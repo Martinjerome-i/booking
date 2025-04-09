@@ -1,0 +1,163 @@
+<!-- halls/templates/halls/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stall Booking System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .btn {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .hall-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            grid-gap: 20px;
+        }
+        .hall-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            background-color: #f9f9f9;
+        }
+        .hall-preview {
+            height: 200px;
+            background-color: #eee;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            position: relative;
+            overflow: hidden;
+        }
+        .stall {
+            position: absolute;
+            background-color: #4CAF50;
+            border: 1px solid #2E7D32;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Stall Booking System</h1>
+            <a href="{% url 'create_hall' %}" class="btn">Create New Hall</a>
+        </div>
+
+        <div class="hall-grid">
+            {% for hall in halls %}
+            <div class="hall-card">
+                <h2>{{ hall.name }}</h2>
+                <div class="hall-preview" id="hall-preview-{{ hall.id }}"
+                     data-hall-id="{{ hall.id }}"
+                     data-length="{{ hall.length }}"
+                     data-breadth="{{ hall.breadth }}">
+                    <!-- Stalls will be drawn here using JavaScript -->
+                </div>
+                <p>Size: {{ hall.length }}m x {{ hall.breadth }}m ({{ hall.total_area }}m²)</p>
+                <p>Stalls: {{ hall.stalls.count }}</p>
+                <a href="{% url 'hall_detail' hall.id %}" class="btn">View Details</a>
+            </div>
+            {% empty %}
+            <p>No halls available. Create a new hall to get started.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+    // Load hall data and render stalls
+    const hallPreviews = document.querySelectorAll('[id^="hall-preview-"]');
+
+    hallPreviews.forEach(async function(preview) {
+        const hallId = preview.dataset.hallId;
+        const hallLength = parseInt(preview.dataset.length);
+        const hallBreadth = parseInt(preview.dataset.breadth);
+
+        try {
+            const response = await fetch(`/halls/${hallId}/data/`);
+            const data = await response.json();
+
+            // Calculate the scale to fit the preview
+            const maxWidth = preview.offsetWidth;
+            const maxHeight = preview.offsetHeight;
+
+            const scaleX = maxWidth / hallLength;
+            const scaleY = maxHeight / hallBreadth;
+            const scale = Math.min(scaleX, scaleY);
+
+            // Render each stall
+            data.stalls.forEach(stall => {
+                const selectedBoxes = stall.selected_boxes;
+
+                // Find the boundaries of the stall
+                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+                selectedBoxes.forEach(box => {
+                    minX = Math.min(minX, box.x);
+                    minY = Math.min(minY, box.y);
+                    maxX = Math.max(maxX, box.x);
+                    maxY = Math.max(maxY, box.y);
+                });
+
+                // Create a single stall element instead of multiple boxes
+                const stallElement = document.createElement('div');
+                stallElement.className = 'stall';
+                stallElement.style.position = 'absolute';
+                stallElement.style.left = `${minX * scale}px`;
+                stallElement.style.top = `${minY * scale}px`;
+                stallElement.style.width = `${(maxX - minX + 1) * scale}px`;
+                stallElement.style.height = `${(maxY - minY + 1) * scale}px`;
+                stallElement.style.backgroundColor = '#4CAF50';
+                stallElement.style.border = '1px solid #2E7D32';
+                stallElement.style.zIndex = '5'; // Ensure stalls appear above any grid lines
+
+                // Add stall number label
+                const stallLabel = document.createElement('div');
+                stallLabel.textContent = stall.stall_number;
+                stallLabel.style.position = 'absolute';
+                stallLabel.style.top = '50%';
+                stallLabel.style.left = '50%';
+                stallLabel.style.transform = 'translate(-50%, -50%)';
+                stallLabel.style.color = 'white';
+                stallLabel.style.fontWeight = 'bold';
+                stallLabel.style.textAlign = 'center';
+
+                stallElement.appendChild(stallLabel);
+                preview.appendChild(stallElement);
+            });
+        } catch (error) {
+            console.error('Error loading hall data:', error);
+        }
+    });
+});
+    </script>
+</body>
+</html>

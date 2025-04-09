@@ -1,0 +1,530 @@
+<!-- halls/templates/halls/create_stall.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Stall - {{ hall.name }}</title>
+    <style>
+        body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+}
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+.btn {
+    background-color: #4CAF50;
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+.btn-secondary {
+    background-color: #2196F3;
+}
+.btn-disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+.grid-container {
+    border: 1px solid #ddd;
+    overflow: auto;
+    margin-bottom: 20px;
+    position: relative;
+    background-color: #f9f9f9;
+}
+.grid-box {
+    position: absolute;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+    transition: background-color 0.1s;
+}
+.grid-box:hover {
+    background-color: rgba(76, 175, 80, 0.3);
+}
+.grid-box.selected {
+    background-color: rgba(76, 175, 80, 0.7);
+}
+.grid-box.selectable {
+    background-color: rgba(76, 175, 80, 0.2);
+}
+.existing-stall {
+    position: absolute;
+    background-color: rgba(255, 87, 34, 0.7);
+    border: 1px solid #E64A19;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    pointer-events: none;
+}
+.form-group {
+    margin-bottom: 15px;
+}
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+input {
+    padding: 8px;
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+.selection-info {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #f0f0f0;
+    border-radius: 4px;
+}
+.instructions {
+    background-color: #e3f2fd;
+    padding: 15px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    border-left: 5px solid #2196F3;
+}
+.instructions ul {
+    margin-top: 10px;
+    padding-left: 20px;
+}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Create Stall - {{ hall.name }}</h1>
+            <a href="{% url 'hall_detail' hall.id %}" class="btn btn-secondary">Back to Hall</a>
+        </div>
+
+        <div class="hall-info">
+            <p>Hall Size: {{ hall.length }}m x {{ hall.breadth }}m ({{ hall.total_area }}m²)</p>
+            <p>Each grid box represents 1 square meter.</p>
+            <p>Click or drag to select boxes for your stall.</p>
+        </div>
+
+        <div class="form-group">
+            <label for="stall-number">Stall Number:</label>
+            <input type="text" id="stall-number" placeholder="Enter stall number">
+        </div>
+
+        <div class="selection-info">
+            <p>Selected Area: <span id="selected-area">0</span> square meters</p>
+            <p>Selection Dimensions: <span id="selection-dimensions">0 x 0</span> meters</p>
+        </div>
+
+        <div class="grid-container" id="hall-grid"
+             style="width: 100%; height: 600px;"
+             data-hall-id="{{ hall.id }}"
+             data-length="{{ hall.length }}"
+             data-breadth="{{ hall.breadth }}">
+            <!-- Grid boxes will be generated here -->
+        </div>
+
+        <div class="actions">
+            <button id="clear-selection" class="btn btn-secondary">Clear Selection</button>
+            <button id="create-stall" class="btn btn-disabled" disabled>Create Stall</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+        const hallGrid = document.getElementById('hall-grid');
+        const hallId = hallGrid.dataset.hallId;
+        const hallLength = parseInt(hallGrid.dataset.length);
+        const hallBreadth = parseInt(hallGrid.dataset.breadth);
+
+        const clearSelectionBtn = document.getElementById('clear-selection');
+        const createStallBtn = document.getElementById('create-stall');
+        const stallNumberInput = document.getElementById('stall-number');
+        const selectedAreaSpan = document.getElementById('selected-area');
+        const selectionDimensionsSpan = document.getElementById('selection-dimensions');
+
+        // Determine the scale to fit the display
+        const maxWidth = hallGrid.clientWidth;
+        const maxHeight = hallGrid.clientHeight;
+
+        const scaleX = maxWidth / hallLength;
+        const scaleY = maxHeight / hallBreadth;
+        const scale = Math.min(scaleX, scaleY);
+
+        // Keep track of selected boxes
+        const selectedBoxes = [];
+        const existingStalls = [];
+
+        // Flag for mouse down (for drag selection)
+        let isMouseDown = false;
+        let isSelecting = true; // true for selecting, false for deselecting
+
+        // Create grid boxes
+        for (let y = 0; y < hallBreadth; y++) {
+            for (let x = 0; x < hallLength; x++) {
+                const box = document.createElement('div');
+                box.className = 'grid-box';
+                box.dataset.x = x;
+                box.dataset.y = y;
+                box.style.left = `${x * scale}px`;
+                box.style.top = `${y * scale}px`;
+                box.style.width = `${scale}px`;
+                box.style.height = `${scale}px`;
+
+                // Handle mouse events for selection
+                box.addEventListener('mousedown', function(e) {
+                    e.preventDefault(); // Prevent text selection
+                    isMouseDown = true;
+
+                    // Check if box is already selected
+                    const boxIndex = findBoxIndex(x, y);
+                    if (boxIndex === -1) {
+                        // Box not selected, select it
+                        isSelecting = true;
+                        selectBox(x, y, box);
+                    } else {
+                        // Box already selected, deselect it
+                        isSelecting = false;
+                        deselectBox(boxIndex);
+                    }
+
+                    updateSelectionInfo();
+                });
+
+                box.addEventListener('mouseenter', function() {
+                    if (isMouseDown) {
+                        const boxIndex = findBoxIndex(x, y);
+                        if (isSelecting && boxIndex === -1) {
+                            selectBox(x, y, box);
+                        } else if (!isSelecting && boxIndex !== -1) {
+                            deselectBox(boxIndex);
+                        }
+                        updateSelectionInfo();
+                    }
+                });
+
+                hallGrid.appendChild(box);
+            }
+        }
+
+        // Mouse up event (for drag selection)
+        document.addEventListener('mouseup', function() {
+            isMouseDown = false;
+        });
+
+        // Clear selection button
+        clearSelectionBtn.addEventListener('click', function() {
+            clearSelection();
+            updateSelectionInfo();
+        });
+
+        // Create stall button
+        createStallBtn.addEventListener('click', function() {
+            const stallNumber = stallNumberInput.value.trim();
+            if (stallNumber === '') {
+                alert('Please enter a stall number');
+                return;
+            }
+
+            if (selectedBoxes.length === 0) {
+                alert('Please select at least one box for the stall');
+                return;
+            }
+
+            // Verify the selected boxes are all connected
+            if (!areSelectedBoxesConnected()) {
+                alert('All selected boxes must be connected. Please ensure there are no gaps in your selection.');
+                return;
+            }
+
+            // Prepare data for submission
+            const data = {
+                stall_number: stallNumber,
+                selected_boxes: selectedBoxes.map(box => ({
+                    x: box.x,
+                    y: box.y
+                }))
+            };
+
+            // Submit the data
+            fetch(`/halls/${hallId}/create-stall/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Stall created successfully!');
+                    window.location.href = `/halls/${hallId}/`;
+                } else {
+                    alert('Error creating stall');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error creating stall');
+            });
+        });
+
+        // Update stall number input to enable/disable create button
+        stallNumberInput.addEventListener('input', function() {
+            updateCreateButtonState();
+        });
+
+        // Load existing stalls
+        fetch(`/halls/${hallId}/data/`)
+        .then(response => response.json())
+        .then(data => {
+            // Store existing stalls
+            data.stalls.forEach(stall => {
+                const selectedBoxes = stall.selected_boxes;
+
+                // Find the boundaries of the stall
+                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+                selectedBoxes.forEach(box => {
+                    minX = Math.min(minX, box.x);
+                    minY = Math.min(minY, box.y);
+                    maxX = Math.max(maxX, box.x);
+                    maxY = Math.max(maxY, box.y);
+
+                    // Store in existingStalls array for validation
+                    existingStalls.push({
+                        stallNumber: stall.stall_number,
+                        boxes: selectedBoxes
+                    });
+                });
+
+                // Create a map to track which boxes belong to this stall
+                const stallBoxMap = {};
+                selectedBoxes.forEach(box => {
+                    stallBoxMap[`${box.x}-${box.y}`] = true;
+                });
+
+                // Create a stall container
+                const stallContainer = document.createElement('div');
+                stallContainer.className = 'existing-stall-container';
+                stallContainer.style.position = 'absolute';
+                stallContainer.style.left = `${minX * scale}px`;
+                stallContainer.style.top = `${minY * scale}px`;
+                stallContainer.style.width = `${(maxX - minX + 1) * scale}px`;
+                stallContainer.style.height = `${(maxY - minY + 1) * scale}px`;
+                stallContainer.style.backgroundColor = 'rgba(255, 87, 34, 0.7)';
+                stallContainer.style.border = '1px solid #E64A19';
+                stallContainer.style.zIndex = '5';
+                stallContainer.style.pointerEvents = 'none';
+
+                // Add stall number label
+                const stallLabel = document.createElement('div');
+                stallLabel.textContent = stall.stall_number;
+                stallLabel.style.position = 'absolute';
+                stallLabel.style.top = '50%';
+                stallLabel.style.left = '50%';
+                stallLabel.style.transform = 'translate(-50%, -50%)';
+                stallLabel.style.color = 'white';
+                stallLabel.style.fontWeight = 'bold';
+                stallLabel.style.textAlign = 'center';
+
+                stallContainer.appendChild(stallLabel);
+                hallGrid.appendChild(stallContainer);
+
+                // Also mark individual boxes as taken (for selection logic)
+                selectedBoxes.forEach(box => {
+                    // Mark each box in the existing stall as taken
+                    const gridBox = document.querySelector(`.grid-box[data-x="${box.x}"][data-y="${box.y}"]`);
+                    if (gridBox) {
+                        gridBox.classList.add('taken');
+                    }
+                });
+            });
+        })
+        .catch(error => {
+            console.error('Error loading hall data:', error);
+        });
+
+        // Helper functions
+        function selectBox(x, y, boxElement) {
+            // Check if box is already part of an existing stall
+            for (const stall of existingStalls) {
+                for (const box of stall.boxes) {
+                    if (box.x === x && box.y === y) {
+                        // Box is already part of an existing stall
+                        return;
+                    }
+                }
+            }
+
+            // If there are already selected boxes, make sure this box is adjacent
+            if (selectedBoxes.length > 0 && !isAdjacentToSelectedBox(x, y)) {
+                return; // Skip this box if it's not adjacent to any selected box
+            }
+
+            // Add the box to the selected boxes array
+            selectedBoxes.push({
+                x: x,
+                y: y,
+                element: boxElement
+            });
+
+            // Highlight the box
+            boxElement.classList.add('selected');
+
+            // Enable create button if requirements are met
+            updateCreateButtonState();
+        }
+
+        function isAdjacentToSelectedBox(x, y) {
+            if (selectedBoxes.length === 0) {
+                return true; // First box can be anywhere
+            }
+
+            // Check if the box is adjacent to any selected box (horizontally or vertically)
+            for (const box of selectedBoxes) {
+                // Adjacent horizontally or vertically (not diagonally)
+                if ((Math.abs(box.x - x) === 1 && box.y === y) ||
+                    (Math.abs(box.y - y) === 1 && box.x === x)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function areSelectedBoxesConnected() {
+            if (selectedBoxes.length <= 1) {
+                return true; // A single box is always connected
+            }
+
+            // Use a simple flood fill algorithm to check connectivity
+            const visited = new Set();
+            const boxesCopy = [...selectedBoxes];
+            const startBox = boxesCopy[0];
+
+            // Define a recursive function for flood fill
+            function floodFill(x, y) {
+                const key = `${x},${y}`;
+                if (visited.has(key)) {
+                    return;
+                }
+
+                // Mark as visited
+                visited.add(key);
+
+                // Check all adjacent boxes
+                for (const box of boxesCopy) {
+                    if (!visited.has(`${box.x},${box.y}`) &&
+                        ((Math.abs(box.x - x) === 1 && box.y === y) ||
+                         (Math.abs(box.y - y) === 1 && box.x === x))) {
+                        floodFill(box.x, box.y);
+                    }
+                }
+            }
+
+            // Start flood fill from the first box
+            floodFill(startBox.x, startBox.y);
+
+            // If all boxes were visited, they're all connected
+            return visited.size === selectedBoxes.length;
+        }
+
+        function deselectBox(index) {
+            const box = selectedBoxes[index];
+            box.element.classList.remove('selected');
+            selectedBoxes.splice(index, 1);
+
+            // Don't allow a selection that breaks connectivity
+            if (!areSelectedBoxesConnected()) {
+                // If deselecting this box breaks connectivity, re-select it
+                selectBox(box.x, box.y, box.element);
+                alert("Cannot deselect this box as it would create disconnected areas.");
+                return;
+            }
+
+            // Update create button state
+            updateCreateButtonState();
+        }
+
+        function findBoxIndex(x, y) {
+            for (let i = 0; i < selectedBoxes.length; i++) {
+                if (selectedBoxes[i].x === x && selectedBoxes[i].y === y) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        function clearSelection() {
+            while (selectedBoxes.length > 0) {
+                const box = selectedBoxes.pop();
+                box.element.classList.remove('selected');
+            }
+
+            // Disable create button
+            updateCreateButtonState();
+        }
+
+        function updateSelectionInfo() {
+            // Update selected area
+            selectedAreaSpan.textContent = selectedBoxes.length;
+
+            // Calculate dimensions of selection
+            if (selectedBoxes.length > 0) {
+                const xValues = selectedBoxes.map(box => box.x);
+                const yValues = selectedBoxes.map(box => box.y);
+
+                const minX = Math.min(...xValues);
+                const maxX = Math.max(...xValues);
+                const minY = Math.min(...yValues);
+                const maxY = Math.max(...yValues);
+
+                const width = maxX - minX + 1;
+                const height = maxY - minY + 1;
+
+                selectionDimensionsSpan.textContent = `${width} x ${height}`;
+            } else {
+                selectionDimensionsSpan.textContent = '0 x 0';
+            }
+        }
+
+        function updateCreateButtonState() {
+            const stallNumber = stallNumberInput.value.trim();
+            const hasSelection = selectedBoxes.length > 0;
+
+            if (stallNumber !== '' && hasSelection) {
+                createStallBtn.disabled = false;
+                createStallBtn.classList.remove('btn-disabled');
+            } else {
+                createStallBtn.disabled = true;
+                createStallBtn.classList.add('btn-disabled');
+            }
+        }
+
+        // Function to get CSRF token from cookies
+        function getCsrfToken() {
+            const cookieValue = document.cookie
+                .split('; ')
+                .find(row => row.startsWith('csrftoken='))
+                ?.split('=')[1];
+            return cookieValue;
+        }
+    });
+    </script>
+</body>
+</html>
