@@ -81,6 +81,20 @@ DATABASES = {
     }
 }
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': 'ibfeindia_booking',
+#         'USER': 'ibfeindia_admin',
+#         'PASSWORD': 'l(Jr%oJw)bla',
+#         'HOST': 'localhost',  # Or your MySQL server address
+#         'PORT': '3306',       # Default MySQL port
+#         'OPTIONS': {
+#             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+#         },
+#     }
+# }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
