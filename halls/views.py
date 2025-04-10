@@ -85,3 +85,13 @@ def get_hall_data(request, hall_id):
         },
         'stalls': stall_data
     })
+
+def delete_stall(request, hall_id, stall_id):
+    hall = get_object_or_404(Hall, id=hall_id)
+    stall = get_object_or_404(Stall, id=stall_id, hall=hall)
+    
+    # Delete the stall
+    stall.delete()
+    
+    # Redirect back to the hall detail page
+    return redirect('hall_detail', hall_id=hall_id)
