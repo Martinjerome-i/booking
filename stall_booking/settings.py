@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-c6i%t21r+wmjkeu+*#x)qn@mwu@5d180ow$@zc(1af(j2@cn37
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['booking.ibfeindia.com', 'booking.ibfeindia.com']
 
 
 # Application definition
@@ -139,3 +139,7 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Email configuration (for booking confirmations)
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # For development
+DEFAULT_FROM_EMAIL = 'noreply@yourdomain.com'

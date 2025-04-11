@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book a Stall - {{ hall.name }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .btn {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-right: 5px;
+        }
+        .btn-primary {
+            background-color: #2196F3;
+        }
+        .btn-disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .hall-display {
+            border: 1px solid #ddd;
+            overflow: auto;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .stall {
+            position: absolute;
+            border: 1px solid #2E7D32;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .stall:hover {
+            filter: brightness(1.1);
+            transform: scale(1.02);
+            z-index: 10;
+        }
+        .stall.available {
+            background-color: #4CAF50;
+        }
+        .stall.booked {
+            background-color: #F44336;
+            cursor: not-allowed;
+        }
+        .stall.reserved {
+            background-color: #FF9800;
+            cursor: not-allowed;
+        }
+        .stall.selected {
+            border: 3px solid #2196F3;
+            box-shadow: 0 0 15px rgba(33, 150, 243, 0.7);
+        }
+        .stall-info {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 5px;
+            display: none;
+            margin-bottom: 20px;
+        }
+        .stall-info h3 {
+            margin-top: 0;
+        }
+        .legend {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+        }
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
+            border: 1px solid #333;
+        }
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255,255,255,0.8);
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Book a Stall - {{ hall.name }}</h1>
+            <!-- <div>
+                <a href="{% url 'hall_detail' hall.id %}" class="btn btn-primary">Back to Hall Details</a>
+                <a href="{% url 'index' %}" class="btn">Back to All Halls</a>
+            </div> -->
+        </div>
+
+        <div class="hall-info">
+            <p>Size: {{ hall.length }}m x {{ hall.breadth }}m ({{ hall.total_area }}m²)</p>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #4CAF50;"></div>
+                <span>Available</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #F44336;"></div>
+                <span>Booked</span>
+            </div>
+        </div>
+
+        <!-- Selected stall information -->
+        <div id="stall-info" class="stall-info">
+            <h3>Selected Stall Information</h3>
+            <div id="stall-details">
+                <!-- Stall details will be loaded here dynamically -->
+            </div>
+            <button id="book-now-btn" class="btn" style="margin-top: 15px;">Book Now</button>
+        </div>
+
+        <div class="hall-display" id="hall-display"
+             style="width: 100%; height: 600px;"
+             data-hall-id="{{ hall.id }}"
+             data-length="{{ hall.length }}"
+             data-breadth="{{ hall.breadth }}">
+            <div id="loading" class="loading">Loading stalls...</div>
+            <!-- Stalls will be drawn here using JavaScript -->
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load hall data and render stalls
+            const hallDisplay = document.getElementById('hall-display');
+            const hallId = hallDisplay.dataset.hallId;
+            const hallLength = parseInt(hallDisplay.dataset.length);
+            const hallBreadth = parseInt(hallDisplay.dataset.breadth);
+            const stallInfo = document.getElementById('stall-info');
+            const stallDetails = document.getElementById('stall-details');
+            const bookNowBtn = document.getElementById('book-now-btn');
+            const loadingElement = document.getElementById('loading');
+
+            let selectedStall = null;
+
+            // Determine the scale to fit the display
+            const maxWidth = hallDisplay.clientWidth;
+            const maxHeight = hallDisplay.clientHeight;
+
+            const scaleX = maxWidth / hallLength;
+            const scaleY = maxHeight / hallBreadth;
+            const scale = Math.min(scaleX, scaleY);
+
+            // Set the actual dimensions
+            const actualWidth = hallLength * scale;
+            const actualHeight = hallBreadth * scale;
+
+            // Draw hall grid (for reference)
+            for (let x = 0; x < hallLength; x++) {
+                for (let y = 0; y < hallBreadth; y++) {
+                    const gridBox = document.createElement('div');
+                    gridBox.style.position = 'absolute';
+                    gridBox.style.left = `${x * scale}px`;
+                    gridBox.style.top = `${y * scale}px`;
+                    gridBox.style.width = `${scale}px`;
+                    gridBox.style.height = `${scale}px`;
+                    gridBox.style.border = '1px solid #eee';
+                    hallDisplay.appendChild(gridBox);
+                }
+            }
+
+            // Fetch and render stalls
+            fetch(`/halls/${hallId}/data/`)
+                .then(response => response.json())
+                .then(data => {
+                    // Hide loading indicator
+                    loadingElement.style.display = 'none';
+                    
+                    // Process each stall
+                    data.stalls.forEach(stall => {
+                        const stallBoxes = stall.selected_boxes;
+
+                        // Group boxes by stall number and find the boundaries
+                        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+                        stallBoxes.forEach(box => {
+                            minX = Math.min(minX, box.x);
+                            minY = Math.min(minY, box.y);
+                            maxX = Math.max(maxX, box.x);
+                            maxY = Math.max(maxY, box.y);
+                        });
+
+                        // Create a single stall element
+                        const stallElement = document.createElement('div');
+                        stallElement.className = `stall ${stall.status}`;
+                        stallElement.setAttribute('data-stall-id', stall.id);
+                        stallElement.setAttribute('data-stall-number', stall.stall_number);
+                        stallElement.setAttribute('data-stall-status', stall.status);
+                        stallElement.setAttribute('data-stall-price', stall.price);
+                        
+                        stallElement.style.position = 'absolute';
+                        stallElement.style.left = `${minX * scale}px`;
+                        stallElement.style.top = `${minY * scale}px`;
+                        stallElement.style.width = `${(maxX - minX + 1) * scale}px`;
+                        stallElement.style.height = `${(maxY - minY + 1) * scale}px`;
+                        stallElement.style.zIndex = '5'; // Ensure stalls appear above grid lines
+
+                        // Add the stall number
+                        const stallLabel = document.createElement('div');
+                        stallLabel.textContent = stall.stall_number;
+                        stallLabel.style.position = 'absolute';
+                        stallLabel.style.top = '50%';
+                        stallLabel.style.left = '50%';
+                        stallLabel.style.transform = 'translate(-50%, -50%)';
+                        stallLabel.style.color = 'white';
+                        stallLabel.style.fontWeight = 'bold';
+                        stallLabel.style.fontSize = `${Math.max(14, scale / 3)}px`;
+                        stallLabel.style.textAlign = 'center';
+
+                        // Add click event for available stalls
+                        if(stall.status === 'available') {
+                            stallElement.addEventListener('click', function() {
+                                // Deselect previously selected stall
+                                if(selectedStall) {
+                                    selectedStall.classList.remove('selected');
+                                }
+                                
+                                // Select this stall
+                                this.classList.add('selected');
+                                selectedStall = this;
+                                
+                                // Show stall info
+                                const stallId = this.getAttribute('data-stall-id');
+                                fetchStallDetails(stallId);
+                            });
+                        }
+
+                        stallElement.appendChild(stallLabel);
+                        hallDisplay.appendChild(stallElement);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading hall data:', error);
+                    loadingElement.textContent = 'Error loading stalls. Please try again later.';
+                });
+
+            // Function to fetch stall details
+            function fetchStallDetails(stallId) {
+                fetch(`/stall/${stallId}/details/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if(data.success) {
+                            const stall = data.stall;
+                            
+                            // Display stall details
+                            stallDetails.innerHTML = `
+                                <p><strong>Stall Number:</strong> ${stall.stall_number}</p>
+                                <p><strong>Size:</strong> ${stall.width}m x ${stall.height}m</p>
+                                <p><strong>Area:</strong> ${stall.area}m²</p>
+                                <p><strong>Price:</strong> $${stall.price.toFixed(2)}</p>
+                            `;
+                            
+                            // Show the stall info section
+                            stallInfo.style.display = 'block';
+                            
+                            // Set up the book now button
+                            bookNowBtn.onclick = function() {
+                                window.location.href = `/stall/${stallId}/book/`;
+                            };
+                        } else {
+                            alert(data.error || 'Could not load stall details');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred while fetching stall details');
+                    });
+            }
+        });
+    </script>
+</body>
+</html>

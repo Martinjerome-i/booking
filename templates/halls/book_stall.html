@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Stall {{ stall.stall_number }} - {{ hall.name }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .btn {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-right: 5px;
+        }
+        .btn-primary {
+            background-color: #2196F3;
+        }
+        .stall-info {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .booking-form {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .form-group .help-text {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 5px;
+        }
+        .errorlist {
+            color: #f44336;
+            margin: 5px 0;
+            padding-left: 20px;
+        }
+        .summary {
+            background-color: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .price {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2196F3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Book Stall</h1>
+            <div>
+                <a href="{% url 'stall_booking' hall.id %}" class="btn btn-primary">Back to Stall Selection</a>
+            </div>
+        </div>
+
+        <div class="stall-info">
+            <h2>Stall Information</h2>
+            <p><strong>Hall:</strong> {{ hall.name }}</p>
+            <p><strong>Stall Number:</strong> {{ stall.stall_number }}</p>
+            <p><strong>Size:</strong> {{ stall.width }}m x {{ stall.height }}m ({{ stall.area }}m²)</p>
+        </div>
+
+        <div class="summary">
+            <h3>Booking Summary</h3>
+            <p>You are about to book stall #{{ stall.stall_number }} in {{ hall.name }}</p>
+            <p class="price">Price: ${{ stall.price }}</p>
+        </div>
+
+        <div class="booking-form">
+            <h2>Customer Details</h2>
+            <form method="post">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                <div class="errorlist">
+                    {{ form.non_field_errors }}
+                </div>
+                {% endif %}
+                
+                <div class="form-group">
+                    <label for="{{ form.customer_name.id_for_label }}">Name *</label>
+                    {{ form.customer_name }}
+                    {% if form.customer_name.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.customer_name.errors %}
+                        <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.customer_email.id_for_label }}">Email *</label>
+                    {{ form.customer_email }}
+                    {% if form.customer_email.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.customer_email.errors %}
+                        <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.customer_phone.id_for_label }}">Phone Number *</label>
+                    {{ form.customer_phone }}
+                    {% if form.customer_phone.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.customer_phone.errors %}
+                        <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.company_name.id_for_label }}">Company Name</label>
+                    {{ form.company_name }}
+                    <div class="help-text">Optional</div>
+                    {% if form.company_name.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.company_name.errors %}
+                        <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.notes.id_for_label }}">Additional Notes</label>
+                    {{ form.notes }}
+                    <div class="help-text">Any special requirements or information</div>
+                    {% if form.notes.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.notes.errors %}
+                        <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+                
+                <button type="submit" class="btn">Complete Booking</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

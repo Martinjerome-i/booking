@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Bookings</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .btn {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-right: 5px;
+        }
+        .btn-primary {
+            background-color: #2196F3;
+        }
+        .search-container {
+            margin-bottom: 15px;
+            position: relative;
+        }
+        .search-input {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .search-input:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+        }
+        .status-filter {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .filter-btn {
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: 1px solid #ddd;
+            background-color: #f5f5f5;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .filter-btn.active {
+            background-color: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+        }
+        .booking-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .booking-table th, .booking-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        .booking-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .booking-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .booking-table tr:hover {
+            background-color: #f1f1f1;
+        }
+        .action-btn {
+            padding: 5px 10px;
+            margin-right: 5px;
+            border-radius: 3px;
+            font-size: 12px;
+            cursor: pointer;
+            border: none;
+            color: white;
+        }
+        .action-btn.confirm {
+            background-color: #4CAF50;
+        }
+        .action-btn.cancel {
+            background-color: #f44336;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: a20px;
+            font-size: 12px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+        .status-pending {
+            background-color: #fff3e0;
+            color: #e65100;
+        }
+        .status-confirmed {
+            background-color: #e8f5e9;
+            color: #2E7D32;
+        }
+        .status-cancelled {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .pagination a {
+            padding: 8px 16px;
+            text-decoration: none;
+            color: black;
+            background-color: #f1f1f1;
+            margin: 0 4px;
+            border-radius: 4px;
+        }
+        .pagination a.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .pagination a:hover:not(.active) {
+            background-color: #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Manage Bookings</h1>
+            <div>
+                <a href="{% url 'index' %}" class="btn btn-primary">Back to Halls</a>
+            </div>
+        </div>
+
+        <div class="filters">
+            <div class="search-container">
+                <input type="text" id="bookingSearchInput" placeholder="Search bookings by reference, customer, or stall..." class="search-input">
+            </div>
+            
+            <div class="status-filter">
+                <button class="filter-btn active" data-status="all">All</button>
+                <button class="filter-btn" data-status="pending">Pending</button>
+                <button class="filter-btn" data-status="confirmed">Confirmed</button>
+                <button class="filter-btn" data-status="cancelled">Cancelled</button>
+            </div>
+        </div>
+
+        {% if bookings %}
+        <table class="booking-table" id="bookingTable">
+            <thead>
+                <tr>
+                    <th>Reference</th>
+                    <th>Hall</th>
+                    <th>Stall</th>
+                    <th>Customer</th>
+                    <th>Booking Date</th>
+                    <th>Event Dates</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for booking in bookings %}
+                <tr data-status="{{ booking.status }}">
+                    <td>{{ booking.booking_reference }}</td>
+                    <td>{{ booking.stall.hall.name }}</td>
+                    <td>{{ booking.stall.stall_number }}</td>
+                    <td>
+                        {{ booking.customer_name }}<br>
+                        <small>{{ booking.customer_email }}</small>
+                    </td>
+                    <td>{{ booking.booking_date|date:"M d, Y" }}</td>
+                    <td>{{ booking.event_start_date|date:"M d, Y" }} to {{ booking.event_end_date|date:"M d, Y" }}</td>
+                    <td>
+                        <span class="status-badge status-{{ booking.status }}">
+                            {{ booking.get_status_display }}
+                        </span>
+                    </td>
+                    <td>
+                        <form method="post" action="{% url 'update_booking_status' booking.id %}" class="status-form" style="display: inline;">
+                            {% csrf_token %}
+                            {% if booking.status == 'pending' %}
+                            <input type="hidden" name="status" value="confirmed">
+                            <button type="submit" class="action-btn confirm">Confirm</button>
+                            
+                            <input type="hidden" name="status" value="cancelled">
+                            <button type="submit" class="action-btn cancel">Cancel</button>
+                            {% elif booking.status == 'confirmed' %}
+                            <input type="hidden" name="status" value="cancelled">
+                            <button type="submit" class="action-btn cancel">Cancel</button>
+                            {% elif booking.status == 'cancelled' %}
+                            <input type="hidden" name="status" value="pending">
+                            <button type="submit" class="action-btn confirm">Restore</button>
+                            {% endif %}
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <!-- Pagination -->
+        <div class="pagination">
+            <a href="#">&laquo;</a>
+            <a href="#" class="active">1</a>
+            <a href="#">2</a>
+            <a href="#">3</a>
+            <a href="#">&raquo;</a>
+        </div>
+        
+        {% else %}
+        <div style="text-align: center; padding: 50px;">
+            <h3>No bookings found</h3>
+            <p>No stall bookings have been made yet.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Search functionality
+            const searchInput = document.getElementById('bookingSearchInput');
+            const bookingTable = document.getElementById('bookingTable');
+            
+            if (searchInput && bookingTable) {
+                searchInput.addEventListener('keyup', function() {
+                    const searchQuery = this.value.toLowerCase();
+                    const rows = bookingTable.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+                    
+                    for (let i = 0; i < rows.length; i++) {
+                        const reference = rows[i].cells[0].textContent.toLowerCase();
+                        const hall = rows[i].cells[1].textContent.toLowerCase();
+                        const stall = rows[i].cells[2].textContent.toLowerCase();
+                        const customer = rows[i].cells[3].textContent.toLowerCase();
+                        
+                        // Check if the row should be visible based on both search and filter
+                        const matchesSearch = reference.includes(searchQuery) || 
+                                           hall.includes(searchQuery) || 
+                                           stall.includes(searchQuery) || 
+                                           customer.includes(searchQuery);
+                                           
+                        const currentFilter = document.querySelector('.filter-btn.active').dataset.status;
+                        const matchesFilter = currentFilter === 'all' || rows[i].dataset.status === currentFilter;
+                        
+                        rows[i].style.display = (matchesSearch && matchesFilter) ? '' : 'none';
+                    }
+                });
+            }
+            
+            // Filter functionality
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            
+            filterButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Set active state
+                    filterButtons.forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    const filter = this.dataset.status;
+                    const rows = bookingTable.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+                    
+                    for (let i = 0; i < rows.length; i++) {
+                        // Apply both search and filter
+                        const searchQuery = searchInput.value.toLowerCase();
+                        const reference = rows[i].cells[0].textContent.toLowerCase();
+                        const hall = rows[i].cells[1].textContent.toLowerCase();
+                        const stall = rows[i].cells[2].textContent.toLowerCase();
+                        const customer = rows[i].cells[3].textContent.toLowerCase();
+                        
+                        const matchesSearch = reference.includes(searchQuery) || 
+                                         hall.includes(searchQuery) || 
+                                         stall.includes(searchQuery) || 
+                                         customer.includes(searchQuery);
+                                         
+                        const matchesFilter = filter === 'all' || rows[i].dataset.status === filter;
+                        
+                        rows[i].style.display = (matchesSearch && matchesFilter) ? '' : 'none';
+                    }
+                });
+            });
+            
+            // Handle status form submissions with AJAX
+            const statusForms = document.querySelectorAll('.status-form');
+            
+            statusForms.forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    const formData = new FormData(this);
+                    const url = this.action;
+                    
+                    fetch(url, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Refresh the page to show the updated status
+                            window.location.reload();
+                        } else {
+                            alert('Error updating booking status: ' + data.error);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred while updating the booking status.');
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>
