@@ -120,11 +120,6 @@ input {
             <p>Click or drag to select boxes for your stall.</p>
         </div>
 
-        <div class="form-group">
-            <label for="stall-number">Stall Number:</label>
-            <input type="text" id="stall-number" placeholder="Enter stall number">
-        </div>
-
         <div class="selection-info">
             <p>Selected Area: <span id="selected-area">0</span> square meters</p>
             <p>Selection Dimensions: <span id="selection-dimensions">0 x 0</span> meters</p>
@@ -136,6 +131,11 @@ input {
              data-length="{{ hall.length }}"
              data-breadth="{{ hall.breadth }}">
             <!-- Grid boxes will be generated here -->
+        </div>
+
+        <div class="form-group">
+            <label for="stall-number">Stall Number:</label>
+            <input type="text" id="stall-number" placeholder="Enter stall number">
         </div>
 
         <div class="actions">
@@ -245,19 +245,41 @@ input {
                 return;
             }
 
-            // Verify the selected boxes are all connected
-            if (!areSelectedBoxesConnected()) {
-                alert('All selected boxes must be connected. Please ensure there are no gaps in your selection.');
-                return;
+            // Calculate the rectangle boundaries
+            const xValues = selectedBoxes.map(box => box.x);
+            const yValues = selectedBoxes.map(box => box.y);
+
+            const minX = Math.min(...xValues);
+            const maxX = Math.max(...xValues);
+            const minY = Math.min(...yValues);
+            const maxY = Math.max(...yValues);
+
+            // Create an array of all boxes within the rectangle
+            const rectangleBoxes = [];
+            for (let x = minX; x <= maxX; x++) {
+                for (let y = minY; y <= maxY; y++) {
+                    // Check if this position is already taken by an existing stall
+                    let isTaken = false;
+                    for (const stall of existingStalls) {
+                        for (const box of stall.boxes) {
+                            if (box.x === x && box.y === y) {
+                                isTaken = true;
+                                break;
+                            }
+                        }
+                        if (isTaken) break;
+                    }
+                    
+                    if (!isTaken) {
+                        rectangleBoxes.push({ x, y });
+                    }
+                }
             }
 
-            // Prepare data for submission
+            // Prepare data for submission with rectangle boxes
             const data = {
                 stall_number: stallNumber,
-                selected_boxes: selectedBoxes.map(box => ({
-                    x: box.x,
-                    y: box.y
-                }))
+                selected_boxes: rectangleBoxes  // Use the rectangle boxes
             };
 
             // Submit the data
@@ -378,11 +400,6 @@ input {
                 }
             }
 
-            // If there are already selected boxes, make sure this box is adjacent
-            if (selectedBoxes.length > 0 && !isAdjacentToSelectedBox(x, y)) {
-                return; // Skip this box if it's not adjacent to any selected box
-            }
-
             // Add the box to the selected boxes array
             selectedBoxes.push({
                 x: x,
@@ -393,61 +410,51 @@ input {
             // Highlight the box
             boxElement.classList.add('selected');
 
+            // Calculate the rectangle boundaries and update the UI
+            updateSelectionRectangle();
+
             // Enable create button if requirements are met
             updateCreateButtonState();
         }
 
-        function isAdjacentToSelectedBox(x, y) {
-            if (selectedBoxes.length === 0) {
-                return true; // First box can be anywhere
-            }
+        function updateSelectionRectangle() {
+            if (selectedBoxes.length === 0) return;
 
-            // Check if the box is adjacent to any selected box (horizontally or vertically)
-            for (const box of selectedBoxes) {
-                // Adjacent horizontally or vertically (not diagonally)
-                if ((Math.abs(box.x - x) === 1 && box.y === y) ||
-                    (Math.abs(box.y - y) === 1 && box.x === x)) {
-                    return true;
-                }
-            }
-            return false;
-        }
+            // Clear any existing rectangle selection
+            clearRectangleSelection();
 
-        function areSelectedBoxesConnected() {
-            if (selectedBoxes.length <= 1) {
-                return true; // A single box is always connected
-            }
+            // Find the boundaries of the selection
+            const xValues = selectedBoxes.map(box => box.x);
+            const yValues = selectedBoxes.map(box => box.y);
 
-            // Use a simple flood fill algorithm to check connectivity
-            const visited = new Set();
-            const boxesCopy = [...selectedBoxes];
-            const startBox = boxesCopy[0];
+            const minX = Math.min(...xValues);
+            const maxX = Math.max(...xValues);
+            const minY = Math.min(...yValues);
+            const maxY = Math.max(...yValues);
 
-            // Define a recursive function for flood fill
-            function floodFill(x, y) {
-                const key = `${x},${y}`;
-                if (visited.has(key)) {
-                    return;
-                }
-
-                // Mark as visited
-                visited.add(key);
-
-                // Check all adjacent boxes
-                for (const box of boxesCopy) {
-                    if (!visited.has(`${box.x},${box.y}`) &&
-                        ((Math.abs(box.x - x) === 1 && box.y === y) ||
-                         (Math.abs(box.y - y) === 1 && box.x === x))) {
-                        floodFill(box.x, box.y);
+            // Mark all boxes within the rectangle as selected
+            for (let x = minX; x <= maxX; x++) {
+                for (let y = minY; y <= maxY; y++) {
+                    const boxElement = document.querySelector(`.grid-box[data-x="${x}"][data-y="${y}"]`);
+                    if (boxElement && !boxElement.classList.contains('taken')) {
+                        // Only mark as selectable if not already selected
+                        if (!isBoxSelected(x, y)) {
+                            boxElement.classList.add('selectable');
+                        }
                     }
                 }
             }
+        }
 
-            // Start flood fill from the first box
-            floodFill(startBox.x, startBox.y);
+        function isBoxSelected(x, y) {
+            return findBoxIndex(x, y) !== -1;
+        }
 
-            // If all boxes were visited, they're all connected
-            return visited.size === selectedBoxes.length;
+        function clearRectangleSelection() {
+            // Remove 'selectable' class from all boxes
+            document.querySelectorAll('.grid-box.selectable').forEach(box => {
+                box.classList.remove('selectable');
+            });
         }
 
         function deselectBox(index) {
@@ -455,13 +462,8 @@ input {
             box.element.classList.remove('selected');
             selectedBoxes.splice(index, 1);
 
-            // Don't allow a selection that breaks connectivity
-            if (!areSelectedBoxesConnected()) {
-                // If deselecting this box breaks connectivity, re-select it
-                selectBox(box.x, box.y, box.element);
-                alert("Cannot deselect this box as it would create disconnected areas.");
-                return;
-            }
+            // Update rectangle selection
+            updateSelectionRectangle();
 
             // Update create button state
             updateCreateButtonState();
@@ -481,32 +483,59 @@ input {
                 const box = selectedBoxes.pop();
                 box.element.classList.remove('selected');
             }
+            
+            // Also clear rectangle selection
+            clearRectangleSelection();
 
             // Disable create button
             updateCreateButtonState();
         }
 
         function updateSelectionInfo() {
-            // Update selected area
-            selectedAreaSpan.textContent = selectedBoxes.length;
-
-            // Calculate dimensions of selection
-            if (selectedBoxes.length > 0) {
-                const xValues = selectedBoxes.map(box => box.x);
-                const yValues = selectedBoxes.map(box => box.y);
-
-                const minX = Math.min(...xValues);
-                const maxX = Math.max(...xValues);
-                const minY = Math.min(...yValues);
-                const maxY = Math.max(...yValues);
-
-                const width = maxX - minX + 1;
-                const height = maxY - minY + 1;
-
-                selectionDimensionsSpan.textContent = `${width} x ${height}`;
-            } else {
+            if (selectedBoxes.length === 0) {
+                selectedAreaSpan.textContent = '0';
                 selectionDimensionsSpan.textContent = '0 x 0';
+                return;
             }
+
+            // Calculate dimensions of selection rectangle
+            const xValues = selectedBoxes.map(box => box.x);
+            const yValues = selectedBoxes.map(box => box.y);
+
+            const minX = Math.min(...xValues);
+            const maxX = Math.max(...xValues);
+            const minY = Math.min(...yValues);
+            const maxY = Math.max(...yValues);
+
+            const width = maxX - minX + 1;
+            const height = maxY - minY + 1;
+
+            // Calculate area of the rectangle
+            let area = width * height;
+            
+            // Reduce area for any boxes that are part of existing stalls
+            for (let x = minX; x <= maxX; x++) {
+                for (let y = minY; y <= maxY; y++) {
+                    // Check if this box is part of an existing stall
+                    let isTaken = false;
+                    for (const stall of existingStalls) {
+                        for (const box of stall.boxes) {
+                            if (box.x === x && box.y === y) {
+                                isTaken = true;
+                                break;
+                            }
+                        }
+                        if (isTaken) break;
+                    }
+                    
+                    if (isTaken) {
+                        area--;
+                    }
+                }
+            }
+
+            selectedAreaSpan.textContent = area;
+            selectionDimensionsSpan.textContent = `${width} x ${height}`;
         }
 
         function updateCreateButtonState() {
