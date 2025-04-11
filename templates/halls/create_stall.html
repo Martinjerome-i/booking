@@ -269,18 +269,24 @@ input {
                 },
                 body: JSON.stringify(data)
             })
-            .then(response => response.json())
+            .then(response => {
+                // Check if the response is ok first
+                if (!response.ok) {
+                    return response.json().then(errorData => {
+                        throw new Error(errorData.error || 'Error creating stall');
+                    });
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
                     alert('Stall created successfully!');
-                    window.location.href = `/halls/${hallId}/`;
-                } else {
-                    alert('Error creating stall');
+                    window.location.reload();
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Error creating stall');
+                alert(error.message);
             });
         });
 

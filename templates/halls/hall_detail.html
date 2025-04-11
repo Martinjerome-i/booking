@@ -37,6 +37,9 @@
         .btn-danger {
             background-color: #f44336;
         }
+        .btn-warning {
+            background-color: #FF9800;
+        }
         .hall-display {
             border: 1px solid #ddd;
             overflow: auto;
@@ -53,18 +56,68 @@
             color: white;
             font-weight: bold;
         }
-        .stall-list {
-            margin-top: 30px;
+        .stall-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
         }
-        .stall-item {
+        .stall-table th, .stall-table td {
             border: 1px solid #ddd;
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 4px;
+            padding: 12px;
+            text-align: left;
+        }
+        .stall-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .stall-table tr:nth-child(even) {
             background-color: #f9f9f9;
         }
-        .stall-actions {
-            margin-top: 10px;
+        .stall-table tr:hover {
+            background-color: #f1f1f1;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 50%;
+            border-radius: 5px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover {
+            color: black;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
         }
     </style>
 </head>
@@ -93,106 +146,218 @@
 
         <div class="stall-list">
             <h2>Stalls</h2>
-            {% for stall in stalls %}
-            <div class="stall-item">
-                <h3>Stall #{{ stall.stall_number }}</h3>
-                <p>Size: {{ stall.width }}m x {{ stall.height }}m</p>
-                <p>Area: {{ stall.area }}m²</p>
-                <p>Position: ({{ stall.x_start }}, {{ stall.y_start }})</p>
-                <div class="stall-actions">
-                    <a href="{% url 'delete_stall' hall.id stall.id %}" class="btn btn-danger" style="background-color: #f44336;" onclick="return confirm('Are you sure you want to delete this stall?')">Remove</a>
-                </div>
-            </div>
-            {% empty %}
+            {% if stalls %}
+            <table class="stall-table">
+                <thead>
+                    <tr>
+                        <th>Stall Number</th>
+                        <th>Size</th>
+                        <th>Area</th>
+                        <th>Position</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stall in stalls %}
+                    <tr>
+                        <td>{{ stall.stall_number }}</td>
+                        <td>{{ stall.width }}m x {{ stall.height }}m</td>
+                        <td>{{ stall.area }}m²</td>
+                        <td>({{ stall.x_start }}, {{ stall.y_start }})</td>
+                        <td>
+                            <button class="btn btn-warning edit-stall-btn" data-stall-id="{{ stall.id }}" data-stall-number="{{ stall.stall_number }}">Edit</button>
+                            <a href="{% url 'delete_stall' hall.id stall.id %}" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this stall?')">Delete</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
             <p>No stalls created yet. Create a new stall to get started.</p>
-            {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Edit Stall Modal -->
+    <div id="editStallModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Edit Stall</h2>
+            <form id="editStallForm">
+                <input type="hidden" id="editStallId" name="stall_id">
+                <div class="form-group">
+                    <label for="editStallNumber">Stall Number:</label>
+                    <input type="text" id="editStallNumber" name="stall_number" required>
+                </div>
+                <button type="submit" class="btn">Save Changes</button>
+            </form>
         </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-    // Load hall data and render stalls
-    const hallDisplay = document.getElementById('hall-display');
-    const hallId = hallDisplay.dataset.hallId;
-    const hallLength = parseInt(hallDisplay.dataset.length);
-    const hallBreadth = parseInt(hallDisplay.dataset.breadth);
+            // Load hall data and render stalls
+            const hallDisplay = document.getElementById('hall-display');
+            const hallId = hallDisplay.dataset.hallId;
+            const hallLength = parseInt(hallDisplay.dataset.length);
+            const hallBreadth = parseInt(hallDisplay.dataset.breadth);
 
-    // Determine the scale to fit the display
-    const maxWidth = hallDisplay.clientWidth;
-    const maxHeight = hallDisplay.clientHeight;
+            // Determine the scale to fit the display
+            const maxWidth = hallDisplay.clientWidth;
+            const maxHeight = hallDisplay.clientHeight;
 
-    const scaleX = maxWidth / hallLength;
-    const scaleY = maxHeight / hallBreadth;
-    const scale = Math.min(scaleX, scaleY);
+            const scaleX = maxWidth / hallLength;
+            const scaleY = maxHeight / hallBreadth;
+            const scale = Math.min(scaleX, scaleY);
 
-    // Set the actual dimensions
-    const actualWidth = hallLength * scale;
-    const actualHeight = hallBreadth * scale;
+            // Set the actual dimensions
+            const actualWidth = hallLength * scale;
+            const actualHeight = hallBreadth * scale;
 
-    // Draw hall grid (for reference)
-    for (let x = 0; x < hallLength; x++) {
-        for (let y = 0; y < hallBreadth; y++) {
-            const gridBox = document.createElement('div');
-            gridBox.style.position = 'absolute';
-            gridBox.style.left = `${x * scale}px`;
-            gridBox.style.top = `${y * scale}px`;
-            gridBox.style.width = `${scale}px`;
-            gridBox.style.height = `${scale}px`;
-            gridBox.style.border = '1px solid #eee';
-            hallDisplay.appendChild(gridBox);
-        }
-    }
+            // Draw hall grid (for reference)
+            for (let x = 0; x < hallLength; x++) {
+                for (let y = 0; y < hallBreadth; y++) {
+                    const gridBox = document.createElement('div');
+                    gridBox.style.position = 'absolute';
+                    gridBox.style.left = `${x * scale}px`;
+                    gridBox.style.top = `${y * scale}px`;
+                    gridBox.style.width = `${scale}px`;
+                    gridBox.style.height = `${scale}px`;
+                    gridBox.style.border = '1px solid #eee';
+                    hallDisplay.appendChild(gridBox);
+                }
+            }
 
-    // Fetch and render stalls
-    fetch(`/halls/${hallId}/data/`)
-        .then(response => response.json())
-        .then(data => {
-            // Process each stall
-            data.stalls.forEach(stall => {
-                const stallBoxes = stall.selected_boxes;
+            // Fetch and render stalls
+            fetch(`/halls/${hallId}/data/`)
+                .then(response => response.json())
+                .then(data => {
+                    // Process each stall
+                    data.stalls.forEach(stall => {
+                        const stallBoxes = stall.selected_boxes;
 
-                // Group boxes by stall number and find the boundaries
-                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                        // Group boxes by stall number and find the boundaries
+                        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
 
-                stallBoxes.forEach(box => {
-                    minX = Math.min(minX, box.x);
-                    minY = Math.min(minY, box.y);
-                    maxX = Math.max(maxX, box.x);
-                    maxY = Math.max(maxY, box.y);
+                        stallBoxes.forEach(box => {
+                            minX = Math.min(minX, box.x);
+                            minY = Math.min(minY, box.y);
+                            maxX = Math.max(maxX, box.x);
+                            maxY = Math.max(maxY, box.y);
+                        });
+
+                        // Create a single stall element instead of individual boxes
+                        const stallElement = document.createElement('div');
+                        stallElement.className = 'stall';
+                        stallElement.style.position = 'absolute';
+                        stallElement.style.left = `${minX * scale}px`;
+                        stallElement.style.top = `${minY * scale}px`;
+                        stallElement.style.width = `${(maxX - minX + 1) * scale}px`;
+                        stallElement.style.height = `${(maxY - minY + 1) * scale}px`;
+                        stallElement.style.backgroundColor = '#4CAF50';
+                        stallElement.style.border = '1px solid #2E7D32';
+                        stallElement.style.zIndex = '5'; // Ensure stalls appear above grid lines
+
+                        // Add the stall number
+                        const stallLabel = document.createElement('div');
+                        stallLabel.textContent = stall.stall_number;
+                        stallLabel.style.position = 'absolute';
+                        stallLabel.style.top = '50%';
+                        stallLabel.style.left = '50%';
+                        stallLabel.style.transform = 'translate(-50%, -50%)';
+                        stallLabel.style.color = 'white';
+                        stallLabel.style.fontWeight = 'bold';
+                        stallLabel.style.fontSize = `${Math.max(14, scale / 3)}px`;
+                        stallLabel.style.textAlign = 'center';
+
+                        stallElement.appendChild(stallLabel);
+                        hallDisplay.appendChild(stallElement);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading hall data:', error);
                 });
 
-                // Create a single stall element instead of individual boxes
-                const stallElement = document.createElement('div');
-                stallElement.className = 'stall';
-                stallElement.style.position = 'absolute';
-                stallElement.style.left = `${minX * scale}px`;
-                stallElement.style.top = `${minY * scale}px`;
-                stallElement.style.width = `${(maxX - minX + 1) * scale}px`;
-                stallElement.style.height = `${(maxY - minY + 1) * scale}px`;
-                stallElement.style.backgroundColor = '#4CAF50';
-                stallElement.style.border = '1px solid #2E7D32';
-                stallElement.style.zIndex = '5'; // Ensure stalls appear above grid lines
+            // Modal handling for edit
+            const modal = document.getElementById("editStallModal");
+            const span = document.getElementsByClassName("close")[0];
+            const editBtns = document.getElementsByClassName("edit-stall-btn");
+            const editForm = document.getElementById("editStallForm");
 
-                // Add the stall number
-                const stallLabel = document.createElement('div');
-                stallLabel.textContent = stall.stall_number;
-                stallLabel.style.position = 'absolute';
-                stallLabel.style.top = '50%';
-                stallLabel.style.left = '50%';
-                stallLabel.style.transform = 'translate(-50%, -50%)';
-                stallLabel.style.color = 'white';
-                stallLabel.style.fontWeight = 'bold';
-                stallLabel.style.fontSize = `${Math.max(14, scale / 3)}px`;
-                stallLabel.style.textAlign = 'center';
+            // When the user clicks on any edit button, open the modal
+            for (let i = 0; i < editBtns.length; i++) {
+                editBtns[i].onclick = function() {
+                    const stallId = this.getAttribute("data-stall-id");
+                    const stallNumber = this.getAttribute("data-stall-number");
+                    
+                    document.getElementById("editStallId").value = stallId;
+                    document.getElementById("editStallNumber").value = stallNumber;
+                    
+                    modal.style.display = "block";
+                }
+            }
 
-                stallElement.appendChild(stallLabel);
-                hallDisplay.appendChild(stallElement);
-            });
-        })
-        .catch(error => {
-            console.error('Error loading hall data:', error);
+            // When the user clicks on <span> (x), close the modal
+            span.onclick = function() {
+                modal.style.display = "none";
+            }
+
+            // When the user clicks anywhere outside of the modal, close it
+            window.onclick = function(event) {
+                if (event.target == modal) {
+                    modal.style.display = "none";
+                }
+            }
+
+            // Handle form submission
+            editForm.onsubmit = function(e) {
+                e.preventDefault();
+                
+                const stallId = document.getElementById("editStallId").value;
+                const stallNumber = document.getElementById("editStallNumber").value;
+                
+                // Make AJAX request to update stall
+                fetch(`/halls/${hallId}/stall/${stallId}/edit/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        stall_number: stallNumber
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Refresh the page to show updated data
+                        window.location.reload();
+                    } else {
+                        alert('Error updating stall: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while updating the stall.');
+                });
+            };
+
+            // Function to get CSRF token from cookies
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
         });
-});
     </script>
 </body>
 </html>

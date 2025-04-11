@@ -36,6 +36,13 @@ def create_stall(request, hall_id):
         stall_number = data.get('stall_number')
         selected_boxes = data.get('selected_boxes', [])
 
+        # Check if a stall with the same number already exists in this hall
+        if Stall.objects.filter(hall=hall, stall_number=stall_number).exists():
+            return JsonResponse({
+                'success': False, 
+                'error': 'A stall with this number already exists in this hall.'
+            }, status=400)
+
         # Calculate the dimensions of the stall
         x_coordinates = [box['x'] for box in selected_boxes]
         y_coordinates = [box['y'] for box in selected_boxes]
@@ -95,3 +102,29 @@ def delete_stall(request, hall_id, stall_id):
     
     # Redirect back to the hall detail page
     return redirect('hall_detail', hall_id=hall_id)
+
+
+def edit_stall(request, hall_id, stall_id):
+    hall = get_object_or_404(Hall, id=hall_id)
+    stall = get_object_or_404(Stall, id=stall_id, hall=hall)
+    
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        stall_number = data.get('stall_number')
+        
+        if not stall_number:
+            return JsonResponse({'success': False, 'error': 'Stall number is required'})
+        
+        # Check if a stall with the same number already exists in this hall
+        # Exclude the current stall from the check
+        if Stall.objects.filter(hall=hall, stall_number=stall_number).exclude(id=stall_id).exists():
+            return JsonResponse({
+                'success': False, 
+                'error': 'A stall with this number already exists in this hall.'
+            }, status=400)
+        
+        stall.stall_number = stall_number
+        stall.save()
+        return JsonResponse({'success': True})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
