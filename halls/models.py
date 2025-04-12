@@ -77,3 +77,25 @@ class Booking(models.Model):
     
     def __str__(self):
         return f"Booking {self.booking_reference} - {self.customer_name}"
+    
+
+class ComboStall(models.Model):
+    name = models.CharField(max_length=100)
+    hall = models.ForeignKey(Hall, on_delete=models.CASCADE, related_name='combos')
+    stalls = models.ManyToManyField(Stall, related_name='combos')
+    description = models.TextField(blank=True, null=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, 
+                               help_text="Optional custom price for the combo. If not set, will use sum of stall prices.")
+    
+    def __str__(self):
+        return f"{self.name} - {self.hall.name}"
+    
+    @property
+    def stall_count(self):
+        return self.stalls.count()
+    
+    @property
+    def total_price(self):
+        if self.price:
+            return self.price
+        return sum(stall.price for stall in self.stalls.all())

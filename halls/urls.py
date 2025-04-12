@@ -27,4 +27,8 @@ urlpatterns = [
     path('booking/<int:booking_id>/confirmation/', views.booking_confirmation, name='booking_confirmation'),
     path('bookings/', views.manage_bookings, name='manage_bookings'),
     path('booking/<int:booking_id>/update-status/', views.update_booking_status, name='update_booking_status'),
+    path('halls/<int:hall_id>/combos/', views.get_combos, name='get_combos'),
+    path('halls/<int:hall_id>/create-combo/', views.create_combo, name='create_combo'),
+    path('combo/<int:combo_id>/edit/', views.edit_combo, name='edit_combo'),
+    path('combo/<int:combo_id>/delete/', views.delete_combo, name='delete_combo'),
 ]

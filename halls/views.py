@@ -5,7 +5,7 @@ from django.views.decorators.http import require_POST
 from django.core.mail import send_mail
 from django.conf import settings
 from django.utils import timezone
-from .models import Hall, Stall, Booking
+from .models import Hall, Stall, Booking, ComboStall
 from .forms import BookingForm
 import json
 import uuid
@@ -311,3 +311,93 @@ def send_booking_confirmation(booking):
     recipient_list = [booking.customer_email]
     
     send_mail(subject, message, from_email, recipient_list)
+
+
+# Add these to your views.py
+
+def create_combo(request, hall_id):
+    hall = get_object_or_404(Hall, id=hall_id)
+    
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        name = data.get('name')
+        description = data.get('description', '')
+        stall_ids = data.get('stall_ids', [])
+        price = data.get('price')
+        
+        # Validate
+        if not name:
+            return JsonResponse({'success': False, 'error': 'Combo name is required'})
+        if not stall_ids:
+            return JsonResponse({'success': False, 'error': 'You must select at least one stall'})
+            
+        # Create combo
+        combo = ComboStall.objects.create(
+            name=name,
+            hall=hall,
+            description=description,
+            price=price if price else None
+        )
+        
+        # Add stalls to combo
+        stalls = Stall.objects.filter(id__in=stall_ids, hall=hall)
+        combo.stalls.set(stalls)
+        
+        return JsonResponse({'success': True, 'combo_id': combo.id})
+        
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+def edit_combo(request, combo_id):
+    combo = get_object_or_404(ComboStall, id=combo_id)
+    
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        name = data.get('name')
+        description = data.get('description', '')
+        stall_ids = data.get('stall_ids', [])
+        price = data.get('price')
+        
+        # Validate
+        if not name:
+            return JsonResponse({'success': False, 'error': 'Combo name is required'})
+        if not stall_ids:
+            return JsonResponse({'success': False, 'error': 'You must select at least one stall'})
+            
+        # Update combo
+        combo.name = name
+        combo.description = description
+        combo.price = price if price else None
+        combo.save()
+        
+        # Update stalls in combo
+        stalls = Stall.objects.filter(id__in=stall_ids, hall=combo.hall)
+        combo.stalls.set(stalls)
+        
+        return JsonResponse({'success': True})
+        
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+def delete_combo(request, combo_id):
+    combo = get_object_or_404(ComboStall, id=combo_id)
+    hall_id = combo.hall.id
+    combo.delete()
+    return redirect('hall_detail', hall_id=hall_id)
+
+def get_combos(request, hall_id):
+    hall = get_object_or_404(Hall, id=hall_id)
+    combos = hall.combos.all()
+    
+    combo_data = []
+    for combo in combos:
+        stalls = list(combo.stalls.values('id', 'stall_number'))
+        combo_data.append({
+            'id': combo.id,
+            'name': combo.name,
+            'description': combo.description,
+            'stalls': stalls,
+            'price': float(combo.total_price),
+            'custom_price': float(combo.price) if combo.price else None,
+            'stall_count': combo.stall_count
+        })
+    
+    return JsonResponse({'success': True, 'combos': combo_data})

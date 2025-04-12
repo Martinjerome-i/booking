@@ -1,4 +1,4 @@
-<!-- halls/templates/halls/hall_detail.html -->
+<!-- Update your hall_detail.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -56,24 +56,24 @@
             color: white;
             font-weight: bold;
         }
-        .stall-table {
+        .stall-table, .combo-table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
         }
-        .stall-table th, .stall-table td {
+        .stall-table th, .stall-table td, .combo-table th, .combo-table td {
             border: 1px solid #ddd;
             padding: 12px;
             text-align: left;
         }
-        .stall-table th {
+        .stall-table th, .combo-table th {
             background-color: #f2f2f2;
             font-weight: bold;
         }
-        .stall-table tr:nth-child(even) {
+        .stall-table tr:nth-child(even), .combo-table tr:nth-child(even) {
             background-color: #f9f9f9;
         }
-        .stall-table tr:hover {
+        .stall-table tr:hover, .combo-table tr:hover {
             background-color: #f1f1f1;
         }
         .modal {
@@ -88,11 +88,13 @@
         }
         .modal-content {
             background-color: #fefefe;
-            margin: 15% auto;
+            margin: 10% auto;
             padding: 20px;
             border: 1px solid #888;
-            width: 50%;
+            width: 60%;
             border-radius: 5px;
+            max-height: 80vh;
+            overflow-y: auto;
         }
         .close {
             color: #aaa;
@@ -112,7 +114,7 @@
             margin-bottom: 5px;
             font-weight: bold;
         }
-        .form-group input {
+        .form-group input, .form-group textarea, .form-group select {
             width: 100%;
             padding: 8px;
             box-sizing: border-box;
@@ -138,6 +140,38 @@
             border-color: #4CAF50;
             box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
         }
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .checkbox-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        .stall-checkbox {
+            display: flex;
+            align-items: center;
+        }
+        .stall-checkbox input {
+            margin-right: 5px;
+        }
+        .combo-badge {
+            display: inline-block;
+            background-color: #e3f2fd;
+            padding: 2px 6px;
+            margin: 2px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
@@ -148,6 +182,7 @@
                 <a href="{% url 'stall_booking' hall.id %}" class="btn" style="background-color: #FF9800;">Book a Stall</a>
                 <a href="{% url 'index' %}" class="btn" style="background-color: #2196F3;">Back to Halls</a>
                 <a href="{% url 'create_stall' hall.id %}" class="btn">Create New Stall</a>
+                <button id="create-combo-btn" class="btn" style="background-color: #9C27B0;">Create Combo</button>
             </div>
         </div>
 
@@ -164,6 +199,17 @@
             <!-- Stalls will be drawn here using JavaScript -->
         </div>
 
+        <!-- Combo Stalls Section -->
+        <div class="combo-list">
+            <div class="section-header">
+                <h2>Combo Stalls</h2>
+            </div>
+            <div id="combo-table-container">
+                <!-- Combo table will be loaded here via JavaScript -->
+            </div>
+        </div>
+        
+        <!-- Stalls Section -->
         <div class="stall-list">
             <h2>Stalls</h2>
             {% if stalls %}
@@ -177,16 +223,18 @@
                         <th>Size</th>
                         <th>Area</th>
                         <th>Position</th>
+                        <th>In Combos</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for stall in stalls %}
-                    <tr>
+                    <tr data-stall-id="{{ stall.id }}">
                         <td>{{ stall.stall_number }}</td>
                         <td>{{ stall.width }}m x {{ stall.height }}m</td>
                         <td>{{ stall.area }}m²</td>
                         <td>({{ stall.x_start }}, {{ stall.y_start }})</td>
+                        <td class="stall-combos"><!-- Combo badges will be inserted here --></td>
                         <td>
                             <button class="btn btn-warning edit-stall-btn" data-stall-id="{{ stall.id }}" data-stall-number="{{ stall.stall_number }}">Edit</button>
                             <a href="{% url 'delete_stall' hall.id stall.id %}" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this stall?')">Delete</a>
@@ -217,6 +265,39 @@
         </div>
     </div>
 
+    <!-- Create/Edit Combo Modal -->
+    <div id="comboModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="comboModalClose">&times;</span>
+            <h2 id="comboModalTitle">Create Combo</h2>
+            <form id="comboForm">
+                <input type="hidden" id="comboId" name="combo_id">
+                <div class="form-group">
+                    <label for="comboName">Combo Name:</label>
+                    <input type="text" id="comboName" name="combo_name" required placeholder="e.g., Corner Booth Package">
+                </div>
+                <div class="form-group">
+                    <label for="comboDescription">Description (optional):</label>
+                    <textarea id="comboDescription" name="combo_description" rows="3" placeholder="Describe this combo package"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="comboPrice">Custom Price (optional):</label>
+                    <input type="number" id="comboPrice" name="combo_price" step="0.01" placeholder="Leave blank to use sum of stall prices">
+                </div>
+                <div class="form-group">
+                    <label>Select Stalls:</label>
+                    <div class="search-container">
+                        <input type="text" id="comboStallSearch" placeholder="Search stalls..." class="search-input">
+                    </div>
+                    <div id="stallCheckboxList" class="checkbox-list">
+                        <!-- Stall checkboxes will be added here -->
+                    </div>
+                </div>
+                <button type="submit" class="btn" id="saveComboBtn">Save Combo</button>
+            </form>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
         // Load hall data and render stalls
@@ -224,6 +305,7 @@
         const hallId = hallDisplay.dataset.hallId;
         const hallLength = parseInt(hallDisplay.dataset.length);
         const hallBreadth = parseInt(hallDisplay.dataset.breadth);
+        let combos = []; // To store combo data
 
         // Determine the scale to fit the display
         const maxWidth = hallDisplay.clientWidth;
@@ -272,6 +354,7 @@
                     // Create a single stall element instead of individual boxes
                     const stallElement = document.createElement('div');
                     stallElement.className = 'stall';
+                    stallElement.setAttribute('data-stall-id', stall.id);
                     stallElement.style.position = 'absolute';
                     stallElement.style.left = `${minX * scale}px`;
                     stallElement.style.top = `${minY * scale}px`;
@@ -301,6 +384,9 @@
                 console.error('Error loading hall data:', error);
             });
 
+        // Load combo data
+        loadCombos();
+
         // Search functionality for stall table
         const searchInput = document.getElementById('stallSearchInput');
         const stallTable = document.getElementById('stallTable');
@@ -328,11 +414,18 @@
             });
         }
 
-        // Modal handling for edit
-        const modal = document.getElementById("editStallModal");
-        const span = document.getElementsByClassName("close")[0];
+        // Modal handling for edit stall
+        const stallModal = document.getElementById("editStallModal");
+        const stallModalSpan = stallModal.getElementsByClassName("close")[0];
         const editBtns = document.getElementsByClassName("edit-stall-btn");
         const editForm = document.getElementById("editStallForm");
+
+        // Modal handling for combo
+        const comboModal = document.getElementById("comboModal");
+        const comboModalClose = document.getElementById("comboModalClose");
+        const createComboBtn = document.getElementById("create-combo-btn");
+        const comboForm = document.getElementById("comboForm");
+        const comboSearchInput = document.getElementById("comboStallSearch");
 
         // When the user clicks on any edit button, open the modal
         for (let i = 0; i < editBtns.length; i++) {
@@ -343,23 +436,44 @@
                 document.getElementById("editStallId").value = stallId;
                 document.getElementById("editStallNumber").value = stallNumber;
                 
-                modal.style.display = "block";
+                stallModal.style.display = "block";
             }
         }
 
-        // When the user clicks on <span> (x), close the modal
-        span.onclick = function() {
-            modal.style.display = "none";
+        // Create Combo button click
+        createComboBtn.onclick = function() {
+            document.getElementById("comboModalTitle").textContent = "Create Combo";
+            document.getElementById("comboId").value = "";
+            document.getElementById("comboName").value = "";
+            document.getElementById("comboDescription").value = "";
+            document.getElementById("comboPrice").value = "";
+            
+            // Load all stalls for selection
+            loadStallsForCombo();
+            
+            comboModal.style.display = "block";
         }
 
-        // When the user clicks anywhere outside of the modal, close it
+        // When the user clicks on <span> (x), close the modals
+        stallModalSpan.onclick = function() {
+            stallModal.style.display = "none";
+        }
+        
+        comboModalClose.onclick = function() {
+            comboModal.style.display = "none";
+        }
+
+        // When the user clicks anywhere outside of the modals, close them
         window.onclick = function(event) {
-            if (event.target == modal) {
-                modal.style.display = "none";
+            if (event.target == stallModal) {
+                stallModal.style.display = "none";
+            }
+            if (event.target == comboModal) {
+                comboModal.style.display = "none";
             }
         }
 
-        // Handle form submission
+        // Handle stall form submission
         editForm.onsubmit = function(e) {
             e.preventDefault();
             
@@ -391,6 +505,419 @@
                 alert('An error occurred while updating the stall.');
             });
         };
+
+        // Handle combo form submission
+        comboForm.onsubmit = function(e) {
+            e.preventDefault();
+            
+            const comboId = document.getElementById("comboId").value;
+            const comboName = document.getElementById("comboName").value;
+            const comboDescription = document.getElementById("comboDescription").value;
+            const comboPrice = document.getElementById("comboPrice").value;
+            
+            // Get selected stall IDs
+            const selectedStalls = [];
+            const checkboxes = document.querySelectorAll('#stallCheckboxList input[type="checkbox"]:checked');
+            checkboxes.forEach(checkbox => {
+                selectedStalls.push(checkbox.value);
+            });
+            
+            if (selectedStalls.length === 0) {
+                alert('Please select at least one stall for the combo.');
+                return;
+            }
+            
+            // Determine if creating or editing
+            let url = comboId ? 
+                `/combo/${comboId}/edit/` : 
+                `/halls/${hallId}/create-combo/`;
+            
+            // Make AJAX request to create/update combo
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    name: comboName,
+                    description: comboDescription,
+                    stall_ids: selectedStalls,
+                    price: comboPrice || null
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Close modal and reload combos
+                    comboModal.style.display = "none";
+                    loadCombos();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while saving the combo.');
+            });
+        };
+
+        // Search functionality for combo stall selection
+        if (comboSearchInput) {
+            comboSearchInput.addEventListener('keyup', function() {
+                const searchQuery = this.value.toLowerCase();
+                const checkboxes = document.querySelectorAll('#stallCheckboxList .stall-checkbox');
+                
+                checkboxes.forEach(checkbox => {
+                    const label = checkbox.textContent.toLowerCase();
+                    if (label.includes(searchQuery)) {
+                        checkbox.style.display = '';
+                    } else {
+                        checkbox.style.display = 'none';
+                    }
+                });
+            });
+        }
+
+        // Function to load combos
+        function loadCombos() {
+            const comboTableContainer = document.getElementById('combo-table-container');
+            
+            fetch(`/halls/${hallId}/combos/`)
+                .then(response => response.json())
+                .then(data => {
+                    combos = data.combos;
+                    
+                    if (combos.length === 0) {
+                        comboTableContainer.innerHTML = '<p>No combos created yet. Create a combo to group stalls together.</p>';
+                        return;
+                    }
+                    
+                    // Build combo table
+                    let tableHTML = `
+                    <table class="combo-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Description</th>
+                                <th>Stalls</th>
+                                <th>Price</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                    `;
+                    
+                    combos.forEach(combo => {
+                        let stallList = '';
+                        combo.stalls.forEach(stall => {
+                            stallList += `<span class="combo-badge">${stall.stall_number}</span>`;
+                        });
+                        
+                        tableHTML += `
+                            <tr>
+                                <td>${combo.name}</td>
+                                <td>${combo.description || '-'}</td>
+                                <td>${stallList}</td>
+                                <td>$${combo.price.toFixed(2)}${combo.custom_price ? ' (custom)' : ''}</td>
+                                <td>
+                                    <button class="btn btn-warning edit-combo-btn" data-combo-id="${combo.id}">Edit</button>
+                                    <a href="/combo/${combo.id}/delete/" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this combo?')">Delete</a>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    
+                    tableHTML += `
+                        </tbody>
+                    </table>
+                    `;
+                    
+                    comboTableContainer.innerHTML = tableHTML;
+                    
+                    // Add listeners to edit buttons
+                    const editComboBtns = document.getElementsByClassName('edit-combo-btn');
+                    for (let i = 0; i < editComboBtns.length; i++) {
+                        editComboBtns[i].onclick = function() {
+                            const comboId = this.getAttribute('data-combo-id');
+                            editCombo(comboId);
+                        };
+                    }
+                    
+                    // Update stall table to show which combos each stall belongs to
+                    updateStallCombos();
+                    
+                    // Update stall visualization to highlight combo stalls
+                    updateStallVisualization();
+                })
+                .catch(error => {
+                    console.error('Error loading combos:', error);
+                    comboTableContainer.innerHTML = '<p>Error loading combos. Please try again.</p>';
+                });
+        }
+        
+        // Function to load stalls for combo selection
+        function loadStallsForCombo(selectedStallIds = []) {
+            const stallCheckboxList = document.getElementById('stallCheckboxList');
+            stallCheckboxList.innerHTML = '';
+            
+            fetch(`/halls/${hallId}/data/`)
+                .then(response => response.json())
+                .then(data => {
+                    data.stalls.forEach(stall => {
+                        const checkbox = document.createElement('div');
+                        checkbox.className = 'stall-checkbox';
+                        
+                        const isChecked = selectedStallIds.includes(stall.id);
+                        
+                        checkbox.innerHTML = `
+                            <input type="checkbox" id="stall_${stall.id}" name="stall_ids" value="${stall.id}" ${isChecked ? 'checked' : ''}>
+                            <label for="stall_${stall.id}">${stall.stall_number}</label>
+                        `;
+                        
+                        stallCheckboxList.appendChild(checkbox);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading stalls:', error);
+                });
+        }
+        
+        // Function to edit combo
+        function editCombo(comboId) {
+            const combo = combos.find(c => c.id == comboId);
+            
+            if (!combo) {
+                console.error('Combo not found:', comboId);
+                return;
+            }
+            
+            document.getElementById('comboModalTitle').textContent = 'Edit Combo';
+            document.getElementById('comboId').value = combo.id;
+            document.getElementById('comboName').value = combo.name;
+            document.getElementById('comboDescription').value = combo.description || '';
+            document.getElementById('comboPrice').value = combo.custom_price || '';
+            
+            // Get selected stall IDs
+            const selectedStallIds = combo.stalls.map(stall => stall.id);
+            
+            // Load stalls with selections
+            loadStallsForCombo(selectedStallIds);
+            
+            // Show modal
+            comboModal.style.display = 'block';
+        }
+        
+        // Function to update stall table to show which combos each stall belongs to
+        function updateStallCombos() {
+            // Clear existing combo badges
+            const comboCells = document.querySelectorAll('.stall-combos');
+            comboCells.forEach(cell => {
+                cell.innerHTML = '';
+            });
+            
+            // Add combo badges to each stall
+            combos.forEach(combo => {
+                combo.stalls.forEach(stall => {
+                    const stallRow = document.querySelector(`tr[data-stall-id="${stall.id}"]`);
+                    if (stallRow) {
+                        const comboCell = stallRow.querySelector('.stall-combos');
+                        const badge = document.createElement('span');
+                        badge.className = 'combo-badge';
+                        badge.textContent = combo.name;
+                        comboCell.appendChild(badge);
+                    }
+                });
+            });
+        }
+        
+        // Function to update stall visualization with combo information
+        function updateStallVisualization() {
+            // Reset all stalls to default color
+            const stallElements = document.querySelectorAll('.stall');
+            stallElements.forEach(el => {
+                el.style.backgroundColor = '#4CAF50';
+                el.style.border = '1px solid #2E7D32';
+                
+                // Store original colors as data attributes for hover effects
+                el.dataset.originalBg = '#4CAF50';
+                el.dataset.originalBorder = '#2E7D32';
+                
+                // Add click handler to select all stalls in the same combo(s)
+                el.onclick = function() {
+                    const stallId = this.getAttribute('data-stall-id');
+                    highlightComboStalls(stallId);
+                };
+                
+                // Add hover effect
+                el.onmouseenter = function() {
+                    const stallId = this.getAttribute('data-stall-id');
+                    previewComboStalls(stallId, true);
+                };
+                
+                el.onmouseleave = function() {
+                    const stallId = this.getAttribute('data-stall-id');
+                    previewComboStalls(stallId, false);
+                };
+            });
+            
+            // Color-code stalls by combos (optional: for multiple combos, you could use patterns or borders)
+            const comboColors = [
+                { bg: '#9C27B0', border: '#7B1FA2' }, // Purple
+                { bg: '#2196F3', border: '#1976D2' }, // Blue
+                { bg: '#FF9800', border: '#F57C00' }, // Orange
+                { bg: '#E91E63', border: '#C2185B' }, // Pink
+                { bg: '#00BCD4', border: '#0097A7' }  // Cyan
+            ];
+            
+            combos.forEach((combo, index) => {
+                const colorIndex = index % comboColors.length;
+                const { bg, border } = comboColors[colorIndex];
+                
+                combo.stalls.forEach(stall => {
+                    const stallElement = document.querySelector(`.stall[data-stall-id="${stall.id}"]`);
+                    if (stallElement) {
+                        stallElement.style.backgroundColor = bg;
+                        stallElement.style.border = `1px solid ${border}`;
+                        
+                        // Store combo ID and colors for interaction
+                        if (!stallElement.dataset.combos) {
+                            stallElement.dataset.combos = JSON.stringify([combo.id]);
+                            stallElement.dataset.originalBg = bg;
+                            stallElement.dataset.originalBorder = border;
+                        } else {
+                            const combos = JSON.parse(stallElement.dataset.combos);
+                            if (!combos.includes(combo.id)) {
+                                combos.push(combo.id);
+                                stallElement.dataset.combos = JSON.stringify(combos);
+                                
+                                // For stalls in multiple combos, use a special color
+                                stallElement.style.backgroundColor = '#795548'; // Brown
+                                stallElement.style.border = '1px solid #5D4037';
+                                stallElement.dataset.originalBg = '#795548';
+                                stallElement.dataset.originalBorder = '#5D4037';
+                            }
+                        }
+                    }
+                });
+            });
+        }
+        
+        // Function to highlight all stalls in the same combo(s)
+        function highlightComboStalls(stallId) {
+            // Find which combos this stall belongs to
+            const stallCombos = [];
+            combos.forEach(combo => {
+                if (combo.stalls.some(stall => stall.id == stallId)) {
+                    stallCombos.push(combo.id);
+                }
+            });
+            
+            if (stallCombos.length === 0) {
+                // This stall is not in any combo
+                return;
+            }
+            
+            // Reset all stalls
+            const allStalls = document.querySelectorAll('.stall');
+            allStalls.forEach(stall => {
+                stall.style.backgroundColor = stall.dataset.originalBg;
+                stall.style.border = `1px solid ${stall.dataset.originalBorder}`;
+                stall.style.opacity = '0.5';
+            });
+            
+            // Highlight stalls in the same combos
+            stallCombos.forEach(comboId => {
+                const combo = combos.find(c => c.id === comboId);
+                if (combo) {
+                    combo.stalls.forEach(stall => {
+                        const stallElement = document.querySelector(`.stall[data-stall-id="${stall.id}"]`);
+                        if (stallElement) {
+                            stallElement.style.opacity = '1';
+                            stallElement.style.boxShadow = '0 0 10px rgba(0,0,0,0.5)';
+                        }
+                    });
+                }
+            });
+            
+            // Add a reset button to the hall display
+            const resetBtn = document.createElement('button');
+            resetBtn.className = 'btn';
+            resetBtn.style.position = 'absolute';
+            resetBtn.style.top = '10px';
+            resetBtn.style.right = '10px';
+            resetBtn.style.zIndex = '10';
+            resetBtn.textContent = 'Reset Selection';
+            resetBtn.onclick = resetStallHighlighting;
+            
+            // Remove any existing reset button
+            const existingBtn = document.querySelector('#hall-display .btn');
+            if (existingBtn) {
+                existingBtn.remove();
+            }
+            
+            hallDisplay.appendChild(resetBtn);
+        }
+        
+        // Function to reset stall highlighting
+        function resetStallHighlighting() {
+            const allStalls = document.querySelectorAll('.stall');
+            allStalls.forEach(stall => {
+                stall.style.backgroundColor = stall.dataset.originalBg;
+                stall.style.border = `1px solid ${stall.dataset.originalBorder}`;
+                stall.style.opacity = '1';
+                stall.style.boxShadow = 'none';
+            });
+            
+            // Remove the reset button
+            const resetBtn = document.querySelector('#hall-display .btn');
+            if (resetBtn) {
+                resetBtn.remove();
+            }
+        }
+        
+        // Function to preview combo stalls on hover
+        function previewComboStalls(stallId, isHovering) {
+            // Find which combos this stall belongs to
+            const stallCombos = [];
+            combos.forEach(combo => {
+                if (combo.stalls.some(stall => stall.id == stallId)) {
+                    stallCombos.push(combo.id);
+                }
+            });
+            
+            if (stallCombos.length === 0 || !isHovering) {
+                // This stall is not in any combo or we're resetting the hover effect
+                const allStalls = document.querySelectorAll('.stall');
+                allStalls.forEach(stall => {
+                    stall.style.filter = 'none';
+                    stall.style.transform = 'scale(1)';
+                });
+                return;
+            }
+            
+            // Apply hover effect to stalls in the same combos
+            const allStalls = document.querySelectorAll('.stall');
+            allStalls.forEach(stall => {
+                stall.style.filter = 'brightness(0.7)';
+                stall.style.transform = 'scale(1)';
+            });
+            
+            stallCombos.forEach(comboId => {
+                const combo = combos.find(c => c.id === comboId);
+                if (combo) {
+                    combo.stalls.forEach(stall => {
+                        const stallElement = document.querySelector(`.stall[data-stall-id="${stall.id}"]`);
+                        if (stallElement) {
+                            stallElement.style.filter = 'brightness(1.2)';
+                            stallElement.style.transform = 'scale(1.05)';
+                            stallElement.style.transition = 'all 0.2s ease-in-out';
+                            stallElement.style.zIndex = '10';
+                        }
+                    });
+                }
+            });
+        }
 
         // Function to get CSRF token from cookies
         function getCookie(name) {
