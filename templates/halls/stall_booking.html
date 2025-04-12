@@ -145,55 +145,6 @@
             margin-top: 15px;
             font-weight: bold;
         }
-        .tabs {
-            display: flex;
-            border-bottom: 1px solid #ddd;
-            margin-bottom: 20px;
-        }
-        .tab {
-            padding: 10px 20px;
-            cursor: pointer;
-            background-color: #f1f1f1;
-            margin-right: 5px;
-            border-radius: 5px 5px 0 0;
-        }
-        .tab.active {
-            background-color: #2196F3;
-            color: white;
-        }
-        .combo-list {
-            margin-bottom: 20px;
-        }
-        .combo-item {
-            background-color: #f3e5f5;
-            padding: 15px;
-            margin-bottom: 10px;
-            border-radius: 5px;
-            border-left: 4px solid #9C27B0;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .combo-item:hover {
-            background-color: #e1bee7;
-        }
-        .combo-item h3 {
-            margin-top: 0;
-            margin-bottom: 10px;
-            color: #6a1b9a;
-        }
-        .combo-stalls {
-            font-size: 14px;
-        }
-        .combo-price {
-            font-weight: bold;
-            margin-top: 10px;
-            color: #6a1b9a;
-        }
-        .combo-description {
-            margin: 8px 0;
-            font-style: italic;
-            color: #666;
-        }
     </style>
 </head>
 <body>
@@ -206,11 +157,7 @@
             <p>Size: {{ hall.length }}m x {{ hall.breadth }}m ({{ hall.total_area }}m²)</p>
         </div>
 
-        <div class="tabs">
-            <div class="tab active" data-tab="hall-view">Hall View</div>
-            <div class="tab" data-tab="combo-view">Combo Stalls</div>
-        </div>
-
+        <!-- Hall View Section -->
         <div id="hall-view-container">
             <div class="legend">
                 <div class="legend-item">
@@ -251,44 +198,10 @@
                 <!-- Stalls will be drawn here using JavaScript -->
             </div>
         </div>
-
-        <div id="combo-view-container" style="display: none;">
-            <h2>Available Combo Stalls</h2>
-            <p>Click on a combo to select all stalls in the combo.</p>
-            <div id="combo-list" class="combo-list">
-                <!-- Combo stalls will be listed here -->
-                <div id="combo-loading" class="loading">Loading combo stalls...</div>
-            </div>
-        </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Tab switching
-            const tabs = document.querySelectorAll('.tab');
-            const hallViewContainer = document.getElementById('hall-view-container');
-            const comboViewContainer = document.getElementById('combo-view-container');
-            
-            tabs.forEach(tab => {
-                tab.addEventListener('click', function() {
-                    // Remove active class from all tabs
-                    tabs.forEach(t => t.classList.remove('active'));
-                    
-                    // Add active class to clicked tab
-                    this.classList.add('active');
-                    
-                    // Show/hide containers based on selected tab
-                    const tabName = this.getAttribute('data-tab');
-                    if (tabName === 'hall-view') {
-                        hallViewContainer.style.display = 'block';
-                        comboViewContainer.style.display = 'none';
-                    } else if (tabName === 'combo-view') {
-                        hallViewContainer.style.display = 'none';
-                        comboViewContainer.style.display = 'block';
-                    }
-                });
-            });
-            
             // Load hall data and render stalls
             const hallDisplay = document.getElementById('hall-display');
             const hallId = hallDisplay.dataset.hallId;
@@ -300,8 +213,6 @@
             const totalPriceElement = document.getElementById('total-price');
             const bookNowBtn = document.getElementById('book-now-btn');
             const loadingElement = document.getElementById('loading');
-            const comboList = document.getElementById('combo-list');
-            const comboLoadingElement = document.getElementById('combo-loading');
 
             let selectedStalls = [];
             let stallData = {};
@@ -340,7 +251,6 @@
                 .then(data => {
                     // Hide loading indicators
                     loadingElement.style.display = 'none';
-                    comboLoadingElement.style.display = 'none';
                     
                     // Store combo data
                     data.combos.forEach(combo => {
@@ -353,70 +263,6 @@
                             }
                             stallToComboMap[stallId].push(combo.id);
                         });
-                        
-                        // Create combo item in the combo view
-                        const comboItem = document.createElement('div');
-                        comboItem.className = 'combo-item';
-                        comboItem.setAttribute('data-combo-id', combo.id);
-                        
-                        const stallNumbers = combo.stall_ids.map(id => {
-                            const stall = data.stalls.find(s => s.id === id);
-                            return stall ? stall.stall_number : 'Unknown';
-                        }).join(', ');
-                        
-                        comboItem.innerHTML = `
-                            <h3>${combo.name}</h3>
-                            <div class="combo-description">${combo.description || 'No description available'}</div>
-                            <div class="combo-stalls">Includes stalls: ${stallNumbers}</div>
-                            <div class="combo-price">Price: $${combo.price.toFixed(2)}</div>
-                        `;
-                        
-                        // Add click event to select all stalls in the combo
-                        comboItem.addEventListener('click', function() {
-                            const comboId = this.getAttribute('data-combo-id');
-                            const combo = comboData[comboId];
-                            
-                            // Check if all stalls in the combo are available
-                            const unavailableStalls = combo.stall_ids.filter(id => 
-                                stallData[id] && stallData[id].status !== 'available'
-                            );
-                            
-                            if (unavailableStalls.length > 0) {
-                                alert('Some stalls in this combo are not available for booking.');
-                                return;
-                            }
-                            
-                            // Select all stalls in the combo
-                            const allSelected = combo.stall_ids.every(id => selectedStalls.includes(id.toString()));
-                            
-                            if (allSelected) {
-                                // Deselect all stalls in the combo
-                                combo.stall_ids.forEach(id => {
-                                    const stallElement = document.querySelector(`.stall[data-stall-id="${id}"]`);
-                                    if (stallElement) {
-                                        stallElement.classList.remove('selected');
-                                    }
-                                    selectedStalls = selectedStalls.filter(stallId => stallId !== id.toString());
-                                });
-                            } else {
-                                // Select all stalls in the combo
-                                combo.stall_ids.forEach(id => {
-                                    const stallElement = document.querySelector(`.stall[data-stall-id="${id}"]`);
-                                    if (stallElement && !selectedStalls.includes(id.toString())) {
-                                        stallElement.classList.add('selected');
-                                        selectedStalls.push(id.toString());
-                                    }
-                                });
-                            }
-                            
-                            // Update selected stalls UI
-                            updateSelectedStallsUI();
-                            
-                            // Switch to hall view tab to show the selected stalls
-                            document.querySelector('.tab[data-tab="hall-view"]').click();
-                        });
-                        
-                        comboList.appendChild(comboItem);
                     });
                     
                     // Process each stall
@@ -478,68 +324,14 @@
                                 const comboIds = this.getAttribute('data-combo-ids');
                                 
                                 if (comboIds) {
-                                    // This stall is part of one or more combos
+                                    // This stall is part of a combo
                                     const comboIdArray = comboIds.split(',');
                                     
-                                    if (isSelected) {
-                                        // If deselecting, check if it's part of a selected combo
-                                        const partOfSelectedCombo = comboIdArray.some(comboId => {
-                                            const combo = comboData[comboId];
-                                            if (!combo) return false;
-                                            
-                                            // Check if all other stalls in this combo are selected
-                                            return combo.stall_ids.every(id => 
-                                                id.toString() === stallId.toString() || 
-                                                selectedStalls.includes(id.toString())
-                                            );
-                                        });
+                                    if (!isSelected) {
+                                        // When selecting a stall that's part of a combo, auto-select all combo stalls
+                                        let selectedCombo = null;
                                         
-                                        if (partOfSelectedCombo) {
-                                            // Ask if user wants to deselect the entire combo
-                                            const confirmDeselect = confirm(
-                                                "This stall is part of a combo. Would you like to deselect all stalls in the combo?"
-                                            );
-                                            
-                                            if (confirmDeselect) {
-                                                // Find which combo has all its stalls selected
-                                                comboIdArray.forEach(comboId => {
-                                                    const combo = comboData[comboId];
-                                                    if (!combo) return;
-                                                    
-                                                    const allOthersSelected = combo.stall_ids.every(id => 
-                                                        id.toString() === stallId.toString() || 
-                                                        selectedStalls.includes(id.toString())
-                                                    );
-                                                    
-                                                    if (allOthersSelected) {
-                                                        // Deselect all stalls in this combo
-                                                        combo.stall_ids.forEach(id => {
-                                                            const comboStallElement = document.querySelector(
-                                                                `.stall[data-stall-id="${id}"]`
-                                                            );
-                                                            if (comboStallElement) {
-                                                                comboStallElement.classList.remove('selected');
-                                                            }
-                                                            selectedStalls = selectedStalls.filter(
-                                                                sid => sid !== id.toString()
-                                                            );
-                                                        });
-                                                    }
-                                                });
-                                            } else {
-                                                // Just deselect this stall
-                                                this.classList.remove('selected');
-                                                selectedStalls = selectedStalls.filter(id => id !== stallId);
-                                            }
-                                        } else {
-                                            // Not part of a fully selected combo, just deselect this stall
-                                            this.classList.remove('selected');
-                                            selectedStalls = selectedStalls.filter(id => id !== stallId);
-                                        }
-                                    } else {
-                                        // If selecting, offer to select the whole combo
-                                        // Find the first valid combo (all stalls available)
-                                        let validCombo = null;
+                                        // Find the first valid combo where all stalls are available
                                         for (const comboId of comboIdArray) {
                                             const combo = comboData[comboId];
                                             if (!combo) continue;
@@ -550,40 +342,65 @@
                                             );
                                             
                                             if (allAvailable) {
-                                                validCombo = combo;
+                                                selectedCombo = combo;
                                                 break;
                                             }
                                         }
                                         
-                                        if (validCombo) {
-                                            const confirmSelect = confirm(
-                                                `This stall is part of the "${validCombo.name}" combo. Would you like to select all stalls in the combo?`
-                                            );
-                                            
-                                            if (confirmSelect) {
-                                                // Select all stalls in this combo
-                                                validCombo.stall_ids.forEach(id => {
-                                                    const comboStallElement = document.querySelector(
-                                                        `.stall[data-stall-id="${id}"]`
-                                                    );
-                                                    if (comboStallElement && !selectedStalls.includes(id.toString())) {
-                                                        comboStallElement.classList.add('selected');
-                                                        selectedStalls.push(id.toString());
-                                                    }
-                                                });
-                                            } else {
-                                                // Just select this stall
-                                                this.classList.add('selected');
-                                                selectedStalls.push(stallId);
-                                            }
+                                        if (selectedCombo) {
+                                            // Select all stalls in this combo automatically
+                                            selectedCombo.stall_ids.forEach(id => {
+                                                const comboStallElement = document.querySelector(
+                                                    `.stall[data-stall-id="${id}"]`
+                                                );
+                                                if (comboStallElement && !selectedStalls.includes(id.toString())) {
+                                                    comboStallElement.classList.add('selected');
+                                                    selectedStalls.push(id.toString());
+                                                }
+                                            });
                                         } else {
-                                            // No valid combo, just select this stall
+                                            // No valid combo (some stalls unavailable), just select this stall
                                             this.classList.add('selected');
                                             selectedStalls.push(stallId);
                                         }
+                                    } else {
+                                        // When deselecting, check if part of a fully selected combo
+                                        let comboToDeselect = null;
+                                        
+                                        for (const comboId of comboIdArray) {
+                                            const combo = comboData[comboId];
+                                            if (!combo) continue;
+                                            
+                                            // Check if all stalls in this combo are selected
+                                            const allSelected = combo.stall_ids.every(id => 
+                                                selectedStalls.includes(id.toString())
+                                            );
+                                            
+                                            if (allSelected) {
+                                                comboToDeselect = combo;
+                                                break;
+                                            }
+                                        }
+                                        
+                                        if (comboToDeselect) {
+                                            // Deselect all stalls in this combo
+                                            comboToDeselect.stall_ids.forEach(id => {
+                                                const comboStallElement = document.querySelector(
+                                                    `.stall[data-stall-id="${id}"]`
+                                                );
+                                                if (comboStallElement) {
+                                                    comboStallElement.classList.remove('selected');
+                                                }
+                                                selectedStalls = selectedStalls.filter(sid => sid !== id.toString());
+                                            });
+                                        } else {
+                                            // Just deselect this stall
+                                            this.classList.remove('selected');
+                                            selectedStalls = selectedStalls.filter(id => id !== stallId);
+                                        }
                                     }
                                 } else {
-                                    // Regular stall, toggle selection
+                                    // Regular stall (not part of a combo), toggle selection
                                     if (isSelected) {
                                         this.classList.remove('selected');
                                         selectedStalls = selectedStalls.filter(id => id !== stallId);
@@ -605,7 +422,6 @@
                 .catch(error => {
                     console.error('Error loading hall data:', error);
                     loadingElement.textContent = 'Error loading stalls. Please try again later.';
-                    comboLoadingElement.textContent = 'Error loading combo stalls. Please try again later.';
                 });
 
             // Function to update the selected stalls UI
