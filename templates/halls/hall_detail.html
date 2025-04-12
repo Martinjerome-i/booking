@@ -743,12 +743,6 @@
                 el.dataset.originalBg = '#4CAF50';
                 el.dataset.originalBorder = '#2E7D32';
                 
-                // Add click handler to select all stalls in the same combo(s)
-                el.onclick = function() {
-                    const stallId = this.getAttribute('data-stall-id');
-                    highlightComboStalls(stallId);
-                };
-                
                 // Add hover effect
                 el.onmouseenter = function() {
                     const stallId = this.getAttribute('data-stall-id');
@@ -800,122 +794,6 @@
                         }
                     }
                 });
-            });
-        }
-        
-        // Function to highlight all stalls in the same combo(s)
-        function highlightComboStalls(stallId) {
-            // Find which combos this stall belongs to
-            const stallCombos = [];
-            combos.forEach(combo => {
-                if (combo.stalls.some(stall => stall.id == stallId)) {
-                    stallCombos.push(combo.id);
-                }
-            });
-            
-            if (stallCombos.length === 0) {
-                // This stall is not in any combo
-                return;
-            }
-            
-            // Reset all stalls
-            const allStalls = document.querySelectorAll('.stall');
-            allStalls.forEach(stall => {
-                stall.style.backgroundColor = stall.dataset.originalBg;
-                stall.style.border = `1px solid ${stall.dataset.originalBorder}`;
-                stall.style.opacity = '0.5';
-            });
-            
-            // Highlight stalls in the same combos
-            stallCombos.forEach(comboId => {
-                const combo = combos.find(c => c.id === comboId);
-                if (combo) {
-                    combo.stalls.forEach(stall => {
-                        const stallElement = document.querySelector(`.stall[data-stall-id="${stall.id}"]`);
-                        if (stallElement) {
-                            stallElement.style.opacity = '1';
-                            stallElement.style.boxShadow = '0 0 10px rgba(0,0,0,0.5)';
-                        }
-                    });
-                }
-            });
-            
-            // Add a reset button to the hall display
-            const resetBtn = document.createElement('button');
-            resetBtn.className = 'btn';
-            resetBtn.style.position = 'absolute';
-            resetBtn.style.top = '10px';
-            resetBtn.style.right = '10px';
-            resetBtn.style.zIndex = '10';
-            resetBtn.textContent = 'Reset Selection';
-            resetBtn.onclick = resetStallHighlighting;
-            
-            // Remove any existing reset button
-            const existingBtn = document.querySelector('#hall-display .btn');
-            if (existingBtn) {
-                existingBtn.remove();
-            }
-            
-            hallDisplay.appendChild(resetBtn);
-        }
-        
-        // Function to reset stall highlighting
-        function resetStallHighlighting() {
-            const allStalls = document.querySelectorAll('.stall');
-            allStalls.forEach(stall => {
-                stall.style.backgroundColor = stall.dataset.originalBg;
-                stall.style.border = `1px solid ${stall.dataset.originalBorder}`;
-                stall.style.opacity = '1';
-                stall.style.boxShadow = 'none';
-            });
-            
-            // Remove the reset button
-            const resetBtn = document.querySelector('#hall-display .btn');
-            if (resetBtn) {
-                resetBtn.remove();
-            }
-        }
-        
-        // Function to preview combo stalls on hover
-        function previewComboStalls(stallId, isHovering) {
-            // Find which combos this stall belongs to
-            const stallCombos = [];
-            combos.forEach(combo => {
-                if (combo.stalls.some(stall => stall.id == stallId)) {
-                    stallCombos.push(combo.id);
-                }
-            });
-            
-            if (stallCombos.length === 0 || !isHovering) {
-                // This stall is not in any combo or we're resetting the hover effect
-                const allStalls = document.querySelectorAll('.stall');
-                allStalls.forEach(stall => {
-                    stall.style.filter = 'none';
-                    stall.style.transform = 'scale(1)';
-                });
-                return;
-            }
-            
-            // Apply hover effect to stalls in the same combos
-            const allStalls = document.querySelectorAll('.stall');
-            allStalls.forEach(stall => {
-                stall.style.filter = 'brightness(0.7)';
-                stall.style.transform = 'scale(1)';
-            });
-            
-            stallCombos.forEach(comboId => {
-                const combo = combos.find(c => c.id === comboId);
-                if (combo) {
-                    combo.stalls.forEach(stall => {
-                        const stallElement = document.querySelector(`.stall[data-stall-id="${stall.id}"]`);
-                        if (stallElement) {
-                            stallElement.style.filter = 'brightness(1.2)';
-                            stallElement.style.transform = 'scale(1.05)';
-                            stallElement.style.transition = 'all 0.2s ease-in-out';
-                            stallElement.style.zIndex = '10';
-                        }
-                    });
-                }
             });
         }
 
