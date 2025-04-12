@@ -1,4 +1,3 @@
-# halls/views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
@@ -82,6 +81,7 @@ def create_stall(request, hall_id):
 def get_hall_data(request, hall_id):
     hall = get_object_or_404(Hall, id=hall_id)
     stalls = hall.stalls.all()
+    combos = hall.combos.all()
 
     stall_data = []
     for stall in stalls:
@@ -93,6 +93,17 @@ def get_hall_data(request, hall_id):
             'price': float(stall.price),
         })
 
+    combo_data = []
+    for combo in combos:
+        combo_stalls = list(combo.stalls.values_list('id', flat=True))
+        combo_data.append({
+            'id': combo.id,
+            'name': combo.name,
+            'description': combo.description or '',
+            'stall_ids': combo_stalls,
+            'price': float(combo.total_price),
+        })
+
     return JsonResponse({
         'hall': {
             'id': hall.id,
@@ -100,7 +111,8 @@ def get_hall_data(request, hall_id):
             'length': hall.length,
             'breadth': hall.breadth,
         },
-        'stalls': stall_data
+        'stalls': stall_data,
+        'combos': combo_data
     })
 
 def delete_stall(request, hall_id, stall_id):
@@ -313,8 +325,7 @@ def send_booking_confirmation(booking):
     send_mail(subject, message, from_email, recipient_list)
 
 
-# Add these to your views.py
-
+# Combo stall related views
 def create_combo(request, hall_id):
     hall = get_object_or_404(Hall, id=hall_id)
     
