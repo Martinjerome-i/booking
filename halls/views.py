@@ -173,41 +173,76 @@ def get_stall_details(request, stall_id):
     })
 
 
-def book_stall(request, stall_id):
-    stall = get_object_or_404(Stall, id=stall_id)
+def book_stall(request):
+    """
+    View for booking multiple stalls at once
+    """
+    stall_ids = request.GET.get('stall_ids', '').split(',')
+    stall_ids = [id for id in stall_ids if id]  # Filter out empty strings
     
-    # Check if stall is already booked
-    if stall.status != 'available':
-        return redirect('stall_booking', hall_id=stall.hall.id)
+    if not stall_ids:
+        return redirect('index')
+    
+    # Get all stalls
+    stalls = Stall.objects.filter(id__in=stall_ids)
+    
+    # Check if any stall is already booked
+    unavailable_stalls = stalls.exclude(status='available')
+    if unavailable_stalls.exists():
+        # Some stalls are not available, redirect back to the booking page
+        hall_id = stalls.first().hall.id if stalls.exists() else 1
+        return redirect('stall_booking', hall_id=hall_id)
     
     if request.method == 'POST':
         form = BookingForm(request.POST)
         if form.is_valid():
+            # Create booking but don't save stall relationship yet
             booking = form.save(commit=False)
-            booking.stall = stall
-            booking.save()
+            booking.status = 'booked'  # Directly set to booked status
+            booking.save()  # Save to generate ID
             
-            # Send confirmation email
-            try:
-                send_booking_confirmation(booking)
-            except:
-                # Log error but continue
-                pass
+            # Now add all stalls to the booking
+            booking.stalls.set(stalls)
+            
+            # Update stall status to booked
+            stalls.update(status='booked')
+            
+            # NOTE: Email sending has been removed as requested
             
             return redirect('booking_confirmation', booking_id=booking.id)
     else:
         form = BookingForm()
     
+    # Get the hall info from the first stall
+    hall = stalls.first().hall if stalls.exists() else None
+    
+    # Calculate total price
+    total_price = sum(stall.price for stall in stalls)
+    
     return render(request, 'halls/book_stall.html', {
         'form': form,
-        'stall': stall,
-        'hall': stall.hall
+        'stalls': stalls,
+        'hall': hall,
+        'total_price': total_price
     })
 
 
 def booking_confirmation(request, booking_id):
     booking = get_object_or_404(Booking, id=booking_id)
-    return render(request, 'halls/booking_confirmation.html', {'booking': booking})
+    
+    # Calculate the total price of all stalls
+    stalls = booking.stalls.all()
+    total_price = sum(stall.price for stall in stalls)
+    
+    # Get the hall ID if there are stalls
+    hall_id = stalls.first().hall.id if stalls.exists() else 1
+    
+    return render(request, 'halls/booking_confirmation.html', {
+        'booking': booking,
+        'stalls': stalls,
+        'total_price': total_price,
+        'hall_id': hall_id
+    })
 
 
 def manage_bookings(request):
@@ -222,31 +257,55 @@ def update_booking_status(request, booking_id):
     
     if status in [s[0] for s in Booking.STATUS_CHOICES]:
         booking.status = status
-        booking.save()
+        booking.save()  # This will update the stall statuses through the save method
         return JsonResponse({'success': True})
     
     return JsonResponse({'success': False, 'error': 'Invalid status'})
 
 
+# The email function is retained but not called anywhere, as requested
 def send_booking_confirmation(booking):
     subject = f'Booking Confirmation - {booking.booking_reference}'
-    message = f'''
+    
+    # Get all stalls in this booking
+    stalls = booking.stalls.all()
+    
+    # Generate stall details for the email
+    stall_details = ""
+    total_price = 0
+    
+    if stalls.exists():
+        for stall in stalls:
+            stall_details += f"""
+            Stall #{stall.stall_number} in {stall.hall.name}
+            Size: {stall.width}m x {stall.height}m ({stall.area}m²)
+            Price: ${stall.price}
+            
+            """
+            total_price += stall.price
+    else:
+        stall_details = "No stalls in this booking."
+    
+    message = f"""
     Dear {booking.customer_name},
     
-    Thank you for booking Stall {booking.stall.stall_number} in {booking.stall.hall.name}.
+    Thank you for your booking at our exhibition.
     
     Booking Reference: {booking.booking_reference}
-    Event Dates: {booking.event_start_date} to {booking.event_end_date}
-    Stall Size: {booking.stall.width}m x {booking.stall.height}m ({booking.stall.area}m²)
-    Price: ${booking.stall.price}
+    Booking Date: {booking.booking_date.strftime('%B %d, %Y')}
     
-    Your booking status is currently: {booking.get_status_display()}
+    STALL DETAILS:
+    {stall_details}
+    
+    Total Price: ${total_price}
+    
+    Your booking status is: {booking.get_status_display()}
     
     Please keep this reference for future communications.
     
     Regards,
     The Exhibition Team
-    '''
+    """
     
     from_email = settings.DEFAULT_FROM_EMAIL
     recipient_list = [booking.customer_email]

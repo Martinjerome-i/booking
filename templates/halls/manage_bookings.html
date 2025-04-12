@@ -100,7 +100,7 @@
             border: none;
             color: white;
         }
-        .action-btn.confirm {
+        .action-btn.restore {
             background-color: #4CAF50;
         }
         .action-btn.cancel {
@@ -109,16 +109,12 @@
         .status-badge {
             display: inline-block;
             padding: 5px 10px;
-            border-radius: a20px;
+            border-radius: 20px;
             font-size: 12px;
             text-transform: uppercase;
             font-weight: bold;
         }
-        .status-pending {
-            background-color: #fff3e0;
-            color: #e65100;
-        }
-        .status-confirmed {
+        .status-booked {
             background-color: #e8f5e9;
             color: #2E7D32;
         }
@@ -164,8 +160,7 @@
             
             <div class="status-filter">
                 <button class="filter-btn active" data-status="all">All</button>
-                <button class="filter-btn" data-status="pending">Pending</button>
-                <button class="filter-btn" data-status="confirmed">Confirmed</button>
+                <button class="filter-btn" data-status="booked">Booked</button>
                 <button class="filter-btn" data-status="cancelled">Cancelled</button>
             </div>
         </div>
@@ -175,11 +170,9 @@
             <thead>
                 <tr>
                     <th>Reference</th>
-                    <th>Hall</th>
-                    <th>Stall</th>
+                    <th>Hall & Stall</th>
                     <th>Customer</th>
                     <th>Booking Date</th>
-                    <th>Event Dates</th>
                     <th>Status</th>
                     <th>Actions</th>
                 </tr>
@@ -188,14 +181,17 @@
                 {% for booking in bookings %}
                 <tr data-status="{{ booking.status }}">
                     <td>{{ booking.booking_reference }}</td>
-                    <td>{{ booking.stall.hall.name }}</td>
-                    <td>{{ booking.stall.stall_number }}</td>
+                    <td>
+                        {% for stall in booking.stalls.all %}
+                            {{ stall.hall.name }} - Stall #{{ stall.stall_number }}<br>
+                        {% endfor %}
+                    </td>
                     <td>
                         {{ booking.customer_name }}<br>
-                        <small>{{ booking.customer_email }}</small>
+                        <small>{{ booking.customer_email }}</small><br>
+                        <small>{{ booking.customer_phone }}</small>
                     </td>
                     <td>{{ booking.booking_date|date:"M d, Y" }}</td>
-                    <td>{{ booking.event_start_date|date:"M d, Y" }} to {{ booking.event_end_date|date:"M d, Y" }}</td>
                     <td>
                         <span class="status-badge status-{{ booking.status }}">
                             {{ booking.get_status_display }}
@@ -204,18 +200,12 @@
                     <td>
                         <form method="post" action="{% url 'update_booking_status' booking.id %}" class="status-form" style="display: inline;">
                             {% csrf_token %}
-                            {% if booking.status == 'pending' %}
-                            <input type="hidden" name="status" value="confirmed">
-                            <button type="submit" class="action-btn confirm">Confirm</button>
-                            
+                            {% if booking.status == 'booked' %}
                             <input type="hidden" name="status" value="cancelled">
-                            <button type="submit" class="action-btn cancel">Cancel</button>
-                            {% elif booking.status == 'confirmed' %}
-                            <input type="hidden" name="status" value="cancelled">
-                            <button type="submit" class="action-btn cancel">Cancel</button>
+                            <button type="submit" class="action-btn cancel">Cancel Booking</button>
                             {% elif booking.status == 'cancelled' %}
-                            <input type="hidden" name="status" value="pending">
-                            <button type="submit" class="action-btn confirm">Restore</button>
+                            <input type="hidden" name="status" value="booked">
+                            <button type="submit" class="action-btn restore">Restore Booking</button>
                             {% endif %}
                         </form>
                     </td>
@@ -254,14 +244,12 @@
                     
                     for (let i = 0; i < rows.length; i++) {
                         const reference = rows[i].cells[0].textContent.toLowerCase();
-                        const hall = rows[i].cells[1].textContent.toLowerCase();
-                        const stall = rows[i].cells[2].textContent.toLowerCase();
-                        const customer = rows[i].cells[3].textContent.toLowerCase();
+                        const hallStall = rows[i].cells[1].textContent.toLowerCase();
+                        const customer = rows[i].cells[2].textContent.toLowerCase();
                         
                         // Check if the row should be visible based on both search and filter
                         const matchesSearch = reference.includes(searchQuery) || 
-                                           hall.includes(searchQuery) || 
-                                           stall.includes(searchQuery) || 
+                                           hallStall.includes(searchQuery) || 
                                            customer.includes(searchQuery);
                                            
                         const currentFilter = document.querySelector('.filter-btn.active').dataset.status;
@@ -288,13 +276,11 @@
                         // Apply both search and filter
                         const searchQuery = searchInput.value.toLowerCase();
                         const reference = rows[i].cells[0].textContent.toLowerCase();
-                        const hall = rows[i].cells[1].textContent.toLowerCase();
-                        const stall = rows[i].cells[2].textContent.toLowerCase();
-                        const customer = rows[i].cells[3].textContent.toLowerCase();
+                        const hallStall = rows[i].cells[1].textContent.toLowerCase();
+                        const customer = rows[i].cells[2].textContent.toLowerCase();
                         
                         const matchesSearch = reference.includes(searchQuery) || 
-                                         hall.includes(searchQuery) || 
-                                         stall.includes(searchQuery) || 
+                                         hallStall.includes(searchQuery) || 
                                          customer.includes(searchQuery);
                                          
                         const matchesFilter = filter === 'all' || rows[i].dataset.status === filter;

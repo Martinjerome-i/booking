@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Book Stall {{ stall.stall_number }} - {{ hall.name }}</title>
+    <title>Book Stalls - {{ hall.name }}</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -86,28 +86,45 @@
             font-weight: bold;
             color: #2196F3;
         }
+        .stall-list {
+            margin-top: 10px;
+        }
+        .stall-item {
+            background-color: #f5f5f5;
+            margin-bottom: 8px;
+            padding: 10px 15px;
+            border-radius: 4px;
+            border-left: 4px solid #4CAF50;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>Book Stall</h1>
+            <h1>Book Stalls</h1>
             <div>
                 <a href="{% url 'stall_booking' hall.id %}" class="btn btn-primary">Back to Stall Selection</a>
             </div>
         </div>
 
         <div class="stall-info">
-            <h2>Stall Information</h2>
+            <h2>Selected Stalls Information</h2>
             <p><strong>Hall:</strong> {{ hall.name }}</p>
-            <p><strong>Stall Number:</strong> {{ stall.stall_number }}</p>
-            <p><strong>Size:</strong> {{ stall.width }}m x {{ stall.height }}m ({{ stall.area }}m²)</p>
+            <p><strong>Number of Stalls:</strong> {{ stalls|length }}</p>
+            
+            <div class="stall-list">
+                {% for stall in stalls %}
+                <div class="stall-item">
+                    <p><strong>Stall #{{ stall.stall_number }}</strong> | Size: {{ stall.width }}m x {{ stall.height }}m ({{ stall.area }}m²) | Price: ${{ stall.price }}</p>
+                </div>
+                {% endfor %}
+            </div>
         </div>
 
         <div class="summary">
             <h3>Booking Summary</h3>
-            <p>You are about to book stall #{{ stall.stall_number }} in {{ hall.name }}</p>
-            <p class="price">Price: ${{ stall.price }}</p>
+            <p>You are about to book {{ stalls|length }} stall(s) in {{ hall.name }}</p>
+            <p class="price">Total Price: ${{ total_price }}</p>
         </div>
 
         <div class="booking-form">

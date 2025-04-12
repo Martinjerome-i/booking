@@ -23,7 +23,7 @@ urlpatterns = [
     # Booking URLs
     path('halls/<int:hall_id>/book/', views.stall_booking, name='stall_booking'),
     path('stall/<int:stall_id>/details/', views.get_stall_details, name='get_stall_details'),
-    path('stall/<int:stall_id>/book/', views.book_stall, name='book_stall'),
+    path('stalls/book/', views.book_stall, name='book_stalls'),
     path('booking/<int:booking_id>/confirmation/', views.booking_confirmation, name='booking_confirmation'),
     path('bookings/', views.manage_bookings, name='manage_bookings'),
     path('booking/<int:booking_id>/update-status/', views.update_booking_status, name='update_booking_status'),

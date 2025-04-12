@@ -114,16 +114,35 @@
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
             z-index: 100;
         }
+        .selected-stalls-list {
+            margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .selected-stall-item {
+            background-color: #e3f2fd;
+            padding: 5px 10px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+        }
+        .remove-stall {
+            color: #F44336;
+            cursor: pointer;
+            margin-left: 5px;
+            font-weight: bold;
+        }
+        .selection-info {
+            margin-top: 15px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
             <h1>Book a Stall - {{ hall.name }}</h1>
-            <!-- <div>
-                <a href="{% url 'hall_detail' hall.id %}" class="btn btn-primary">Back to Hall Details</a>
-                <a href="{% url 'index' %}" class="btn">Back to All Halls</a>
-            </div> -->
         </div>
 
         <div class="hall-info">
@@ -139,15 +158,21 @@
                 <div class="legend-color" style="background-color: #F44336;"></div>
                 <span>Booked</span>
             </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #4CAF50; border: 3px solid #2196F3;"></div>
+                <span>Selected</span>
+            </div>
         </div>
 
         <!-- Selected stall information -->
         <div id="stall-info" class="stall-info">
-            <h3>Selected Stall Information</h3>
-            <div id="stall-details">
-                <!-- Stall details will be loaded here dynamically -->
+            <h3>Selected Stalls</h3>
+            <div id="selected-stalls-count" class="selection-info">0 stalls selected</div>
+            <div id="selected-stalls-list" class="selected-stalls-list">
+                <!-- Selected stalls will be listed here -->
             </div>
-            <button id="book-now-btn" class="btn" style="margin-top: 15px;">Book Now</button>
+            <div id="total-price" class="selection-info" style="margin-top: 15px;">Total: $0.00</div>
+            <button id="book-now-btn" class="btn" style="margin-top: 15px;" disabled>Book Selected Stalls</button>
         </div>
 
         <div class="hall-display" id="hall-display"
@@ -168,11 +193,14 @@
             const hallLength = parseInt(hallDisplay.dataset.length);
             const hallBreadth = parseInt(hallDisplay.dataset.breadth);
             const stallInfo = document.getElementById('stall-info');
-            const stallDetails = document.getElementById('stall-details');
+            const selectedStallsList = document.getElementById('selected-stalls-list');
+            const selectedStallsCount = document.getElementById('selected-stalls-count');
+            const totalPriceElement = document.getElementById('total-price');
             const bookNowBtn = document.getElementById('book-now-btn');
             const loadingElement = document.getElementById('loading');
 
-            let selectedStall = null;
+            let selectedStalls = [];
+            let stallData = {};
 
             // Determine the scale to fit the display
             const maxWidth = hallDisplay.clientWidth;
@@ -209,6 +237,9 @@
                     
                     // Process each stall
                     data.stalls.forEach(stall => {
+                        // Store all stall data for reference
+                        stallData[stall.id] = stall;
+                        
                         const stallBoxes = stall.selected_boxes;
 
                         // Group boxes by stall number and find the boundaries
@@ -251,18 +282,22 @@
                         // Add click event for available stalls
                         if(stall.status === 'available') {
                             stallElement.addEventListener('click', function() {
-                                // Deselect previously selected stall
-                                if(selectedStall) {
-                                    selectedStall.classList.remove('selected');
+                                // Toggle selection
+                                const stallId = this.getAttribute('data-stall-id');
+                                const isSelected = this.classList.contains('selected');
+                                
+                                if (isSelected) {
+                                    // Remove from selection
+                                    this.classList.remove('selected');
+                                    selectedStalls = selectedStalls.filter(id => id !== stallId);
+                                } else {
+                                    // Add to selection
+                                    this.classList.add('selected');
+                                    selectedStalls.push(stallId);
                                 }
                                 
-                                // Select this stall
-                                this.classList.add('selected');
-                                selectedStall = this;
-                                
-                                // Show stall info
-                                const stallId = this.getAttribute('data-stall-id');
-                                fetchStallDetails(stallId);
+                                // Update selected stalls UI
+                                updateSelectedStallsUI();
                             });
                         }
 
@@ -275,37 +310,73 @@
                     loadingElement.textContent = 'Error loading stalls. Please try again later.';
                 });
 
-            // Function to fetch stall details
-            function fetchStallDetails(stallId) {
-                fetch(`/stall/${stallId}/details/`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if(data.success) {
-                            const stall = data.stall;
-                            
-                            // Display stall details
-                            stallDetails.innerHTML = `
-                                <p><strong>Stall Number:</strong> ${stall.stall_number}</p>
-                                <p><strong>Size:</strong> ${stall.width}m x ${stall.height}m</p>
-                                <p><strong>Area:</strong> ${stall.area}m²</p>
-                                <p><strong>Price:</strong> $${stall.price.toFixed(2)}</p>
-                            `;
-                            
-                            // Show the stall info section
-                            stallInfo.style.display = 'block';
-                            
-                            // Set up the book now button
-                            bookNowBtn.onclick = function() {
-                                window.location.href = `/stall/${stallId}/book/`;
-                            };
-                        } else {
-                            alert(data.error || 'Could not load stall details');
+            // Function to update the selected stalls UI
+            function updateSelectedStallsUI() {
+                // Clear the list
+                selectedStallsList.innerHTML = '';
+                
+                // Update counter
+                selectedStallsCount.textContent = `${selectedStalls.length} stalls selected`;
+                
+                if (selectedStalls.length === 0) {
+                    stallInfo.style.display = 'none';
+                    bookNowBtn.disabled = true;
+                    return;
+                }
+                
+                // Show the stall info section
+                stallInfo.style.display = 'block';
+                bookNowBtn.disabled = false;
+                
+                // Calculate total price
+                let totalPrice = 0;
+                
+                // Add each selected stall to the list
+                selectedStalls.forEach(stallId => {
+                    const stall = stallData[stallId];
+                    if (!stall) return;
+                    
+                    totalPrice += stall.price;
+                    
+                    const stallItem = document.createElement('div');
+                    stallItem.className = 'selected-stall-item';
+                    stallItem.innerHTML = `
+                        Stall #${stall.stall_number} ($${stall.price.toFixed(2)})
+                        <span class="remove-stall" data-stall-id="${stallId}">×</span>
+                    `;
+                    
+                    selectedStallsList.appendChild(stallItem);
+                    
+                    // Add remove button click event
+                    const removeBtn = stallItem.querySelector('.remove-stall');
+                    removeBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const stallIdToRemove = this.getAttribute('data-stall-id');
+                        
+                        // Remove selection highlight
+                        const stallElement = document.querySelector(`.stall[data-stall-id="${stallIdToRemove}"]`);
+                        if (stallElement) {
+                            stallElement.classList.remove('selected');
                         }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        alert('An error occurred while fetching stall details');
+                        
+                        // Remove from selected array
+                        selectedStalls = selectedStalls.filter(id => id !== stallIdToRemove);
+                        
+                        // Update UI
+                        updateSelectedStallsUI();
                     });
+                });
+                
+                // Update total price
+                totalPriceElement.textContent = `Total: $${totalPrice.toFixed(2)}`;
+                
+                // Set up the book now button
+                bookNowBtn.onclick = function() {
+                    if (selectedStalls.length > 0) {
+                        // Redirect to booking form with selected stall IDs
+                        window.location.href = `/stalls/book/?stall_ids=${selectedStalls.join(',')}`;
+                    }
+                };
             }
         });
     </script>

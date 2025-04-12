@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-c6i%t21r+wmjkeu+*#x)qn@mwu@5d180ow$@zc(1af(j2@cn37
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['booking.ibfeindia.com', 'booking.ibfeindia.com']
+ALLOWED_HOSTS = ['booking.ibfeindia.com', 'booking.ibfeindia.com', '127.0.0.1']
 
 
 # Application definition
