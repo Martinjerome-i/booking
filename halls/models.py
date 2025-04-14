@@ -38,6 +38,7 @@ class Stall(models.Model):
 
     def __str__(self):
         return f"Stall {self.stall_number} in {self.hall.name}"
+    
 class Booking(models.Model):
     STATUS_CHOICES = [
         ('booked', 'Booked'),
