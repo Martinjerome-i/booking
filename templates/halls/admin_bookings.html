@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Bookings Management</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 1650px;
+            margin: 0 auto;
+            padding-left: 20px;
+            padding-right: 20px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+        .header h1 {
+            margin: 0;
+        }
+        .admin-nav {
+            background-color: #333;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        .admin-nav a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 15px;
+            margin-right: 5px;
+        }
+        .admin-nav a:hover {
+            background-color: #555;
+        }
+        .admin-nav a.active {
+            background-color: #4CAF50;
+        }
+        .btn {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-right: 5px;
+        }
+        .btn-primary {
+            background-color: #2196F3;
+        }
+        .btn-danger {
+            background-color: #F44336;
+        }
+        .btn-warning {
+            background-color: #FF9800;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        .status {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .status.booked {
+            background-color: #e8f5e9;
+            color: #2E7D32;
+        }
+        .status.cancelled {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 50%;
+            max-width: 500px;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .modal-header h2 {
+            margin: 0;
+        }
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover {
+            color: black;
+        }
+        .stall-list {
+            margin-top: 15px;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+        }
+        .stall-item {
+            background-color: #f5f5f5;
+            padding: 8px;
+            margin-bottom: 5px;
+            border-left: 3px solid #2196F3;
+            border-radius: 3px;
+        }
+        .filter-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+        .search-box {
+            flex: 1;
+            max-width: 300px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .no-results {
+            text-align: center;
+            padding: 30px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            margin-top: 20px;
+            color: #666;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .pagination a {
+            color: black;
+            float: left;
+            padding: 8px 16px;
+            text-decoration: none;
+            border: 1px solid #ddd;
+            margin: 0 4px;
+        }
+        .pagination a.active {
+            background-color: #2196F3;
+            color: white;
+            border: 1px solid #2196F3;
+        }
+        .pagination a:hover:not(.active) {
+            background-color: #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="admin-nav">
+            <a href="{% url 'root' %}">Homepage</a>
+            <a href="{% url 'admin_stall_management' 1 %}">Manage Stalls</a>
+            <a href="{% url 'admin_bookings' %}" class="active">View Bookings</a>
+        </div>
+
+        <div class="header">
+            <h1>Admin: Manage Bookings</h1>
+        </div>
+
+        <div class="filter-controls">
+            <input type="text" id="search-box" class="search-box" placeholder="Search customer, reference, email...">
+            <select id="status-filter">
+                <option value="">All Statuses</option>
+                <option value="booked">Booked</option>
+                <option value="cancelled">Cancelled</option>
+            </select>
+            <button class="btn btn-primary" id="apply-filters">Apply Filters</button>
+            <button class="btn" id="reset-filters">Reset</button>
+        </div>
+
+        <table id="bookings-table">
+            <thead>
+                <tr>
+                    <th>Booking Ref</th>
+                    <th>Customer</th>
+                    <th>Company</th>
+                    <th>Email</th>
+                    <th>Booking Date</th>
+                    <th>Stalls</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if bookings %}
+                    {% for booking in bookings %}
+                    <tr data-id="{{ booking.id }}" data-ref="{{ booking.booking_reference }}" data-customer="{{ booking.customer_name|lower }}" data-email="{{ booking.customer_email|lower }}" data-company="{{ booking.company_name|lower }}" data-status="{{ booking.status }}">
+                        <td>{{ booking.booking_reference }}</td>
+                        <td>{{ booking.customer_name }}</td>
+                        <td>{{ booking.company_name }}</td>
+                        <td>{{ booking.customer_email }}</td>
+                        <td>{{ booking.booking_date|date:"M d, Y" }}</td>
+                        <td>
+                            {% with stall_count=booking.stalls.count %}
+                                {{ stall_count }} stall{% if stall_count != 1 %}s{% endif %}
+                            {% endwith %}
+                            <button class="btn btn-primary btn-sm view-stalls" data-id="{{ booking.id }}">View</button>
+                        </td>
+                        <td>
+                            <span class="status {{ booking.status }}">{{ booking.get_status_display }}</span>
+                        </td>
+                        <td>
+                            <select class="status-dropdown" data-booking-id="{{ booking.id }}">
+                                {% for status_code, status_label in booking.STATUS_CHOICES %}
+                                <option value="{{ status_code }}" {% if booking.status == status_code %}selected{% endif %}>{{ status_label }}</option>
+                                {% endfor %}
+                            </select>
+                            <button class="btn btn-danger btn-sm delete-booking" data-id="{{ booking.id }}">Delete</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="8" class="no-results">No bookings found</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+
+        <div class="pagination">
+            <!-- Pagination would go here if implemented -->
+        </div>
+    </div>
+
+    <!-- Modal for Viewing Stalls -->
+    <div id="stalls-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Booking Details</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div id="booking-details">
+                <p><strong>Reference:</strong> <span id="booking-ref"></span></p>
+                <p><strong>Customer:</strong> <span id="booking-customer"></span></p>
+                <p><strong>Email:</strong> <span id="booking-email"></span></p>
+                <p><strong>Phone:</strong> <span id="booking-phone"></span></p>
+                <p><strong>Company:</strong> <span id="booking-company"></span></p>
+                <p><strong>Status:</strong> <span id="booking-status"></span></p>
+                <p><strong>Notes:</strong> <span id="booking-notes"></span></p>
+            </div>
+            <div class="stall-list">
+                <h3>Booked Stalls</h3>
+                <div id="stall-items-container">
+                    <!-- Stall items will be added here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Delete Confirmation -->
+    <div id="delete-modal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>Confirm Delete</h2>
+                <span class="close">&times;</span>
+            </div>
+            <p>Are you sure you want to delete this booking? This will free up all booked stalls and cannot be undone.</p>
+            <div style="text-align: right; margin-top: 20px;">
+                <button id="cancel-delete" class="btn">Cancel</button>
+                <button id="confirm-delete" class="btn btn-danger">Delete Booking</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Modal handling
+            const stallsModal = document.getElementById('stalls-modal');
+            const deleteModal = document.getElementById('delete-modal');
+            const closeButtons = document.querySelectorAll('.close');
+            const cancelDelete = document.getElementById('cancel-delete');
+            let currentBookingId = null;
+
+            // Close modal when clicking X
+            closeButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    stallsModal.style.display = 'none';
+                    deleteModal.style.display = 'none';
+                });
+            });
+
+            // Close modal when clicking outside
+            window.addEventListener('click', function(event) {
+                if (event.target === stallsModal) {
+                    stallsModal.style.display = 'none';
+                }
+                if (event.target === deleteModal) {
+                    deleteModal.style.display = 'none';
+                }
+            });
+
+            // Cancel delete
+            cancelDelete.addEventListener('click', function() {
+                deleteModal.style.display = 'none';
+            });
+
+            // View stalls button
+            const viewStallsButtons = document.querySelectorAll('.view-stalls');
+            viewStallsButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const bookingId = this.getAttribute('data-id');
+                    loadBookingDetails(bookingId);
+                });
+            });
+
+            // Status change handler
+            const statusDropdowns = document.querySelectorAll('.status-dropdown');
+            statusDropdowns.forEach(dropdown => {
+                dropdown.addEventListener('change', function() {
+                    const bookingId = this.getAttribute('data-booking-id');
+                    const newStatus = this.value;
+                    updateBookingStatus(bookingId, newStatus);
+                });
+            });
+
+            // Delete booking buttons
+            const deleteButtons = document.querySelectorAll('.delete-booking');
+            deleteButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const bookingId = this.getAttribute('data-id');
+                    currentBookingId = bookingId;
+                    deleteModal.style.display = 'block';
+                });
+            });
+
+            // Confirm delete button
+            document.getElementById('confirm-delete').addEventListener('click', function() {
+                if (currentBookingId) {
+                    deleteBooking(currentBookingId);
+                }
+            });
+
+            // Search and filter functionality
+            const searchBox = document.getElementById('search-box');
+            const statusFilter = document.getElementById('status-filter');
+            const applyFiltersBtn = document.getElementById('apply-filters');
+            const resetFiltersBtn = document.getElementById('reset-filters');
+            
+            applyFiltersBtn.addEventListener('click', function() {
+                filterTable();
+            });
+            
+            resetFiltersBtn.addEventListener('click', function() {
+                searchBox.value = '';
+                statusFilter.value = '';
+                filterTable();
+            });
+
+            function filterTable() {
+                const searchTerm = searchBox.value.toLowerCase();
+                const statusTerm = statusFilter.value.toLowerCase();
+                const rows = document.querySelectorAll('#bookings-table tbody tr');
+                
+                let visibleCount = 0;
+                
+                rows.forEach(row => {
+                    if (row.classList.contains('no-results-row')) {
+                        row.remove();
+                        return;
+                    }
+                    
+                    const customerName = row.getAttribute('data-customer');
+                    const email = row.getAttribute('data-email');
+                    const company = row.getAttribute('data-company');
+                    const reference = row.getAttribute('data-ref');
+                    const status = row.getAttribute('data-status');
+                    
+                    const matchesSearch = !searchTerm || 
+                        customerName.includes(searchTerm) || 
+                        email.includes(searchTerm) || 
+                        company.includes(searchTerm) || 
+                        reference.toLowerCase().includes(searchTerm);
+                    
+                    const matchesStatus = !statusTerm || status === statusTerm;
+                    
+                    if (matchesSearch && matchesStatus) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+                
+                // Show no results message if needed
+                if (visibleCount === 0) {
+                    const tbody = document.querySelector('#bookings-table tbody');
+                    const noResultsRow = document.createElement('tr');
+                    noResultsRow.classList.add('no-results-row');
+                    noResultsRow.innerHTML = '<td colspan="8" class="no-results">No bookings match your filters</td>';
+                    tbody.appendChild(noResultsRow);
+                }
+            }
+
+            // Function to load booking details
+            function loadBookingDetails(bookingId) {
+                fetch(`/booking/${bookingId}/details/`, {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Fill in booking details
+                        document.getElementById('booking-ref').textContent = data.booking.reference;
+                        document.getElementById('booking-customer').textContent = data.booking.customer_name;
+                        document.getElementById('booking-email').textContent = data.booking.customer_email;
+                        document.getElementById('booking-phone').textContent = data.booking.customer_phone;
+                        document.getElementById('booking-company').textContent = data.booking.company_name;
+                        document.getElementById('booking-status').textContent = data.booking.status_display;
+                        document.getElementById('booking-notes').textContent = data.booking.notes || 'None';
+                        
+                        // Fill in stalls
+                        const stallContainer = document.getElementById('stall-items-container');
+                        stallContainer.innerHTML = '';
+                        
+                        if (data.stalls && data.stalls.length > 0) {
+                            data.stalls.forEach(stall => {
+                                const stallItem = document.createElement('div');
+                                stallItem.className = 'stall-item';
+                                stallItem.innerHTML = `
+                                    <strong>Stall #${stall.stall_number}</strong> in ${stall.hall_name}<br>
+                                    Size: ${stall.width}m x ${stall.height}m (${stall.area}m²)<br>
+                                    Price: $${stall.price.toFixed(2)}
+                                `;
+                                stallContainer.appendChild(stallItem);
+                            });
+                        } else {
+                            stallContainer.innerHTML = '<p>No stalls found for this booking.</p>';
+                        }
+                        
+                        // Show modal
+                        stallsModal.style.display = 'block';
+                    } else {
+                        alert('Error loading booking details: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while loading booking details.');
+                });
+            }
+
+            // Function to update booking status
+            function updateBookingStatus(bookingId, status) {
+                const csrfToken = getCookie('csrftoken');
+                
+                fetch(`/booking/${bookingId}/update-status/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: `status=${status}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update the UI
+                        const row = document.querySelector(`tr[data-id="${bookingId}"]`);
+                        const statusCell = row.querySelector('td:nth-child(7) .status');
+                        
+                        // Update status class and text
+                        statusCell.className = `status ${status}`;
+                        statusCell.textContent = getStatusDisplay(status);
+                        
+                        // Update data attribute for filtering
+                        row.setAttribute('data-status', status);
+                    } else {
+                        alert('Error updating status: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while updating the booking status.');
+                });
+            }
+
+            // Function to delete booking
+            function deleteBooking(bookingId) {
+                const csrfToken = getCookie('csrftoken');
+                
+                fetch(`/admin_booking/${bookingId}/delete/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Close the modal
+                        deleteModal.style.display = 'none';
+                        
+                        // Remove the row from the table
+                        const row = document.querySelector(`tr[data-id="${bookingId}"]`);
+                        if (row) {
+                            row.remove();
+                        }
+                        
+                        // Check if we need to show "no results"
+                        const tbody = document.querySelector('#bookings-table tbody');
+                        if (tbody.children.length === 0) {
+                            const noResultsRow = document.createElement('tr');
+                            noResultsRow.innerHTML = '<td colspan="8" class="no-results">No bookings found</td>';
+                            tbody.appendChild(noResultsRow);
+                        }
+                    } else {
+                        alert('Error deleting booking: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while deleting the booking.');
+                });
+            }
+
+            // Helper function to get CSRF token from cookies
+            function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+            }
+
+            // Helper function to get status display text
+            function getStatusDisplay(status) {
+                const statusMap = {
+                    'booked': 'Booked',
+                    'cancelled': 'Cancelled'
+                };
+                return statusMap[status] || status;
+            }
+        });
+    </script>
+</body>
+</html>

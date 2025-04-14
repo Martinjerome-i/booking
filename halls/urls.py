@@ -25,10 +25,14 @@ urlpatterns = [
     path('stall/<int:stall_id>/details/', views.get_stall_details, name='get_stall_details'),
     path('stalls/book/', views.book_stall, name='book_stalls'),
     path('booking/<int:booking_id>/confirmation/', views.booking_confirmation, name='booking_confirmation'),
-    path('bookings/', views.manage_bookings, name='manage_bookings'),
     path('booking/<int:booking_id>/update-status/', views.update_booking_status, name='update_booking_status'),
     path('halls/<int:hall_id>/combos/', views.get_combos, name='get_combos'),
     path('halls/<int:hall_id>/create-combo/', views.create_combo, name='create_combo'),
     path('combo/<int:combo_id>/edit/', views.edit_combo, name='edit_combo'),
     path('combo/<int:combo_id>/delete/', views.delete_combo, name='delete_combo'),
+
+    path('admin_halls/<int:hall_id>/manage/', views.admin_stall_management, name='admin_stall_management'),
+    path('admin_stall/<int:stall_id>/update-status/', views.admin_update_stall_status, name='admin_update_stall_status'),
+    path('admin_bookings/', views.admin_bookings, name='admin_bookings'),
+    path('admin_booking/<int:booking_id>/delete/', views.admin_delete_booking, name='admin_delete_booking'),
 ]

@@ -38,12 +38,11 @@ class Stall(models.Model):
 
     def __str__(self):
         return f"Stall {self.stall_number} in {self.hall.name}"
-
-
 class Booking(models.Model):
     STATUS_CHOICES = [
         ('booked', 'Booked'),
         ('cancelled', 'Cancelled'),
+        ('blocked', 'Blocked'), 
     ]
     
     stalls = models.ManyToManyField(Stall, related_name='bookings')
@@ -99,3 +98,4 @@ class ComboStall(models.Model):
         if self.price:
             return self.price
         return sum(stall.price for stall in self.stalls.all())
+

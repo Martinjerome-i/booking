@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Stall Management - {{ hall.name }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 1650px;
+            margin: 0 auto;
+            padding-left: 20px;
+            padding-right: 20px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+        .header h1 {
+            margin: 0;
+        }
+        .admin-nav {
+            background-color: #333;
+            padding: 10px;
+            margin-bottom:20px;
+        }
+        .admin-nav a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 15px;
+            margin-right: 5px;
+        }
+        .admin-nav a:hover {
+            background-color: #555;
+        }
+        .admin-nav a.active {
+            background-color: #4CAF50;
+        }
+        .btn {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-right: 5px;
+        }
+        .btn-primary {
+            background-color: #2196F3;
+        }
+        .btn-danger {
+            background-color: #F44336;
+        }
+        .btn-warning {
+            background-color: #FF9800;
+        }
+        .btn-secondary {
+            background-color: #757575;
+        }
+        .btn-disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .hall-display {
+            border: 1px solid #ddd;
+            overflow: auto;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .stall {
+            position: absolute;
+            border: 1px solid #2E7D32;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .stall:hover {
+            filter: brightness(1.1);
+            transform: scale(1.02);
+            z-index: 10;
+        }
+        .stall.available {
+            background-color: #4CAF50;
+        }
+        .stall.booked {
+            background-color: #F44336;
+        }
+        /* Add styling for blocked stalls */
+        .stall.blocked {
+            background-color: #FF9800;
+            border: 1px solid #E65100;
+        }
+        .stall.selected {
+            border: 3px solid #2196F3;
+            box-shadow: 0 0 15px rgba(33, 150, 243, 0.7);
+        }
+        .legend {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+        }
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
+            border: 1px solid #333;
+        }
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255,255,255,0.8);
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 50%;
+            max-width: 500px;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .modal-header h2 {
+            margin: 0;
+        }
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover {
+            color: black;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .stall-info {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            border-left: 4px solid #2196F3;
+        }
+        .stall-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .stall-card {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            background-color: #fff;
+        }
+        .stall-card h3 {
+            margin-top: 0;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
+        }
+        .stall-status {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .stall-status.available {
+            background-color: #e8f5e9;
+            color: #2E7D32;
+        }
+        .stall-status.booked {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+        /* Add styling for blocked status in status badge */
+        .stall-status.blocked {
+            background-color: #fff3e0;
+            color: #E65100;
+        }
+        .action-buttons {
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="admin-nav">
+            <a href="{% url 'root' %}">Homepage</a>
+            <a href="{% url 'admin_stall_management' hall.id %}" class="active">Manage Stalls</a>
+            <a href="{% url 'admin_bookings' %}">View Bookings</a>
+        </div>
+
+        <div class="header">
+            <h1>Admin: Manage Stalls - {{ hall.name }}</h1>
+        </div>
+
+        <div class="hall-info">
+            <p>Size: {{ hall.length }}m x {{ hall.breadth }}m ({{ hall.total_area }}m²)</p>
+        </div>
+
+        <!-- Hall View Section -->
+        <div id="hall-view-container">
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #4CAF50;"></div>
+                    <span>Available</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #F44336;"></div>
+                    <span>Booked</span>
+                </div>
+                <!-- Add blocked status to legend -->
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #FF9800;"></div>
+                    <span>Blocked</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #4CAF50; border: 3px solid #2196F3;"></div>
+                    <span>Selected</span>
+                </div>
+            </div>
+
+            <div class="hall-display" id="hall-display"
+                style="width: 100%; height: 500px;"
+                data-hall-id="{{ hall.id }}"
+                data-length="{{ hall.length }}"
+                data-breadth="{{ hall.breadth }}">
+                <div id="loading" class="loading">Loading stalls...</div>
+                <!-- Stalls will be drawn here using JavaScript -->
+            </div>
+        </div>
+
+        <!-- Stall Grid View -->
+        <h2>All Stalls</h2>
+        <div class="stall-grid" id="stall-grid">
+            <!-- Stalls will be listed here -->
+        </div>
+    </div>
+
+    <!-- Modal for Stall Actions -->
+    <div id="stall-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Manage Stall</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="stall-info" id="modal-stall-info">
+                <!-- Stall info will be displayed here -->
+            </div>
+            <form id="stall-action-form">
+                <div class="form-group">
+                    <label for="status">Update Status:</label>
+                    <select id="status" name="status">
+                        <option value="available">Available</option>
+                        <option value="booked">Booked</option>
+                        <option value="blocked">Blocked</option>  <!-- Add this option -->
+                    </select>
+                </div>
+                
+                <div id="booking-details" style="display: none;">
+                    <h3>Booking Details</h3>
+                    <div class="form-group">
+                        <label for="customer_name">Customer Name:</label>
+                        <input type="text" id="customer_name" name="customer_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="customer_email">Customer Email:</label>
+                        <input type="email" id="customer_email" name="customer_email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="customer_phone">Customer Phone:</label>
+                        <input type="text" id="customer_phone" name="customer_phone" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="company_name">Company Name:</label>
+                        <input type="text" id="company_name" name="company_name">
+                    </div>
+                    <div class="form-group">
+                        <label for="notes">Notes:</label>
+                        <textarea id="notes" name="notes" rows="3"></textarea>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Update Stall</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load hall data and render stalls
+            const hallDisplay = document.getElementById('hall-display');
+            const hallId = hallDisplay.dataset.hallId;
+            const hallLength = parseInt(hallDisplay.dataset.length);
+            const hallBreadth = parseInt(hallDisplay.dataset.breadth);
+            const loadingElement = document.getElementById('loading');
+            const stallGrid = document.getElementById('stall-grid');
+            
+            // Modal elements
+            const modal = document.getElementById('stall-modal');
+            const modalClose = modal.querySelector('.close');
+            const modalTitle = document.getElementById('modal-title');
+            const modalStallInfo = document.getElementById('modal-stall-info');
+            const stallActionForm = document.getElementById('stall-action-form');
+            const statusSelect = document.getElementById('status');
+            const bookingDetailsDiv = document.getElementById('booking-details');
+            
+            let selectedStall = null;
+            let stallData = {};
+
+            // Determine the scale to fit the display
+            const maxWidth = hallDisplay.clientWidth;
+            const maxHeight = hallDisplay.clientHeight;
+
+            const scaleX = maxWidth / hallLength;
+            const scaleY = maxHeight / hallBreadth;
+            const scale = Math.min(scaleX, scaleY);
+
+            // Set the actual dimensions
+            const actualWidth = hallLength * scale;
+            const actualHeight = hallBreadth * scale;
+
+            // Draw hall grid (for reference)
+            for (let x = 0; x < hallLength; x++) {
+                for (let y = 0; y < hallBreadth; y++) {
+                    const gridBox = document.createElement('div');
+                    gridBox.style.position = 'absolute';
+                    gridBox.style.left = `${x * scale}px`;
+                    gridBox.style.top = `${y * scale}px`;
+                    gridBox.style.width = `${scale}px`;
+                    gridBox.style.height = `${scale}px`;
+                    gridBox.style.border = '1px solid #eee';
+                    hallDisplay.appendChild(gridBox);
+                }
+            }
+
+            // Close modal when clicking the X
+            modalClose.onclick = function() {
+                modal.style.display = "none";
+            };
+
+            // Close modal when clicking outside of it
+            window.onclick = function(event) {
+                if (event.target == modal) {
+                    modal.style.display = "none";
+                }
+            };
+
+            // Status select change event
+            statusSelect.addEventListener('change', function() {
+                // Only show booking details for booked status
+                if (this.value === 'booked') {
+                    bookingDetailsDiv.style.display = 'block';
+                } else {
+                    bookingDetailsDiv.style.display = 'none';
+                }
+            });
+
+            // Form submit event
+            stallActionForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                if (!selectedStall) return;
+                
+                const formData = new FormData(this);
+                
+                // Send request to update stall status
+                fetch(`/admin_stall/${selectedStall}/update-status/`, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update the stall in the UI
+                        const stallElement = document.querySelector(`.stall[data-stall-id="${selectedStall}"]`);
+                        if (stallElement) {
+                            // Remove all status classes
+                            stallElement.classList.remove('available', 'booked', 'blocked');
+                            // Add new status class
+                            stallElement.classList.add(data.status);
+                            stallElement.setAttribute('data-stall-status', data.status);
+                        }
+                        
+                        // Update stall in the grid
+                        const gridStallStatus = document.querySelector(`#stall-card-${selectedStall} .stall-status`);
+                        if (gridStallStatus) {
+                            gridStallStatus.textContent = data.status_display;
+                            gridStallStatus.classList.remove('available', 'booked', 'blocked');
+                            gridStallStatus.classList.add(data.status);
+                        }
+                        
+                        // Update stallData
+                        if (stallData[selectedStall]) {
+                            stallData[selectedStall].status = data.status;
+                        }
+                        
+                        // Close the modal
+                        modal.style.display = "none";
+                        
+                        // Show success message
+                        alert('Stall status updated successfully!');
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error updating stall status:', error);
+                    alert('Failed to update stall status. Please try again.');
+                });
+            });
+
+            // Helper function to get CSRF token
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+
+            // Function to open the stall management modal
+            function openStallModal(stallId) {
+                const stall = stallData[stallId];
+                if (!stall) return;
+                
+                selectedStall = stallId;
+                modalTitle.textContent = `Manage Stall #${stall.stall_number}`;
+                
+                // Display stall info
+                modalStallInfo.innerHTML = `
+                    <p><strong>Hall:</strong> ${hallId}</p>
+                    <p><strong>Stall Number:</strong> ${stall.stall_number}</p>
+                    <p><strong>Current Status:</strong> <span class="stall-status ${stall.status}">${stall.status}</span></p>
+                    <p><strong>Size:</strong> ${stall.width || 'N/A'} x ${stall.height || 'N/A'}</p>
+                    <p><strong>Price:</strong> $${stall.price.toFixed(2)}</p>
+                `;
+                
+                // Set the current status
+                statusSelect.value = stall.status;
+                
+                // Show/hide booking details based on status
+                if (statusSelect.value === 'booked') {
+                    bookingDetailsDiv.style.display = 'block';
+                } else {
+                    bookingDetailsDiv.style.display = 'none';
+                }
+                
+                // Show the modal
+                modal.style.display = "block";
+            }
+
+            // Function to create stall card for grid view
+            function createStallCard(stall) {
+                const card = document.createElement('div');
+                card.className = 'stall-card';
+                card.id = `stall-card-${stall.id}`;
+                
+                let statusDisplay = 'Available';
+                if (stall.status === 'booked') statusDisplay = 'Booked';
+                if (stall.status === 'blocked') statusDisplay = 'Blocked';
+                
+                card.innerHTML = `
+                    <h3>Stall #${stall.stall_number}</h3>
+                    <p><strong>Status:</strong> <span class="stall-status ${stall.status}">${statusDisplay}</span></p>
+                    <p><strong>Size:</strong> ${stall.width || 'N/A'} x ${stall.height || 'N/A'}</p>
+                    <p><strong>Price:</strong> $${stall.price.toFixed(2)}</p>
+                    <div class="action-buttons">
+                        <button class="btn btn-primary manage-stall" data-stall-id="${stall.id}">Manage</button>
+                    </div>
+                `;
+                
+                return card;
+            }
+
+            // Fetch and render stalls
+            fetch(`/halls/${hallId}/data/`)
+                .then(response => response.json())
+                .then(data => {
+                    // Hide loading indicators
+                    loadingElement.style.display = 'none';
+                    
+                    // Clear stall grid
+                    stallGrid.innerHTML = '';
+                    
+                    // Process each stall
+                    data.stalls.forEach(stall => {
+                        // Store all stall data for reference
+                        stallData[stall.id] = stall;
+                        
+                        const stallBoxes = stall.selected_boxes;
+
+                        // Group boxes by stall number and find the boundaries
+                        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+                        stallBoxes.forEach(box => {
+                            minX = Math.min(minX, box.x);
+                            minY = Math.min(minY, box.y);
+                            maxX = Math.max(maxX, box.x);
+                            maxY = Math.max(maxY, box.y);
+                        });
+
+                        // Create a single stall element for the hall display
+                        const stallElement = document.createElement('div');
+                        stallElement.className = `stall ${stall.status}`;
+                        stallElement.setAttribute('data-stall-id', stall.id);
+                        stallElement.setAttribute('data-stall-number', stall.stall_number);
+                        stallElement.setAttribute('data-stall-status', stall.status);
+                        
+                        stallElement.style.position = 'absolute';
+                        stallElement.style.left = `${minX * scale}px`;
+                        stallElement.style.top = `${minY * scale}px`;
+                        stallElement.style.width = `${(maxX - minX + 1) * scale}px`;
+                        stallElement.style.height = `${(maxY - minY + 1) * scale}px`;
+                        stallElement.style.zIndex = '5'; // Ensure stalls appear above grid lines
+
+                        // Add the stall number
+                        const stallLabel = document.createElement('div');
+                        stallLabel.textContent = stall.stall_number;
+                        stallLabel.style.position = 'absolute';
+                        stallLabel.style.top = '50%';
+                        stallLabel.style.left = '50%';
+                        stallLabel.style.transform = 'translate(-50%, -50%)';
+                        stallLabel.style.color = 'white';
+                        stallLabel.style.fontWeight = 'bold';
+                        stallLabel.style.fontSize = `${Math.max(14, scale / 3)}px`;
+                        stallLabel.style.textAlign = 'center';
+
+                        // Add click event for stalls
+                        stallElement.addEventListener('click', function() {
+                            openStallModal(stall.id);
+                        });
+
+                        stallElement.appendChild(stallLabel);
+                        hallDisplay.appendChild(stallElement);
+                        
+                        // Add to grid view
+                        const stallCard = createStallCard(stall);
+                        stallGrid.appendChild(stallCard);
+                    });
+                    
+                    // Add event listeners to manage buttons in grid view
+                    document.querySelectorAll('.manage-stall').forEach(button => {
+                        button.addEventListener('click', function() {
+                            const stallId = this.getAttribute('data-stall-id');
+                            openStallModal(stallId);
+                        });
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading hall data:', error);
+                    loadingElement.textContent = 'Error loading stalls. Please try again later.';
+                });
+        });
+    </script>
+</body>
+</html>

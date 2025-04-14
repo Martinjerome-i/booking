@@ -257,11 +257,6 @@ def booking_confirmation(request, booking_id):
     })
 
 
-def manage_bookings(request):
-    bookings = Booking.objects.all().order_by('-booking_date')
-    return render(request, 'halls/manage_bookings.html', {'bookings': bookings})
-
-
 @require_POST
 def update_booking_status(request, booking_id):
     booking = get_object_or_404(Booking, id=booking_id)
@@ -412,3 +407,75 @@ def get_combos(request, hall_id):
         })
     
     return JsonResponse({'success': True, 'combos': combo_data})
+
+
+def admin_stall_management(request, hall_id):
+    """
+    View for admin to manage stalls (block/book) without authentication
+    """
+    hall = get_object_or_404(Hall, id=hall_id)
+    stalls = hall.stalls.all()
+    return render(request, 'halls/admin_stall_management.html', {'hall': hall, 'stalls': stalls})
+
+@require_POST
+def admin_update_stall_status(request, stall_id):
+    """
+    API endpoint to update stall status from admin interface
+    """
+    stall = get_object_or_404(Stall, id=stall_id)
+    status = request.POST.get('status')
+    customer_name = request.POST.get('customer_name', '')
+    customer_email = request.POST.get('customer_email', '')
+    customer_phone = request.POST.get('customer_phone', '')
+    company_name = request.POST.get('company_name', '')
+    notes = request.POST.get('notes', '')
+    
+    if status not in [s[0] for s in Stall.STATUS_CHOICES]:
+        return JsonResponse({'success': False, 'error': 'Invalid status'})
+    
+    # Update stall status
+    stall.status = status
+    stall.save()
+    
+    # If booking the stall, create a booking record
+    if status == 'booked' and customer_name and customer_email:
+        booking = Booking.objects.create(
+            customer_name=customer_name,
+            customer_email=customer_email,
+            customer_phone=customer_phone,
+            company_name=company_name,
+            notes=notes,
+            status='booked'
+        )
+        booking.stalls.add(stall)
+    
+    # No booking record is created for blocked stalls
+    
+    return JsonResponse({
+        'success': True, 
+        'status': status,
+        'status_display': dict(Stall.STATUS_CHOICES).get(status, status)
+    })
+
+def admin_bookings(request):
+    """
+    View for admin to see all bookings
+    """
+    bookings = Booking.objects.all().order_by('-booking_date')
+    return render(request, 'halls/admin_bookings.html', {'bookings': bookings})
+
+@require_POST
+def admin_delete_booking(request, booking_id):
+    """
+    Delete a booking and free up the stalls
+    """
+    booking = get_object_or_404(Booking, id=booking_id)
+    
+    # Free up all stalls in this booking
+    stalls = booking.stalls.all()
+    stalls.update(status='available')
+    
+    # Delete the booking
+    booking.delete()
+    
+    return JsonResponse({'success': True})
