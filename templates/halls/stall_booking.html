@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!--<meta name="viewport" content="width=device-width, initial-scale=1.0">-->
     <title>Book a Stall - {{ hall.name }}</title>
     <style>
         body {
@@ -41,9 +41,9 @@
             cursor: not-allowed;
         }
         .hall-display {
-            border: 1px solid #ddd;
-            overflow: auto;
-            margin-bottom: 20px;
+            /*border: 1px solid #ddd;*/
+            /*overflow: auto;*/
+            /*margin-bottom: 20px;*/
             position: relative;
         }
         .stall {
@@ -64,18 +64,16 @@
         }
         .stall.available {
             background-color: #4D90C4;
+            border: 1px solid #FFFFFF;
         }
         .stall.booked {
-            background-color: #F44336;
+            background-color: #868585;
+            border: 1px solid #FFFFFF;
             cursor: not-allowed;
         }
         .stall.selected {
-            border: 1px s id #2196F3;
-            /* box-shadow: 0 0 15px rgba(33, 150, 243, 0.7); */
-            background-color: #2196F3;
-        }
-        .stall.combo {
-            border: 2px dashed #9C27B0;
+            border: 1px solid #FFFFFF;
+            background-color: #1e4a6c;
         }
         .stall-info {
             background-color: #f9f9f9;
@@ -142,6 +140,27 @@
             margin-top: 15px;
             font-weight: bold;
         }
+        /* Added styles for entry/exit markers */
+        .entry-exit-marker {
+            position: absolute;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            pointer-events: none;
+        }
+        .entry-exit-marker svg {
+            filter: drop-shadow(0px 0px 3px rgba(0,0,0,0.3));
+        }
+        .entry-exit-label {
+            position: absolute;
+            font-size: 14px;
+            font-weight: bold;
+            color: #333;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+            text-transform: uppercase;
+        }
     </style>
 </head>
 <body>
@@ -162,17 +181,25 @@
                     <span>Available</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background-color: #F44336;"></div>
+                    <div class="legend-color" style="background-color: #868585;"></div>
                     <span>Booked</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background-color: #4CAF50; border: 3px solid #2196F3;"></div>
+                    <div class="legend-color" style="background-color: #1e4a6c;"></div>
                     <span>Selected</span>
                 </div>
-                <!-- <div class="legend-item">
-                    <div class="legend-color" style="background-color: #4CAF50; border: 2px dashed #9C27B0;"></div>
-                    <span>Part of Combo</span>
-                </div> -->
+            </div>
+
+            <div class="hall-display" id="hall-display"
+                style="width: 100%; height: 550px;"
+                data-hall-id="{{ hall.id }}"
+                data-length="{{ hall.length }}"
+                data-breadth="{{ hall.breadth }}">
+                <div id="loading" class="loading">Loading stalls...</div>
+                <!-- Stalls will be drawn here using JavaScript -->
+                
+                <!-- Entry marker will be added dynamically -->
+                <!-- Exit marker will be added dynamically -->
             </div>
 
             <!-- Selected stall information -->
@@ -184,15 +211,6 @@
                 </div>
                 <div id="total-price" class="selection-info" style="margin-top: 15px;">Total: $0.00</div>
                 <button id="book-now-btn" class="btn" style="margin-top: 15px;" disabled>Book Selected Stalls</button>
-            </div>
-
-            <div class="hall-display" id="hall-display"
-                style="width: 100%; height: 600px;"
-                data-hall-id="{{ hall.id }}"
-                data-length="{{ hall.length }}"
-                data-breadth="{{ hall.breadth }}">
-                <div id="loading" class="loading">Loading stalls...</div>
-                <!-- Stalls will be drawn here using JavaScript -->
             </div>
         </div>
     </div>
@@ -241,6 +259,38 @@
                     hallDisplay.appendChild(gridBox);
                 }
             }
+
+            // Add Entry marker (outside coordinates 14,1 to 25,1)
+            const entryMarker = document.createElement('div');
+            entryMarker.className = 'entry-exit-marker';
+            // Position above the specified coordinates
+            const entryX = ((14 + 25) / 2) * scale; // Center between 14 and 25
+            const entryY = 562; // Above row 1
+            entryMarker.style.left = `${entryX - 25}px`; // Center the marker
+            entryMarker.style.top = `${entryY - 40}px`;
+            entryMarker.innerHTML = `              
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+                    <path d="M4 15L12 9L20 15" stroke="#000000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="entry-exit-label" style="top: 35px;">ENTRY</span>
+            `;
+            hallDisplay.appendChild(entryMarker);
+
+            // Add Exit marker (outside coordinates 76,1 to 87,1)
+            const exitMarker = document.createElement('div');
+            exitMarker.className = 'entry-exit-marker';
+            // Position above the specified coordinates
+            const exitX = ((76 + 87) / 2) * scale; // Center between 76 and 87
+            const exitY = 562; // Above row 1
+            exitMarker.style.left = `${exitX - 25}px`; // Center the marker
+            exitMarker.style.top = `${exitY - 40}px`;
+            exitMarker.innerHTML = `
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+                    <path d="M4 9L12 15L20 9" stroke="#000000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="entry-exit-label" style="top: 35px;">EXIT</span>
+            `;
+            hallDisplay.appendChild(exitMarker);
 
             // Fetch and render stalls and combos
             fetch(`/halls/${hallId}/data/`)
@@ -539,7 +589,7 @@
                     const stallItem = document.createElement('div');
                     stallItem.className = 'selected-stall-item';
                     stallItem.innerHTML = `
-                        Stall #${stall.stall_number} ($${stall.price.toFixed(2)})
+                        Stall #${stall.stall_number} (₹${stall.price.toFixed(2)})
                         <span class="remove-stall" data-stall-id="${stall.id}">×</span>
                     `;
                     
@@ -566,7 +616,7 @@
                 });
                 
                 // Update total price
-                totalPriceElement.textContent = `Total: $${totalPrice.toFixed(2)}`;
+                totalPriceElement.textContent = `Total: ₹${totalPrice.toFixed(2)}`;
                 
                 // Set up the book now button
                 bookNowBtn.onclick = function() {

@@ -115,7 +115,8 @@
             <div class="stall-list">
                 {% for stall in stalls %}
                 <div class="stall-item">
-                    <p><strong>Stall #{{ stall.stall_number }}</strong> | Size: {{ stall.width }}m x {{ stall.height }}m ({{ stall.area }}m²) | Price: ${{ stall.price }}</p>
+                    <p><strong>Stall #{{ stall.stall_number }}</strong> | Size: {{ stall.width }}m x {{ stall.height }}m ({{ stall.area }}m²) | Price: ₹
+                        {{ stall.price }}</p>
                 </div>
                 {% endfor %}
             </div>
@@ -124,7 +125,7 @@
         <div class="summary">
             <h3>Booking Summary</h3>
             <p>You are about to book {{ stalls|length }} stall(s) in {{ hall.name }}</p>
-            <p class="price">Total Price: ${{ total_price }}</p>
+            <p class="price">Total Price: ₹{{ total_price }}</p>
         </div>
 
         <div class="booking-form">

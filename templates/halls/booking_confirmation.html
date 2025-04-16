@@ -183,13 +183,13 @@
                 </div>
                 <div class="detail-row">
                     <div class="detail-label">Price:</div>
-                    <div class="detail-value">${{ stall.price }}</div>
+                    <div class="detail-value">₹{{ stall.price }}</div>
                 </div>
             </div>
             {% endfor %}
             
             <div class="total-price">
-                Total Price: ${{ total_price }}
+                Total Price: ₹{{ total_price }}
             </div>
             {% else %}
             <p>No stalls in this booking.</p>
