@@ -20,8 +20,18 @@
             align-items: center;
             margin-bottom: 20px;
         }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo img {
+            max-height: 60px;
+            width: auto;
+        }
         .btn {
-            background-color: #4CAF50;
+            background-color: #451a32;
             border: none;
             color: white;
             padding: 10px 20px;
@@ -63,7 +73,7 @@
             z-index: 10;
         }
         .stall.available {
-            background-color: #4D90C4;
+            background-color: #451a32;
             border: 1px solid #FFFFFF;
         }
         .stall.booked {
@@ -73,7 +83,7 @@
         }
         .stall.selected {
             border: 1px solid #FFFFFF;
-            background-color: #1e4a6c;
+            background-color: #fcc41a;
         }
         .stall-info {
             background-color: #f9f9f9;
@@ -128,7 +138,6 @@
         }
         .combo-stall-item {
             background-color: #f3e5f5;
-            border-left: 3px solid #9C27B0;
         }
         .remove-stall {
             color: #F44336;
@@ -167,6 +176,9 @@
     <div class="container">
         <div class="header">
             <h1>Book a Stall - {{ hall.name }}</h1>
+            <div class="logo">
+                <img src="/static/ibfe_logo.png" alt="Company Logo" height="60">
+            </div>
         </div>
 
         <div class="hall-info">
@@ -177,7 +189,7 @@
         <div id="hall-view-container">
             <div class="legend">
                 <div class="legend-item">
-                    <div class="legend-color" style="background-color: #4D90C4;"></div>
+                    <div class="legend-color" style="background-color: #451a32;"></div>
                     <span>Available</span>
                 </div>
                 <div class="legend-item">
@@ -185,7 +197,7 @@
                     <span>Booked</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background-color: #1e4a6c;"></div>
+                    <div class="legend-color" style="background-color: #fcc41a;"></div>
                     <span>Selected</span>
                 </div>
             </div>
