@@ -1,0 +1,248 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Admin Bookings {% endblock %} 
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+<style>
+    .status {
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-weight: bold;
+        text-align: center;
+        display: inline-block;
+        min-width: 100px;
+    }
+    .status.booked {
+        background-color: #d1e7dd;
+        color: #0f5132;
+    }
+    .status.cancelled {
+        background-color: #f8d7da;
+        color: #842029;
+    }
+    .status.blocked {
+        background-color: #e2e3e5;
+        color: #41464b;
+    }
+    .filters {
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+    }
+    .no-results {
+        text-align: center;
+        padding: 20px;
+        font-style: italic;
+        color: #6c757d;
+    }
+    .total-amount {
+        font-weight: bold;
+        color: #198754;
+    }
+    .stall-numbers {
+        font-size: 0.85rem;
+        background-color: #e9ecef;
+        padding: 2px 6px;
+        border-radius: 4px;
+        margin-right: 4px;
+        display: inline-block;
+        margin-bottom: 3px;
+    }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center py-4">
+    <div class="d-block mb-4 mb-md-0">
+        <nav aria-label="breadcrumb" class="d-none d-md-inline-block">
+            <ol class="breadcrumb breadcrumb-dark breadcrumb-transparent">
+                <li class="breadcrumb-item">
+                    <a href="/">
+                        <svg class="icon icon-xxs" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                    </a>
+                </li>
+                <li class="breadcrumb-item"><a href="/">Admin</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Bookings</li>
+            </ol>
+        </nav>
+        <h2 class="h4">All Bookings</h2>
+        <p class="mb-0">Manage all exhibition stall bookings from this dashboard</p>
+    </div>
+</div>
+
+<!-- Filter Section -->
+<div class="card mb-4">
+    <div class="card-body filters">
+        <div class="row g-3">
+            <div class="col-md-5">
+                <label for="search-box" class="form-label">Search</label>
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <svg class="icon icon-xs" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path></svg>
+                    </span>
+                    <input type="text" class="form-control" id="search-box" placeholder="Search by name, email, company or reference">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label for="status-filter" class="form-label">Filter by Status</label>
+                <select class="form-select" id="status-filter">
+                    <option value="">All Statuses</option>
+                    <option value="booked">Booked</option>
+                    <option value="cancelled">Cancelled</option>
+                    <option value="blocked">Blocked</option>
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button class="btn btn-primary me-2" id="apply-filters">Apply Filters</button>
+                <button class="btn btn-light" id="reset-filters">Reset</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bookings Table -->
+<div class="card card-body border-0 shadow table-wrapper table-responsive">
+    <table class="table table-hover" id="bookings-table">
+        <thead>
+            <tr>
+                <th class="border-gray-200">Reference</th>
+                <th class="border-gray-200">Customer</th>
+                <th class="border-gray-200">Email</th>
+                <th class="border-gray-200">Stall Numbers</th>
+                <th class="border-gray-200">Total Amount</th>
+                <th class="border-gray-200">Booking Date</th>
+                <th class="border-gray-200">Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for booking in bookings %}
+            <tr data-id="{{ booking.id }}" data-customer="{{ booking.customer_name|lower }}" data-email="{{ booking.customer_email|lower }}" data-company="{{ booking.company_name|lower|default:'' }}" data-ref="{{ booking.booking_reference|lower }}" data-status="{{ booking.status }}">
+                <td>
+                    <span class="fw-bold">{{ booking.booking_reference }}</span>
+                </td>
+                <td>
+                    <span class="fw-normal">{{ booking.customer_name }}</span>
+                </td>
+                <td><span class="fw-normal">{{ booking.customer_email }}</span></td>
+                <td>
+                    <div>
+                    {% for stall in booking.stalls.all %}
+                        <span class="stall-numbers">{{ stall.stall_number }}</span>
+                    {% endfor %}
+                    </div>
+                </td>
+                <td>
+                    <span class="total-amount">
+                        ₹{% with total_price=0 %}
+                            {% for stall in booking.stalls.all %}
+                                {% with total_price=total_price|add:stall.price %}{% endwith %}
+                            {% endfor %}
+                            {{ total_price }}
+                        {% endwith %}
+                    </span>
+                </td>
+                <td><span class="fw-normal">{{ booking.booking_date|date:"M d, Y" }}</span></td>
+                <td>
+                    <span class="status {{ booking.status }}">{{ booking.get_status_display }}</span>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" class="no-results">No bookings found</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div class="card-footer px-3 border-0 d-flex flex-column flex-lg-row align-items-center justify-content-between">
+        <nav aria-label="Page navigation">
+            <ul class="pagination mb-0">
+                <li class="page-item {% if not bookings.has_previous %}disabled{% endif %}">
+                    <a class="page-link" href="?page={% if bookings.has_previous %}{{ bookings.previous_page_number }}{% else %}1{% endif %}">Previous</a>
+                </li>
+                {% for page_num in bookings.paginator.page_range %}
+                    {% if page_num == bookings.number %}
+                        <li class="page-item active"><a class="page-link" href="?page={{ page_num }}">{{ page_num }}</a></li>
+                    {% elif page_num > bookings.number|add:"-3" and page_num < bookings.number|add:"3" %}
+                        <li class="page-item"><a class="page-link" href="?page={{ page_num }}">{{ page_num }}</a></li>
+                    {% endif %}
+                {% endfor %}
+                <li class="page-item {% if not bookings.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="?page={% if bookings.has_next %}{{ bookings.next_page_number }}{% else %}{{ bookings.paginator.num_pages }}{% endif %}">Next</a>
+                </li>
+            </ul>
+        </nav>
+        <div class="fw-normal small mt-4 mt-lg-0">Showing <b>{{ bookings|length }}</b> out of <b>{{ bookings.paginator.count }}</b> bookings</div>
+    </div>
+</div>
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Search and filter functionality
+        const searchBox = document.getElementById('search-box');
+        const statusFilter = document.getElementById('status-filter');
+        const applyFiltersBtn = document.getElementById('apply-filters');
+        const resetFiltersBtn = document.getElementById('reset-filters');
+        
+        applyFiltersBtn.addEventListener('click', function() {
+            filterTable();
+        });
+        
+        resetFiltersBtn.addEventListener('click', function() {
+            searchBox.value = '';
+            statusFilter.value = '';
+            filterTable();
+        });
+
+        function filterTable() {
+            const searchTerm = searchBox.value.toLowerCase();
+            const statusTerm = statusFilter.value.toLowerCase();
+            const rows = document.querySelectorAll('#bookings-table tbody tr');
+            
+            let visibleCount = 0;
+            
+            rows.forEach(row => {
+                if (row.classList.contains('no-results-row')) {
+                    row.remove();
+                    return;
+                }
+                
+                const customerName = row.getAttribute('data-customer');
+                const email = row.getAttribute('data-email');
+                const company = row.getAttribute('data-company');
+                const reference = row.getAttribute('data-ref');
+                const status = row.getAttribute('data-status');
+                
+                const matchesSearch = !searchTerm || 
+                    customerName.includes(searchTerm) || 
+                    email.includes(searchTerm) || 
+                    company.includes(searchTerm) || 
+                    reference.toLowerCase().includes(searchTerm);
+                
+                const matchesStatus = !statusTerm || status === statusTerm;
+                
+                if (matchesSearch && matchesStatus) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            // Show no results message if needed
+            if (visibleCount === 0) {
+                const tbody = document.querySelector('#bookings-table tbody');
+                const noResultsRow = document.createElement('tr');
+                noResultsRow.classList.add('no-results-row');
+                noResultsRow.innerHTML = '<td colspan="7" class="no-results">No bookings match your filters</td>';
+                tbody.appendChild(noResultsRow);
+            }
+        }
+    });
+</script>
+{% endblock javascripts %}

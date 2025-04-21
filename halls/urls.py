@@ -1,7 +1,8 @@
 # halls/urls.py
-from django.urls import path
+from django.urls import path, re_path
 from django.shortcuts import redirect
 from . import views
+from django.contrib.auth.views import LogoutView
 
 # Function to redirect root URL to halls/1/book/
 def redirect_to_hall_booking(request):
@@ -10,8 +11,6 @@ def redirect_to_hall_booking(request):
 urlpatterns = [
     # Root URL now redirects to hall 1 booking page
     path('', redirect_to_hall_booking, name='root'),
-    
-    # Existing URLs (index view can remain as a separate page if needed)
     path('index/', views.index, name='index'),
     path('halls/create/', views.create_hall, name='create_hall'),
     path('halls/<int:hall_id>/', views.hall_detail, name='hall_detail'),
@@ -33,6 +32,14 @@ urlpatterns = [
 
     path('admin_halls/<int:hall_id>/manage/', views.admin_stall_management, name='admin_stall_management'),
     path('admin_stall/<int:stall_id>/update-status/', views.admin_update_stall_status, name='admin_update_stall_status'),
-    path('admin_bookings/', views.admin_bookings, name='admin_bookings'),
     path('admin_booking/<int:booking_id>/delete/', views.admin_delete_booking, name='admin_delete_booking'),
+
+    # re_path(r'^.*\.*', views.pages, name='pages'),
+
+    path('adminLogin/', views.admin_login, name='admin_login'),
+    path('logout/', views.admin_logout, name='admin_logout'),
+    path('admin_dashboard/', views.admin_dashboard, name='admin_dashboard'),
+    path('admin_booking/', views.admin_booking, name='admin_booking'),
+    # path('logout/', LogoutView.as_view(), name='logout'),
+    path('api/verify_token/', views.verify_token, name='verify_token'),
 ]

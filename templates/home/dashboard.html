@@ -1,0 +1,241 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Booking Dashboard {% endblock %} 
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+    <div class="row pt-4">
+        <div class="col-12 col-sm-6 col-xl-4 mb-4">
+            <div class="card border-0 shadow">
+                <div class="card-body">
+                    <div class="row d-block d-xl-flex align-items-center">
+                        <div class="col-12 col-xl-5 text-xl-center mb-3 mb-xl-0 d-flex align-items-center justify-content-xl-center">
+                            <div class="icon-shape icon-shape-primary rounded me-4 me-sm-0">
+                                <svg class="icon" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z"></path></svg>
+                            </div>
+                            <div class="d-sm-none">
+                                <h2 class="h5">Total Bookings</h2>
+                                <h3 class="fw-extrabold mb-1">{{ stats.total_bookings }}</h3>
+                            </div>
+                        </div>
+                        <div class="col-12 col-xl-7 px-xl-0">
+                            <div class="d-none d-sm-block">
+                                <h2 class="h6 text-gray-400 mb-0">Total Bookings</h2>
+                                <h3 class="fw-extrabold mb-2">{{ stats.total_bookings }}</h3>
+                            </div>
+                            <small class="d-flex align-items-center text-gray-500">
+                                Last 30 days
+                            </small> 
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-4 mb-4">
+            <div class="card border-0 shadow">
+                <div class="card-body">
+                    <div class="row d-block d-xl-flex align-items-center">
+                        <div class="col-12 col-xl-5 text-xl-center mb-3 mb-xl-0 d-flex align-items-center justify-content-xl-center">
+                            <div class="icon-shape icon-shape-secondary rounded me-4 me-sm-0">
+                                <svg class="icon" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd"></path></svg>
+                            </div>
+                            <div class="d-sm-none">
+                                <h2 class="fw-extrabold h5">Total Revenue</h2>
+                                <h3 class="mb-1">₹{{ stats.total_revenue }}</h3>
+                            </div>
+                        </div>
+                        <div class="col-12 col-xl-7 px-xl-0">
+                            <div class="d-none d-sm-block">
+                                <h2 class="h6 text-gray-400 mb-0">Total Revenue</h2>
+                                <h3 class="fw-extrabold mb-2">₹{{ stats.total_revenue }}</h3>
+                            </div>
+                            <small class="d-flex align-items-center text-gray-500">
+                                Last 30 days
+                            </small> 
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-4 mb-4">
+            <div class="card border-0 shadow">
+                <div class="card-body">
+                    <div class="row d-block d-xl-flex align-items-center">
+                        <div class="col-12 col-xl-5 text-xl-center mb-3 mb-xl-0 d-flex align-items-center justify-content-xl-center">
+                            <div class="icon-shape icon-shape-tertiary rounded me-4 me-sm-0">
+                                <svg class="icon" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 0l-2 2a1 1 0 101.414 1.414L8 10.414l1.293 1.293a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                            </div>
+                            <div class="d-sm-none">
+                                <h2 class="fw-extrabold h5">Available Stalls</h2>
+                                <h3 class="mb-1">{{ stats.available_stalls }}</h3>
+                            </div>
+                        </div>
+                        <div class="col-12 col-xl-7 px-xl-0">
+                            <div class="d-none d-sm-block">
+                                <h2 class="h6 text-gray-400 mb-0">Available Stalls</h2>
+                                <h3 class="fw-extrabold mb-2">{{ stats.available_stalls }}</h3>
+                            </div>
+                            <small class="text-gray-500">
+                                Total stalls: {{ stats.total_stalls }}
+                            </small> 
+                            <div class="small d-flex mt-1">                               
+                                <div>Occupancy rate: 
+                                    {% with occupancy=stats.stall_status.booked|add:stats.stall_status.blocked %}
+                                    {% widthratio occupancy stats.total_stalls 100 as occupancy_percent %}
+                                    <span class="text-info fw-bolder">{{ occupancy_percent }}%</span>
+                                    {% endwith %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Bookings -->
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card border-0 shadow">
+                <div class="card-header d-flex flex-row align-items-center flex-0 border-bottom">
+                    <div class="d-block">
+                        <h2 class="fs-3 fw-bold mb-0">Recent Bookings</h2>
+                        <p class="mb-0">Latest customer bookings</p>
+                    </div>
+                    <div class="d-flex ms-auto">
+                        <a href="{% url 'admin_booking' %}" class="btn btn-sm btn-primary">View All</a>
+                    </div>
+                </div>
+                <div class="card-body px-0 py-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-centered table-nowrap mb-0 rounded">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th class="border-0 rounded-start">Reference</th>
+                                    <th class="border-0">Customer</th>
+                                    <th class="border-0">Date</th>
+                                    <th class="border-0">Stall Number</th>
+                                    <th class="border-0">Status</th>
+                                    <th class="border-0 rounded-end">Payment</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for booking in recent_bookings %}
+                                <tr>
+                                    <td>{{ booking.reference }}</td>
+                                    <td>{{ booking.customer }}</td>
+                                    <td>{{ booking.date|date:"M d, Y" }}</td>
+                                    <td>{{ booking.stall_number }}</td>
+                                    <td>
+                                        {% if booking.status == 'booked' %}
+                                        <span class="badge bg-success">Booked</span>
+                                        {% elif booking.status == 'cancelled' %}
+                                        <span class="badge bg-danger">Cancelled</span>
+                                        {% elif booking.status == 'blocked' %}
+                                        <span class="badge bg-warning">Blocked</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if booking.payment_status %}
+                                        <span class="text-success">Paid</span>
+                                        {% else %}
+                                        <span class="text-danger">Unpaid</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center">No recent bookings found</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Stall Status Overview -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow">
+                <div class="card-header">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h2 class="fs-5 fw-bold mb-0">Stall Status Overview</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Available Status -->
+                        <div class="col-12 col-sm-3">
+                            <div class="d-flex align-items-center mb-4">
+                                <div class="icon-shape icon-sm icon-shape-success rounded me-3">
+                                    <svg fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="fw-bold mb-0">{{ stats.stall_status.available }}</h3>
+                                    <p class="text-gray-500 mb-0">Available</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Booked Status -->
+                        <div class="col-12 col-sm-3">
+                            <div class="d-flex align-items-center mb-4">
+                                <div class="icon-shape icon-sm icon-shape-danger rounded me-3">
+                                    <svg fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="fw-bold mb-0">{{ stats.stall_status.booked }}</h3>
+                                    <p class="text-gray-500 mb-0">Booked</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Blocked Status -->
+                        <div class="col-12 col-sm-3">
+                            <div class="d-flex align-items-center mb-4">
+                                <div class="icon-shape icon-sm icon-shape-warning rounded me-3">
+                                    <svg fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="fw-bold mb-0">{{ stats.stall_status.blocked }}</h3>
+                                    <p class="text-gray-500 mb-0">Blocked</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Total Stalls -->
+                        <div class="col-12 col-sm-3">
+                            <div class="d-flex align-items-center mb-4">
+                                <div class="icon-shape icon-sm icon-shape-info rounded me-3">
+                                    <svg fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="fw-bold mb-0">{{ stats.total_stalls }}</h3>
+                                    <p class="text-gray-500 mb-0">Total Stalls</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}{% endblock javascripts %}

@@ -76,7 +76,7 @@
             background-color: #451a32;
             border: 1px solid #FFFFFF;
         }
-        .stall.booked {
+        .stall.booked, .stall.blocked {
             background-color: #868585;
             border: 1px solid #FFFFFF;
             cursor: not-allowed;
@@ -194,7 +194,7 @@
                 </div>
                 <div class="legend-item">
                     <div class="legend-color" style="background-color: #868585;"></div>
-                    <span>Booked</span>
+                    <span>Booked/Blocked</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color" style="background-color: #fcc41a;"></div>
@@ -343,7 +343,10 @@
 
                         // Create a single stall element
                         const stallElement = document.createElement('div');
-                        stallElement.className = `stall ${stall.status}`;
+                        
+                        // Handle blocked stalls as booked stalls for display purposes
+                        const displayStatus = stall.status === 'blocked' ? 'booked' : stall.status;
+                        stallElement.className = `stall ${displayStatus}`;
                         stallElement.setAttribute('data-stall-id', stall.id);
                         stallElement.setAttribute('data-stall-number', stall.stall_number);
                         stallElement.setAttribute('data-stall-status', stall.status);
@@ -375,7 +378,7 @@
                         stallLabel.style.fontSize = `${Math.max(14, scale / 3)}px`;
                         stallLabel.style.textAlign = 'center';
 
-                        // Add click event for available stalls
+                        // Add click event for available stalls only
                         if(stall.status === 'available') {
                             stallElement.addEventListener('click', function() {
                                 const stallId = this.getAttribute('data-stall-id');

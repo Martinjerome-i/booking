@@ -20,6 +20,7 @@ class Stall(models.Model):
     STATUS_CHOICES = [
         ('available', 'Available'),
         ('booked', 'Booked'),
+        ('blocked', 'Blocked'), 
     ]
 
     hall = models.ForeignKey(Hall, on_delete=models.CASCADE, related_name='stalls')
@@ -58,22 +59,24 @@ class Booking(models.Model):
     booking_reference = models.CharField(max_length=20, unique=True)
     
     def save(self, *args, **kwargs):
-        # Generate booking reference if not provided
+    # Generate booking reference if not provided
         if not self.booking_reference:
             # Use timestamp to create unique reference
             import random
             import string
             timestamp = timezone.now().strftime('%Y%m%d%H%M')
             random_string = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
-            self.booking_reference = f"BK-{timestamp}-{random_string}"
+            self.booking_reference = f"IBFE-{timestamp}-{random_string}"
         
         super().save(*args, **kwargs)
         
-        # Update stall status immediately
+        # Update stall status immediately based on booking status
         if self.status == 'booked':
             self.stalls.all().update(status='booked')
         elif self.status == 'cancelled':
             self.stalls.all().update(status='available')
+        elif self.status == 'blocked':
+            self.stalls.all().update(status='blocked')
     
     def __str__(self):
         return f"Booking {self.booking_reference} - {self.customer_name}"

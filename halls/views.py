@@ -1,13 +1,266 @@
+import jwt
+import datetime
+from functools import wraps
+from django import template
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
+from django.contrib.auth import authenticate, login, logout
+from django.core.paginator import Paginator
+from django.template import loader
+from django.urls import reverse
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.core.mail import send_mail
 from django.conf import settings
 from django.utils import timezone
 from .models import Hall, Stall, Booking, ComboStall
+from django.views.decorators.http import require_POST
 from .forms import BookingForm
 import json
 import uuid
+from django.views.decorators.csrf import csrf_exempt
+from functools import wraps
+from django.contrib.auth.models import User
+
+
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        request = args[0]
+        token = request.COOKIES.get('jwt_token')
+        
+        if not token:
+            return redirect('admin_login')
+            
+        try:
+            # Decode token
+            data = jwt.decode(token, settings.JWT_SECRET, algorithms=["HS256"])
+        except:
+            return redirect('admin_login')
+            
+        return f(*args, **kwargs)
+    return decorated
+
+# Admin Login View
+def admin_login(request):
+    error_message = None
+    
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        
+        print(f"Login attempt with email: {email}")
+        
+        # First try to find user by email
+        from django.contrib.auth.models import User
+        try:
+            # Check if a user with this email exists
+            users = User.objects.filter(email=email)
+            if users.exists():
+                user_obj = users.first()
+                print(f"Found user by email: {user_obj.username}, is_staff={user_obj.is_staff}, is_superuser={user_obj.is_superuser}")
+                
+                # Try authenticating with the found username
+                user = authenticate(username=user_obj.username, password=password)
+            else:
+                print(f"No user found with email: {email}")
+                # Try authenticating directly with email as username
+                user = authenticate(username=email, password=password)
+        except Exception as e:
+            print(f"Error finding user: {e}")
+            user = authenticate(username=email, password=password)
+            
+        print(f"Authentication result: {user}")
+        
+        if user is not None and user.is_staff:
+            # Generate JWT token
+            token_payload = {
+                'user_id': user.id,
+                'username': user.username,
+                'exp': datetime.datetime.utcnow() + settings.JWT_EXPIRATION_DELTA
+            }
+            
+            try:
+                token = jwt.encode(token_payload, settings.JWT_SECRET, algorithm="HS256")
+                print("JWT token generation successful")
+            except Exception as e:
+                print(f"JWT token generation error: {e}")
+                error_message = "Error generating authentication token"
+                return render(request, 'home/login.html', {'error_message': error_message})
+            
+            # Login user in Django session
+            login(request, user)
+            
+            # Create response with redirect
+            response = redirect('admin_dashboard')
+            
+            # Set JWT token in cookie
+            response.set_cookie('jwt_token', token, httponly=True)
+            
+            return response
+        else:
+            if user is not None:
+                error_message = f"User found but is not staff (is_staff={user.is_staff})"
+            else:
+                error_message = "Invalid credentials or not authorized as admin"
+    
+    return render(request, 'home/login.html', {'error_message': error_message})
+
+# Admin Logout View
+def admin_logout(request):
+    logout(request)
+    response = redirect('admin_login')
+    response.delete_cookie('jwt_token')
+    return response
+
+# Verify Token API endpoint
+@csrf_exempt
+def verify_token(request):
+    token = request.COOKIES.get('jwt_token')
+    
+    if not token:
+        return JsonResponse({'valid': False}, status=401)
+        
+    try:
+        # Decode token
+        data = jwt.decode(token, settings.JWT_SECRET, algorithms=["HS256"])
+        return JsonResponse({'valid': True, 'user': data['username']})
+    except:
+        return JsonResponse({'valid': False}, status=401)
+
+
+# @login_required(login_url="/login/")
+def pages(request):
+    context = {}
+    # All resource paths end in .html.
+    # Pick out the html file name from the url. And load that template.
+    try:
+
+        load_template = request.path.split('/')[-1]
+
+        if load_template == 'admin':
+            return HttpResponseRedirect(reverse('admin:index'))
+        context['segment'] = load_template
+
+        html_template = loader.get_template('home/' + load_template)
+        return HttpResponse(html_template.render(context, request))
+
+    except template.TemplateDoesNotExist:
+
+        html_template = loader.get_template('home/page-404.html')
+        return HttpResponse(html_template.render(context, request))
+
+    except:
+        html_template = loader.get_template('home/page-500.html')
+        return HttpResponse(html_template.render(context, request))
+
+
+def admin_dashboard(request):
+    # Get counts for various statistics
+    from django.db.models import Sum, Count
+    from datetime import timedelta
+    from django.utils import timezone
+    
+    # Date range for "recent" stats (30 days)
+    thirty_days_ago = timezone.now() - timedelta(days=30)
+    sixty_days_ago = timezone.now() - timedelta(days=60)
+    
+    # Get all bookings in last 30 days
+    recent_bookings = Booking.objects.filter(booking_date__gte=thirty_days_ago)
+    
+    # Get bookings from previous 30 days for trend comparison
+    previous_bookings = Booking.objects.filter(
+        booking_date__gte=sixty_days_ago,
+        booking_date__lt=thirty_days_ago
+    )
+    
+    # Get counts
+    total_bookings_count = recent_bookings.count()
+    previous_bookings_count = previous_bookings.count()
+    
+    # Calculate booking trend (percentage increase/decrease)
+    booking_trend = 0
+    if previous_bookings_count > 0:
+        booking_trend = ((total_bookings_count - previous_bookings_count) / previous_bookings_count) * 100
+    
+    # Get stall counts by status
+    stall_status_counts = {
+        'available': Stall.objects.filter(status='available').count(),
+        'booked': Stall.objects.filter(status='booked').count(),
+        'blocked': Stall.objects.filter(status='blocked').count()
+    }
+    total_stalls = sum(stall_status_counts.values())
+    
+    # Calculate total revenue from recent bookings
+    # First, get all stalls associated with recent bookings
+    booked_stalls = Stall.objects.filter(bookings__in=recent_bookings)
+    total_revenue = sum(stall.price for stall in booked_stalls)
+    
+    # Get previous period revenue for trend calculation
+    previous_booked_stalls = Stall.objects.filter(bookings__in=previous_bookings)
+    previous_revenue = sum(stall.price for stall in previous_booked_stalls)
+    
+    # Calculate revenue trend
+    revenue_trend = 0
+    if previous_revenue > 0:
+        revenue_trend = ((total_revenue - previous_revenue) / previous_revenue) * 100
+    
+    # Get latest 5 bookings for the recent bookings table
+    latest_bookings = Booking.objects.all().order_by('-booking_date')[:5]
+    
+    # Prepare booking data for the template
+    booking_data = []
+    for booking in latest_bookings:
+        booking_data.append({
+            'id': booking.id,
+            'reference': booking.booking_reference,
+            'customer': booking.customer_name,
+            'date': booking.booking_date,
+            'stall_count': booking.stalls.count(),
+            'status': booking.status,
+            'payment_status': booking.payment_status
+        })
+    
+    # Monthly revenue data (for the chart)
+    # This assumes you want data for the current year
+    current_year = timezone.now().year
+    monthly_revenue = []
+    
+    for month in range(1, 13):
+        # Get bookings for this month
+        month_bookings = Booking.objects.filter(
+            booking_date__year=current_year,
+            booking_date__month=month
+        )
+        # Get stalls booked in this month
+        month_stalls = Stall.objects.filter(bookings__in=month_bookings)
+        # Calculate total revenue
+        month_revenue = sum(stall.price for stall in month_stalls)
+        
+        # Get month name
+        import calendar
+        month_name = calendar.month_abbr[month]
+        
+        monthly_revenue.append({
+            'month': month_name,
+            'revenue': float(month_revenue)
+        })
+    
+    context = {
+        'stats': {
+            'total_bookings': total_bookings_count,
+            'booking_trend': round(booking_trend),
+            'total_revenue': float(total_revenue),
+            'revenue_trend': round(revenue_trend),
+            'available_stalls': stall_status_counts['available'],
+            'total_stalls': total_stalls,
+            'stall_status': stall_status_counts,
+        },
+        'recent_bookings': booking_data,
+        'monthly_revenue': monthly_revenue
+    }
+    
+    return render(request, 'home/dashboard.html', context)
 
 
 def index(request):
@@ -415,7 +668,8 @@ def admin_stall_management(request, hall_id):
     """
     hall = get_object_or_404(Hall, id=hall_id)
     stalls = hall.stalls.all()
-    return render(request, 'halls/admin_stall_management.html', {'hall': hall, 'stalls': stalls})
+    return render(request, 'home/manage_booking.html', {'hall': hall, 'stalls': stalls})
+
 
 @require_POST
 def admin_update_stall_status(request, stall_id):
@@ -433,7 +687,7 @@ def admin_update_stall_status(request, stall_id):
     if status not in [s[0] for s in Stall.STATUS_CHOICES]:
         return JsonResponse({'success': False, 'error': 'Invalid status'})
     
-    # Update stall status
+    # Set this first to ensure the stall status is updated
     stall.status = status
     stall.save()
     
@@ -449,7 +703,30 @@ def admin_update_stall_status(request, stall_id):
         )
         booking.stalls.add(stall)
     
-    # No booking record is created for blocked stalls
+    # If blocking the stall, create a 'blocked' booking record
+    elif status == 'blocked':
+        booking = Booking.objects.create(
+            customer_name="Admin Blocked",
+            customer_email="admin@example.com",
+            customer_phone="N/A",
+            notes=notes or f"Blocked by admin on {timezone.now().strftime('%Y-%m-%d %H:%M')}",
+            status='blocked'
+        )
+        booking.stalls.add(stall)
+    
+    # If unblocking (setting to available), find and update related bookings
+    elif status == 'available':
+        # Find any bookings that include this stall and mark them as cancelled
+        affected_bookings = stall.bookings.filter(status__in=['blocked', 'booked'])
+        
+        for booking in affected_bookings:
+            if booking.stalls.count() == 1:  # If this is the only stall in the booking
+                booking.status = 'cancelled'
+                booking.save()
+                print(f"DEBUG: Cancelled booking {booking.booking_reference}")
+            else:
+                # If there are other stalls in this booking, just remove this stall
+                booking.stalls.remove(stall)
     
     return JsonResponse({
         'success': True, 
@@ -457,12 +734,12 @@ def admin_update_stall_status(request, stall_id):
         'status_display': dict(Stall.STATUS_CHOICES).get(status, status)
     })
 
-def admin_bookings(request):
-    """
-    View for admin to see all bookings
-    """
-    bookings = Booking.objects.all().order_by('-booking_date')
-    return render(request, 'halls/admin_bookings.html', {'bookings': bookings})
+def admin_booking(request):
+    bookings_list = Booking.objects.all().order_by('-booking_date')
+    paginator = Paginator(bookings_list, 10)  
+    page = request.GET.get('page', 1)
+    bookings = paginator.get_page(page)
+    return render(request, 'home/transactions.html', {'bookings': bookings})
 
 @require_POST
 def admin_delete_booking(request, booking_id):
