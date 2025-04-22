@@ -205,24 +205,58 @@ def admin_dashboard(request):
     if previous_revenue > 0:
         revenue_trend = ((total_revenue - previous_revenue) / previous_revenue) * 100
     
-    # Get latest 5 bookings for the recent bookings table
+    # Get latest 5 bookings for the recent bookings table and notifications
     latest_bookings = Booking.objects.all().order_by('-booking_date')[:5]
+    
+    # Check if there are new bookings (less than 24 hours old)
+    one_day_ago = timezone.now() - timedelta(hours=24)
+    has_new_notifications = Booking.objects.filter(booking_date__gte=one_day_ago).exists()
     
     # Prepare booking data for the template
     booking_data = []
+    notification_data = []
+    
     for booking in latest_bookings:
+        # Get all stall numbers for this booking
+        stall_numbers = [stall.stall_number for stall in booking.stalls.all()]
+        stall_numbers_str = ", ".join(stall_numbers)
+        
+        # Calculate time difference for notifications
+        time_diff = timezone.now() - booking.booking_date
+        hours_ago = time_diff.total_seconds() // 3600
+        
+        if hours_ago < 1:
+            time_display = "a few moments ago"
+        elif hours_ago < 24:
+            time_display = f"{int(hours_ago)} hrs ago"
+        else:
+            days = time_diff.days
+            time_display = f"{days} d ago"
+        
+        # Check if this is a new notification (less than 24 hours)
+        is_new = booking.booking_date >= one_day_ago
+        
         booking_data.append({
             'id': booking.id,
             'reference': booking.booking_reference,
             'customer': booking.customer_name,
             'date': booking.booking_date,
             'stall_count': booking.stalls.count(),
+            'stall_numbers': stall_numbers,
             'status': booking.status,
             'payment_status': booking.payment_status
         })
+        
+        # Add notification data
+        notification_data.append({
+            'id': booking.id,
+            'customer_name': booking.customer_name,
+            'time_display': time_display,
+            'message': f"Booked stall(s): {stall_numbers_str}",
+            'is_new': is_new
+        })
     
     # Monthly revenue data (for the chart)
-    # This assumes you want data for the current year
     current_year = timezone.now().year
     monthly_revenue = []
     
@@ -257,6 +291,8 @@ def admin_dashboard(request):
             'stall_status': stall_status_counts,
         },
         'recent_bookings': booking_data,
+        'notifications': notification_data,
+        'has_new_notifications': has_new_notifications,
         'monthly_revenue': monthly_revenue
     }
     

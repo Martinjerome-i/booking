@@ -3,7 +3,19 @@
 {% block title %} Booking Dashboard {% endblock %} 
 
 <!-- Specific Page CSS goes HERE  -->
-{% block stylesheets %}{% endblock stylesheets %}
+{% block stylesheets %}
+<style>    
+    .stall-numbers {
+        font-size: 0.85rem;
+        background-color: #e9ecef;
+        padding: 1px 6px;
+        border-radius: 4px;
+        margin-right: 4px;
+        display: inline-block;
+        margin-bottom: 3px;
+    }
+</style>
+{% endblock stylesheets %}
 
 {% block content %}
     <div class="row pt-4">
@@ -127,7 +139,11 @@
                                     <td>{{ booking.reference }}</td>
                                     <td>{{ booking.customer }}</td>
                                     <td>{{ booking.date|date:"M d, Y" }}</td>
-                                    <td>{{ booking.stall_number }}</td>
+                                    <td>
+                                        {% for stall_number in booking.stall_numbers %}
+                                            <span class="stall-numbers">{{ stall_number }}</span>
+                                        {% endfor %}
+                                    </td>
                                     <td>
                                         {% if booking.status == 'booked' %}
                                         <span class="badge bg-success">Booked</span>
