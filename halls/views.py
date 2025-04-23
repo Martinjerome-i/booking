@@ -13,6 +13,7 @@ from django.views.decorators.http import require_POST
 from django.core.mail import send_mail
 from django.conf import settings
 from django.utils import timezone
+from datetime import timedelta
 from .models import Hall, Stall, Booking, ComboStall
 from django.views.decorators.http import require_POST
 from .forms import BookingForm
@@ -297,6 +298,58 @@ def admin_dashboard(request):
     }
     
     return render(request, 'home/dashboard.html', context)
+
+
+def get_notifications(request):
+    """Separate view for handling booking notifications"""
+    # Get latest 5 bookings for the notifications
+    latest_bookings = Booking.objects.all().order_by('-booking_date')[:5]
+    
+    booking_notifications = []
+    for booking in latest_bookings:
+        # Get all stall numbers for this booking as a comma-separated string
+        stall_numbers = ", ".join([stall.stall_number for stall in booking.stalls.all()])
+        
+        # Calculate time difference for display
+        time_diff = timezone.now() - booking.booking_date
+        if time_diff.days > 0:
+            time_display = f"{time_diff.days} days ago"
+        elif time_diff.seconds >= 3600:
+            hours = time_diff.seconds // 3600
+            time_display = f"{hours} hrs ago"
+        else:
+            minutes = time_diff.seconds // 60
+            time_display = "a few moments ago" if minutes < 5 else f"{minutes} mins ago"
+        
+        # Check if this is a new notification (less than 24 hours)
+        one_day_ago = timezone.now() - timedelta(hours=24)
+        is_new = booking.booking_date >= one_day_ago
+        
+        booking_notifications.append({
+            'id': booking.id,
+            'customer_name': booking.customer_name,
+            'stall_numbers': stall_numbers,
+            'time_display': time_display,
+            'booking_date': booking.booking_date,
+            'status': booking.status,
+            'is_new': is_new
+        })
+    
+    # Check if there are new bookings (less than 24 hours old)
+    has_new_notifications = any(notification['is_new'] for notification in booking_notifications)
+    
+    # If it's an AJAX request, return JSON
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({
+            'booking_notifications': booking_notifications,
+            'has_new_notifications': has_new_notifications
+        })
+    
+    # Otherwise render a template
+    return render(request, 'home/notifications.html', {
+        'booking_notifications': booking_notifications,
+        'has_new_notifications': has_new_notifications
+    })
 
 
 def index(request):

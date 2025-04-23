@@ -40,6 +40,7 @@ urlpatterns = [
     path('logout/', views.admin_logout, name='admin_logout'),
     path('admin_dashboard/', views.admin_dashboard, name='admin_dashboard'),
     path('admin_booking/', views.admin_booking, name='admin_booking'),
+    path('notifications/', views.get_notifications, name='get_notifications'),
     # path('logout/', LogoutView.as_view(), name='logout'),
     path('api/verify_token/', views.verify_token, name='verify_token'),
 ]
