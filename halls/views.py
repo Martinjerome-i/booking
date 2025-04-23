@@ -553,6 +553,9 @@ def book_stall(request):
     """
     View for booking multiple stalls at once with discount application
     """
+    from django.shortcuts import render, redirect, get_object_or_404
+    from .forms import BookingForm  # Make sure to import the form
+    
     stall_ids = request.GET.get('stall_ids', '').split(',')
     stall_ids = [id for id in stall_ids if id]  # Filter out empty strings
     
@@ -605,26 +608,27 @@ def book_stall(request):
     regular_stall_count = len(regular_stalls)
     regular_stall_base_price = sum(stall.price for stall in regular_stalls)
     
-    # Apply discount to regular stalls - using updated discount logic
+    # Apply the updated discount logic
     if regular_stall_count == 1:
         discount_amount = 0
         discounted_regular_price = regular_stall_base_price
     elif regular_stall_count == 2:
-        discount_amount = 5000
+        discount_amount = decimal.Decimal('5000')
         discounted_regular_price = regular_stall_base_price - discount_amount
     else:  # 3 or more stalls
-        discount_amount = 5000 * regular_stall_count
+        discount_amount = decimal.Decimal('5000') * regular_stall_count
         discounted_regular_price = regular_stall_base_price - discount_amount
     
-    # Combo stalls don't get discounts
-    combo_stall_price = sum(stall.price for stall in combo_stalls)
+    # Calculate combo stalls price - fixed at ₹130,000 per combo stall
+    combo_stall_count = len(combo_stalls)
+    combo_stall_price = decimal.Decimal('130000.00') * combo_stall_count
     
     # Total price
     total_price = discounted_regular_price + combo_stall_price
     
     # Calculate discount percentage for display purposes
     discount_percentage = 0
-    if regular_stall_count > 0 and discount_amount > 0:
+    if regular_stall_base_price > 0 and discount_amount > 0:
         discount_percentage = (discount_amount / regular_stall_base_price) * 100
     
     return render(request, 'halls/book_stall.html', {
@@ -637,11 +641,18 @@ def book_stall(request):
         'discounted_regular_price': discounted_regular_price,
         'combo_stall_price': combo_stall_price,
         'discount_amount': discount_amount,
-        'discount_percentage': discount_percentage
+        'discount_percentage': discount_percentage,
+        'regular_stalls': regular_stalls,
+        'combo_stalls': combo_stalls
     })
 
-# Also update the booking_confirmation view to show the discount
+
 def booking_confirmation(request, booking_id):
+    """
+    View for booking confirmation with updated discount calculations
+    """
+    from django.shortcuts import render, get_object_or_404
+    
     booking = get_object_or_404(Booking, id=booking_id)
     
     # Get all stalls in the booking
@@ -662,8 +673,16 @@ def booking_confirmation(request, booking_id):
     regular_stall_count = len(regular_stalls)
     regular_stall_base_price = sum(stall.price for stall in regular_stalls)
     
-    # Apply discount to regular stalls
-    discounted_regular_price = calculate_discounted_price(regular_stall_count, regular_stall_base_price)
+    # Apply the updated discount logic
+    if regular_stall_count == 1:
+        discount_amount = 0
+        discounted_regular_price = regular_stall_base_price
+    elif regular_stall_count == 2:
+        discount_amount = decimal.Decimal('5000')
+        discounted_regular_price = regular_stall_base_price - discount_amount
+    else:  # 3 or more stalls
+        discount_amount = decimal.Decimal('5000') * regular_stall_count
+        discounted_regular_price = regular_stall_base_price - discount_amount
     
     # Combo stalls don't get discounts
     combo_stall_price = sum(stall.price for stall in combo_stalls)
@@ -671,13 +690,10 @@ def booking_confirmation(request, booking_id):
     # Total price is the sum of discounted regular stalls and combo stalls
     total_price = discounted_regular_price + combo_stall_price
     
-    # Include discount information in the context
-    discount_amount = regular_stall_base_price - discounted_regular_price
+    # Calculate discount percentage for display purposes
     discount_percentage = 0
-    if regular_stall_count == 2:
-        discount_percentage = 4.45
-    elif regular_stall_count >= 3:
-        discount_percentage = 9.10
+    if regular_stall_base_price > 0 and discount_amount > 0:
+        discount_percentage = (discount_amount / regular_stall_base_price) * 100
     
     # Get the hall ID if there are stalls
     hall_id = stalls.first().hall.id if stalls.exists() else 1

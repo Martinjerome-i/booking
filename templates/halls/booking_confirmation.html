@@ -152,7 +152,7 @@
             <div class="stall-list">
                 {% for stall in regular_stalls %}
                 <div class="stall-item">
-                    <p><strong>Stall #{{ stall.stall_number }}</strong> | Size: {{ stall.width }}m x {{ stall.height }}m ({{ stall.area }}m²) | Price: ₹{{ stall.price|floatformat:2 }}</p>
+                    <p><strong>Stall #{{ stall.stall_number }}</strong> | Size: {{ stall.width }}m x {{ stall.height }}m ({{ stall.area }}m²) | Base Price: ₹{{ stall.price|floatformat:2 }}</p>
                 </div>
                 {% endfor %}
             </div>
@@ -171,17 +171,59 @@
             {% endif %}
             
             <!-- Show discount information if applicable -->
-            {% if discount_percentage > 0 %}
+            {% if discount_amount > 0 %}
             <div class="discount-info">
-                <h3>Special Discount Applied! <span class="discount-badge">{{ discount_percentage }}% OFF</span></h3>
-                <p>You've booked {{ regular_stall_count }} regular stalls which qualified for a {{ discount_percentage }}% discount.</p>
+                <h3>Special Discount Applied! <span class="discount-badge">Save ₹{{ discount_amount|floatformat:0 }}</span></h3>
+                {% if regular_stall_count == 2 %}
+                    <p>You've booked 2 regular stalls which qualifies for a flat ₹5,000 discount.</p>
+                {% elif regular_stall_count > 2 %}
+                    <p>You've booked {{ regular_stall_count }} regular stalls which qualifies for a discount of ₹5,000 per stall (₹{{ discount_amount|floatformat:0 }} total).</p>
+                {% endif %}
                 <p>Regular Price: ₹{{ regular_stall_base_price|floatformat:2 }}</p>
                 <p>After Discount: ₹{{ discounted_regular_price|floatformat:2 }}</p>
-                <p>You Saved: ₹{{ discount_amount|floatformat:2 }}</p>
+                <p>You Save: ₹{{ discount_amount|floatformat:2 }}</p>
+                <p><small>Note: Discounts apply only to regular stalls, not to combo stalls.</small></p>
             </div>
             {% endif %}
             
-            <div class="price">Total Price: ₹{{ total_price|floatformat:2 }}</div>
+            <div class="price-summary">
+                <h3>Price Summary</h3>
+                {% if regular_stall_count > 0 %}
+                <p>Regular Stalls: {{ regular_stall_count }} 
+                {% if discount_amount > 0 %}
+                    (₹{{ regular_stall_base_price|floatformat:2 }} - ₹{{ discount_amount|floatformat:2 }} discount = ₹{{ discounted_regular_price|floatformat:2 }})
+                {% else %}
+                    (₹{{ regular_stall_base_price|floatformat:2 }})
+                {% endif %}
+                </p>
+                {% endif %}
+                
+                {% if combo_stalls %}
+                <p>Combo Stalls: {{ combo_stalls|length }} (₹{{ combo_stall_price|floatformat:2 }})</p>
+                {% endif %}
+                
+                <p class="price">Total Price: ₹{{ total_price|floatformat:2 }}</p>
+            </div>
+            
+            <div class="payment-info">
+                <h3>Payment Information</h3>
+                <p>Please complete your payment to finalize your booking. Our team will contact you shortly with payment instructions.</p>
+                <p><strong>Payment Status:</strong> {% if booking.payment_status %}Paid{% else %}Pending{% endif %}</p>
+            </div>
+        </div>
+        
+        <div class="next-steps">
+            <h2>Next Steps</h2>
+            <ul>
+                <li>Please complete the payment as per the instructions sent to your email.</li>
+                <li>Once payment is confirmed, you will receive a payment receipt.</li>
+                <li>For any queries, please contact our support team at support@ibfexpo.com or call +91-XXXXXXXXXX.</li>
+                <li>Visit our website for more information about the expo and schedule.</li>
+            </ul>
+        </div>
+        
+        <div style="margin-top: 30px; text-align: center;">
+            <p>Thank you for booking with IBF Expo. We look forward to seeing you at the event.</p>
         </div>
     </div>
 </body>
