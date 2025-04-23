@@ -222,7 +222,7 @@
                 <div id="selected-stalls-list" class="selected-stalls-list">
                     <!-- Selected stalls will be listed here -->
                 </div>
-                <div id="total-price" class="selection-info" style="margin-top: 15px;">Total: $0.00</div>
+                <div id="total-price" class="selection-info" style="margin-top: 15px;">Total: ₹0</div>
                 <button id="book-now-btn" class="btn" style="margin-top: 15px;" disabled>Book Selected Stalls</button>
             </div>
         </div>
@@ -489,159 +489,202 @@
 
             // Function to update the selected stalls UI
             function updateSelectedStallsUI() {
-                // Clear the list
-                selectedStallsList.innerHTML = '';
+    // Clear the list
+    selectedStallsList.innerHTML = '';
+    
+    // Update counter
+    selectedStallsCount.textContent = `${selectedStalls.length} stalls selected`;
+    
+    if (selectedStalls.length === 0) {
+        stallInfo.style.display = 'none';
+        bookNowBtn.disabled = true;
+        return;
+    }
+    
+    // Show the stall info section
+    stallInfo.style.display = 'block';
+    bookNowBtn.disabled = false;
+    
+    // Group selected stalls by combo
+    const comboGroups = {};
+    const singleStalls = [];
+    
+    selectedStalls.forEach(stallId => {
+        const stall = stallData[stallId];
+        if (!stall) return;
+        
+        // Check if this stall is part of a combo where all other stalls are also selected
+        let partOfSelectedCombo = false;
+        
+        if (stallToComboMap[stallId]) {
+            for (const comboId of stallToComboMap[stallId]) {
+                const combo = comboData[comboId];
+                if (!combo) continue;
                 
-                // Update counter
-                selectedStallsCount.textContent = `${selectedStalls.length} stalls selected`;
+                // Check if all stalls in this combo are selected
+                const allSelected = combo.stall_ids.every(id => 
+                    selectedStalls.includes(id.toString())
+                );
                 
-                if (selectedStalls.length === 0) {
-                    stallInfo.style.display = 'none';
-                    bookNowBtn.disabled = true;
-                    return;
+                if (allSelected) {
+                    // Add to combo group
+                    if (!comboGroups[comboId]) {
+                        comboGroups[comboId] = {
+                            combo: combo,
+                            stalls: []
+                        };
+                    }
+                    comboGroups[comboId].stalls.push(stall);
+                    partOfSelectedCombo = true;
+                    break;
                 }
-                
-                // Show the stall info section
-                stallInfo.style.display = 'block';
-                bookNowBtn.disabled = false;
-                
-                // Calculate total price
-                let totalPrice = 0;
-                
-                // Group selected stalls by combo
-                const comboGroups = {};
-                const singleStalls = [];
-                
-                selectedStalls.forEach(stallId => {
-                    const stall = stallData[stallId];
-                    if (!stall) return;
-                    
-                    // Check if this stall is part of a combo where all other stalls are also selected
-                    let partOfSelectedCombo = false;
-                    
-                    if (stallToComboMap[stallId]) {
-                        for (const comboId of stallToComboMap[stallId]) {
-                            const combo = comboData[comboId];
-                            if (!combo) continue;
-                            
-                            // Check if all stalls in this combo are selected
-                            const allSelected = combo.stall_ids.every(id => 
-                                selectedStalls.includes(id.toString())
-                            );
-                            
-                            if (allSelected) {
-                                // Add to combo group
-                                if (!comboGroups[comboId]) {
-                                    comboGroups[comboId] = {
-                                        combo: combo,
-                                        stalls: []
-                                    };
-                                }
-                                comboGroups[comboId].stalls.push(stall);
-                                partOfSelectedCombo = true;
-                                break;
-                            }
-                        }
-                    }
-                    
-                    if (!partOfSelectedCombo) {
-                        // Add to single stalls
-                        singleStalls.push(stall);
-                        totalPrice += stall.price;
-                    }
-                });
-                
-                // Add combo groups to the list
-                for (const comboId in comboGroups) {
-                    const { combo, stalls } = comboGroups[comboId];
-                    
-                    // Use combo price if available, otherwise sum individual stall prices
-                    const comboPrice = combo.price;
-                    totalPrice += comboPrice;
-                    
-                    const comboItem = document.createElement('div');
-                    comboItem.className = 'selected-stall-item combo-stall-item';
-                    comboItem.style.width = "100%";
-                    comboItem.innerHTML = `
-                        <div style="flex: 1;">
-                            <strong>${combo.name}</strong> - Combo Pack ($${comboPrice.toFixed(2)})
-                            <div style="font-size: 0.85em; margin-top: 3px;">
-                                Includes: ${stalls.map(s => s.stall_number).join(', ')}
-                            </div>
-                        </div>
-                        <span class="remove-stall" data-combo-id="${comboId}">×</span>
-                    `;
-                    
-                    selectedStallsList.appendChild(comboItem);
-                    
-                    // Add remove button click event
-                    const removeBtn = comboItem.querySelector('.remove-stall');
-                    removeBtn.addEventListener('click', function(e) {
-                        e.stopPropagation();
-                        const comboIdToRemove = this.getAttribute('data-combo-id');
-                        const combo = comboData[comboIdToRemove];
-                        
-                        if (combo) {
-                            // Remove all stalls in this combo
-                            combo.stall_ids.forEach(stallId => {
-                                // Remove selection highlight
-                                const stallElement = document.querySelector(`.stall[data-stall-id="${stallId}"]`);
-                                if (stallElement) {
-                                    stallElement.classList.remove('selected');
-                                }
-                                
-                                // Remove from selected array
-                                selectedStalls = selectedStalls.filter(id => id !== stallId.toString());
-                            });
-                        }
-                        
-                        // Update UI
-                        updateSelectedStallsUI();
-                    });
-                }
-                
-                // Add single stalls to the list
-                singleStalls.forEach(stall => {
-                    const stallItem = document.createElement('div');
-                    stallItem.className = 'selected-stall-item';
-                    stallItem.innerHTML = `
-                        Stall #${stall.stall_number} (₹${stall.price.toFixed(2)})
-                        <span class="remove-stall" data-stall-id="${stall.id}">×</span>
-                    `;
-                    
-                    selectedStallsList.appendChild(stallItem);
-                    
-                    // Add remove button click event
-                    const removeBtn = stallItem.querySelector('.remove-stall');
-                    removeBtn.addEventListener('click', function(e) {
-                        e.stopPropagation();
-                        const stallIdToRemove = this.getAttribute('data-stall-id');
-                        
-                        // Remove selection highlight
-                        const stallElement = document.querySelector(`.stall[data-stall-id="${stallIdToRemove}"]`);
-                        if (stallElement) {
-                            stallElement.classList.remove('selected');
-                        }
-                        
-                        // Remove from selected array
-                        selectedStalls = selectedStalls.filter(id => id !== stallIdToRemove);
-                        
-                        // Update UI
-                        updateSelectedStallsUI();
-                    });
-                });
-                
-                // Update total price
-                totalPriceElement.textContent = `Total: ₹${totalPrice.toFixed(2)}`;
-                
-                // Set up the book now button
-                bookNowBtn.onclick = function() {
-                    if (selectedStalls.length > 0) {
-                        // Redirect to booking form with selected stall IDs
-                        window.location.href = `/stalls/book/?stall_ids=${selectedStalls.join(',')}`;
-                    }
-                };
             }
+        }
+        
+        if (!partOfSelectedCombo) {
+            // Add to single stalls
+            singleStalls.push(stall);
+        }
+    });
+    
+    // Regular stall count for discount calculation
+    const regularStallCount = singleStalls.length;
+    
+    // Calculate base price for regular stalls
+    let regularStallBasePrice = 0;
+    singleStalls.forEach(stall => {
+        regularStallBasePrice += parseFloat(stall.price);
+    });
+    
+    // Calculate discount based on new requirements
+    let discountAmount = 0;
+    let discountedRegularPrice = regularStallBasePrice;
+    let discountPerStall = 0;
+    
+    if (regularStallCount === 1) {
+        // No discount
+        discountAmount = 0;
+    } else if (regularStallCount === 2) {
+        // Flat ₹5,000 discount
+        discountAmount = 5000;
+        discountPerStall = 2500; // For display purposes only
+    } else if (regularStallCount >= 3) {
+        // ₹5,000 discount per stall
+        discountAmount = 5000 * regularStallCount;
+        discountPerStall = 5000;
+    }
+    
+    // Apply discount
+    discountedRegularPrice = regularStallBasePrice - discountAmount;
+    
+    // Calculate combo stall price (no discount)
+    let comboStallPrice = 0;
+    Object.values(comboGroups).forEach(group => {
+        comboStallPrice += parseFloat(group.combo.price);
+    });
+    
+    // Total price
+    const totalPrice = discountedRegularPrice + comboStallPrice;
+    
+    // Calculate discount percentage for display purposes
+    let discountPercentage = 0;
+    if (regularStallBasePrice > 0 && discountAmount > 0) {
+        discountPercentage = (discountAmount / regularStallBasePrice) * 100;
+        discountPercentage = discountPercentage.toFixed(2); // Format to 2 decimal places
+    }
+    
+    // Add each stall to the UI
+    // First add regular stalls
+    singleStalls.forEach(stall => {
+        const stallItem = document.createElement('div');
+        stallItem.className = 'selected-stall-item';
+        stallItem.innerHTML = `
+            Stall #${stall.stall_number} <span class="remove-stall" data-stall-id="${stall.id}">×</span>
+        `;
+        selectedStallsList.appendChild(stallItem);
+        
+        // Add click event to remove button
+        stallItem.querySelector('.remove-stall').addEventListener('click', function() {
+            const stallId = this.getAttribute('data-stall-id');
+            const stallElement = document.querySelector(`.stall[data-stall-id="${stallId}"]`);
+            if (stallElement) {
+                stallElement.classList.remove('selected');
+            }
+            selectedStalls = selectedStalls.filter(id => id !== stallId);
+            updateSelectedStallsUI();
+        });
+    });
+    
+    // Then add combo stalls
+    Object.values(comboGroups).forEach(group => {
+        const comboStalls = group.stalls;
+        
+        // Create a combo group element
+        comboStalls.forEach(stall => {
+            const stallItem = document.createElement('div');
+            stallItem.className = 'selected-stall-item combo-stall-item';
+            stallItem.innerHTML = `
+                Stall #${stall.stall_number} <span class="combo-badge">Combo</span> <span class="remove-stall" data-stall-id="${stall.id}" data-combo-id="${group.combo.id}">×</span>
+            `;
+            selectedStallsList.appendChild(stallItem);
+            
+            // Add click event to remove button that removes the whole combo
+            stallItem.querySelector('.remove-stall').addEventListener('click', function() {
+                const comboId = this.getAttribute('data-combo-id');
+                const combo = comboData[comboId];
+                
+                if (combo) {
+                    // Deselect all stalls in this combo
+                    combo.stall_ids.forEach(id => {
+                        const comboStallElement = document.querySelector(
+                            `.stall[data-stall-id="${id}"]`
+                        );
+                        if (comboStallElement) {
+                            comboStallElement.classList.remove('selected');
+                        }
+                        selectedStalls = selectedStalls.filter(sid => sid !== id.toString());
+                    });
+                }
+                
+                updateSelectedStallsUI();
+            });
+        });
+    });
+    
+    // Update price information
+    let priceInfo = '';
+    
+    if (regularStallCount > 0) {
+        priceInfo += `Regular Stalls: ₹${Math.round(regularStallBasePrice)}`;
+        
+        if (discountAmount > 0) {
+            if (regularStallCount === 2) {
+                priceInfo += ` <span style="color: #e91e63;">(Flat ₹${discountAmount} discount)</span><br>`;
+            } else {
+                priceInfo += ` <span style="color: #e91e63;">(₹${discountPerStall} × ${regularStallCount} stalls = -₹${discountAmount})</span><br>`;
+            }
+            priceInfo += `Discounted Price: ₹${Math.round(discountedRegularPrice)}<br>`;
+        } else {
+            priceInfo += `<br>`;
+        }
+    }
+    
+    if (Object.keys(comboGroups).length > 0) {
+        priceInfo += `Combo Stalls: ₹${Math.round(comboStallPrice)}<br>`;
+    }
+    
+    priceInfo += `<strong>Total: ₹${Math.round(totalPrice)}</strong>`;
+    
+    totalPriceElement.innerHTML = priceInfo;
+    
+    // Update the book now button with the correct stall IDs
+    bookNowBtn.onclick = function() {
+        if (selectedStalls.length > 0) {
+            // Redirect to booking form with selected stall IDs
+            window.location.href = `/stalls/book/?stall_ids=${selectedStalls.join(',')}`;
+        }
+    };
+}
         });
     </script>
 </body>

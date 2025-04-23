@@ -22,6 +22,7 @@ import uuid
 from django.views.decorators.csrf import csrf_exempt
 from functools import wraps
 from django.contrib.auth.models import User
+import decimal
 
 
 def token_required(f):
@@ -527,9 +528,30 @@ def get_stall_details(request, stall_id):
     })
 
 
+# Next, let's create a function to calculate discounts based on the number of stalls
+def calculate_discounted_price(stall_count, total_price):
+    """
+    Calculate discounted price based on number of stalls
+    - 1 stall: No discount
+    - 2 stalls: Flat ₹5,000 discount
+    - 3+ stalls: ₹5,000 discount per stall
+    """
+    if stall_count == 1:
+        # No discount
+        return total_price
+    elif stall_count == 2:
+        # Flat ₹5,000 discount
+        discount = decimal.Decimal('5000')
+        return total_price - discount
+    else:  # 3 or more stalls
+        # ₹5,000 discount per stall
+        discount = decimal.Decimal('5000') * stall_count
+        return total_price - discount
+
+
 def book_stall(request):
     """
-    View for booking multiple stalls at once
+    View for booking multiple stalls at once with discount application
     """
     stall_ids = request.GET.get('stall_ids', '').split(',')
     stall_ids = [id for id in stall_ids if id]  # Filter out empty strings
@@ -561,8 +583,6 @@ def book_stall(request):
             # Update stall status to booked
             stalls.update(status='booked')
             
-            # NOTE: Email sending has been removed as requested
-            
             return redirect('booking_confirmation', booking_id=booking.id)
     else:
         form = BookingForm()
@@ -570,23 +590,94 @@ def book_stall(request):
     # Get the hall info from the first stall
     hall = stalls.first().hall if stalls.exists() else None
     
-    # Calculate total price
-    total_price = sum(stall.price for stall in stalls)
+    # Separate regular stalls and combo stalls
+    regular_stalls = []
+    combo_stalls = []
+    
+    for stall in stalls:
+        # Check if this stall is part of a combo
+        if hasattr(stall, 'combos') and stall.combos.exists():
+            combo_stalls.append(stall)
+        else:
+            regular_stalls.append(stall)
+    
+    # Calculate regular stall price with applicable discount
+    regular_stall_count = len(regular_stalls)
+    regular_stall_base_price = sum(stall.price for stall in regular_stalls)
+    
+    # Apply discount to regular stalls - using updated discount logic
+    if regular_stall_count == 1:
+        discount_amount = 0
+        discounted_regular_price = regular_stall_base_price
+    elif regular_stall_count == 2:
+        discount_amount = 5000
+        discounted_regular_price = regular_stall_base_price - discount_amount
+    else:  # 3 or more stalls
+        discount_amount = 5000 * regular_stall_count
+        discounted_regular_price = regular_stall_base_price - discount_amount
+    
+    # Combo stalls don't get discounts
+    combo_stall_price = sum(stall.price for stall in combo_stalls)
+    
+    # Total price
+    total_price = discounted_regular_price + combo_stall_price
+    
+    # Calculate discount percentage for display purposes
+    discount_percentage = 0
+    if regular_stall_count > 0 and discount_amount > 0:
+        discount_percentage = (discount_amount / regular_stall_base_price) * 100
     
     return render(request, 'halls/book_stall.html', {
         'form': form,
         'stalls': stalls,
         'hall': hall,
-        'total_price': total_price
+        'total_price': total_price,
+        'regular_stall_count': regular_stall_count,
+        'regular_stall_base_price': regular_stall_base_price,
+        'discounted_regular_price': discounted_regular_price,
+        'combo_stall_price': combo_stall_price,
+        'discount_amount': discount_amount,
+        'discount_percentage': discount_percentage
     })
 
-
+# Also update the booking_confirmation view to show the discount
 def booking_confirmation(request, booking_id):
     booking = get_object_or_404(Booking, id=booking_id)
     
-    # Calculate the total price of all stalls
+    # Get all stalls in the booking
     stalls = booking.stalls.all()
-    total_price = sum(stall.price for stall in stalls)
+    
+    # Separate regular stalls and combo stalls
+    regular_stalls = []
+    combo_stalls = []
+    
+    for stall in stalls:
+        # Check if this stall is part of a combo
+        if hasattr(stall, 'combos') and stall.combos.exists():
+            combo_stalls.append(stall)
+        else:
+            regular_stalls.append(stall)
+    
+    # Calculate regular stall price with applicable discount
+    regular_stall_count = len(regular_stalls)
+    regular_stall_base_price = sum(stall.price for stall in regular_stalls)
+    
+    # Apply discount to regular stalls
+    discounted_regular_price = calculate_discounted_price(regular_stall_count, regular_stall_base_price)
+    
+    # Combo stalls don't get discounts
+    combo_stall_price = sum(stall.price for stall in combo_stalls)
+    
+    # Total price is the sum of discounted regular stalls and combo stalls
+    total_price = discounted_regular_price + combo_stall_price
+    
+    # Include discount information in the context
+    discount_amount = regular_stall_base_price - discounted_regular_price
+    discount_percentage = 0
+    if regular_stall_count == 2:
+        discount_percentage = 4.45
+    elif regular_stall_count >= 3:
+        discount_percentage = 9.10
     
     # Get the hall ID if there are stalls
     hall_id = stalls.first().hall.id if stalls.exists() else 1
@@ -594,10 +685,17 @@ def booking_confirmation(request, booking_id):
     return render(request, 'halls/booking_confirmation.html', {
         'booking': booking,
         'stalls': stalls,
+        'regular_stalls': regular_stalls,
+        'combo_stalls': combo_stalls,
         'total_price': total_price,
-        'hall_id': hall_id
+        'hall_id': hall_id,
+        'regular_stall_count': regular_stall_count,
+        'regular_stall_base_price': regular_stall_base_price,
+        'discounted_regular_price': discounted_regular_price,
+        'combo_stall_price': combo_stall_price,
+        'discount_amount': discount_amount,
+        'discount_percentage': discount_percentage
     })
-
 
 @require_POST
 def update_booking_status(request, booking_id):

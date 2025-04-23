@@ -96,6 +96,29 @@
             border-radius: 4px;
             border-left: 4px solid #fcc41a;
         }
+        .discount-info {
+            background-color: #e3f2fd;
+            padding: 10px 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            border-left: 4px solid #2196F3;
+        }
+        .discount-badge {
+            background-color: #e91e63;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            margin-left: 5px;
+        }
+        .combo-badge {
+            background-color: #9c27b0;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            margin-left: 5px;
+        }
     </style>
 </head>
 <body>
@@ -112,20 +135,58 @@
             <p><strong>Hall:</strong> {{ hall.name }}</p>
             <p><strong>Number of Stalls:</strong> {{ stalls|length }}</p>
             
+            <!-- Display regular stalls -->
+            {% if regular_stall_count > 0 %}
+            <h3>Regular Stalls</h3>
             <div class="stall-list">
                 {% for stall in stalls %}
+                    {% if not stall.combos.exists %}
+                    <div class="stall-item">
+                        <p><strong>Stall #{{ stall.stall_number }}</strong> | Size: {{ stall.width }}m x {{ stall.height }}m ({{ stall.area }}m²) | Price: ₹{{ stall.price|floatformat:2 }}</p>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <!-- Display combo stalls -->
+            {% if combo_stalls %}
+            <h3>Combo Stalls</h3>
+            <div class="stall-list">
+                {% for stall in combo_stalls %}
                 <div class="stall-item">
-                    <p><strong>Stall #{{ stall.stall_number }}</strong> | Size: {{ stall.width }}m x {{ stall.height }}m ({{ stall.area }}m²) | Price: ₹
-                        {{ stall.price }}</p>
+                    <p><strong>Stall #{{ stall.stall_number }}</strong> <span class="combo-badge">Combo</span> | Size: {{ stall.width }}m x {{ stall.height }}m ({{ stall.area }}m²) | Price: ₹{{ stall.price|floatformat:2 }}</p>
                 </div>
                 {% endfor %}
             </div>
+            {% endif %}
         </div>
+
+        <!-- Show discount information if applicable -->
+        {% if discount_percentage > 0 %}
+        <div class="discount-info">
+            <h3>Special Discount Applied! <span class="discount-badge">{{ discount_percentage }}% OFF</span></h3>
+            <p>You're booking {{ regular_stall_count }} regular stalls which qualifies for a {{ discount_percentage }}% discount.</p>
+            <p>Regular Price: ₹{{ regular_stall_base_price|floatformat:2 }}</p>
+            <p>After Discount: ₹{{ discounted_regular_price|floatformat:2 }}</p>
+            <p>You Save: ₹{{ discount_amount|floatformat:2 }}</p>
+            <p><small>Note: Discounts apply only to regular stalls, not to combo stalls.</small></p>
+        </div>
+        {% endif %}
 
         <div class="summary">
             <h3>Booking Summary</h3>
             <p>You are about to book {{ stalls|length }} stall(s) in {{ hall.name }}</p>
-            <p class="price">Total Price: ₹{{ total_price }}</p>
+            
+            {% if regular_stall_count > 0 %}
+            <p>Regular Stalls: {{ regular_stall_count }} (₹{{ discounted_regular_price|floatformat:2 }})</p>
+            {% endif %}
+            
+            {% if combo_stalls %}
+            <p>Combo Stalls: {{ combo_stalls|length }} (₹{{ combo_stall_price|floatformat:2 }})</p>
+            {% endif %}
+            
+            <p class="price">Total Price: ₹{{ total_price|floatformat:2 }}</p>
         </div>
 
         <div class="booking-form">

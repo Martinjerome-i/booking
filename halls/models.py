@@ -31,7 +31,7 @@ class Stall(models.Model):
     height = models.IntegerField()
     selected_boxes = models.JSONField(default=list)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available')
-    price = models.DecimalField(max_digits=10, decimal_places=2, default=10.00)
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=55000.00)  # Updated default price
     
     @property
     def area(self):
@@ -39,6 +39,29 @@ class Stall(models.Model):
 
     def __str__(self):
         return f"Stall {self.stall_number} in {self.hall.name}"
+
+
+# Update the ComboStall model for the correct default price (₹1,30,000)
+class ComboStall(models.Model):
+    name = models.CharField(max_length=100)
+    hall = models.ForeignKey(Hall, on_delete=models.CASCADE, related_name='combos')
+    stalls = models.ManyToManyField(Stall, related_name='combos')
+    description = models.TextField(blank=True, null=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=130000.00, 
+                               help_text="Default price for combo stalls is ₹1,30,000")
+    
+    def __str__(self):
+        return f"{self.name} - {self.hall.name}"
+    
+    @property
+    def stall_count(self):
+        return self.stalls.count()
+    
+    @property
+    def total_price(self):
+        # Always return the set price for combo stalls
+        return self.price
+
     
 class Booking(models.Model):
     STATUS_CHOICES = [
@@ -81,25 +104,3 @@ class Booking(models.Model):
     def __str__(self):
         return f"Booking {self.booking_reference} - {self.customer_name}"
     
-
-class ComboStall(models.Model):
-    name = models.CharField(max_length=100)
-    hall = models.ForeignKey(Hall, on_delete=models.CASCADE, related_name='combos')
-    stalls = models.ManyToManyField(Stall, related_name='combos')
-    description = models.TextField(blank=True, null=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, 
-                               help_text="Optional custom price for the combo. If not set, will use sum of stall prices.")
-    
-    def __str__(self):
-        return f"{self.name} - {self.hall.name}"
-    
-    @property
-    def stall_count(self):
-        return self.stalls.count()
-    
-    @property
-    def total_price(self):
-        if self.price:
-            return self.price
-        return sum(stall.price for stall in self.stalls.all())
-

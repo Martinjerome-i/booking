@@ -13,90 +13,15 @@
         .container {
             max-width: 800px;
             margin: 0 auto;
-            background-color: #fff;
-            border-radius: 5px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            padding: 30px;
         }
         .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .header h1 {
-            color: #451a32;
-            margin-bottom: 5px;
-        }
-        .header p {
-            color: #666;
-            font-size: 18px;
-        }
-        .confirmation-number {
-            background-color: #fcfde3;
-            border: 1px solid #f0ea93;
-            padding: 15px;
-            text-align: center;
-            border-radius: 5px;
-            margin-bottom: 30px;
-        }
-        .confirmation-number h2 {
-            margin: 0;
-            color: #451a32;
-        }
-        .confirmation-number p {
-            margin: 10px 0 0 0;
-            font-size: 22px;
-            font-weight: bold;
-            color: #451a32;
-        }
-        .booking-details, .stall-details, .customer-details {
-            margin-bottom: 30px;
-        }
-        h3 {
-            padding-bottom: 10px;
-            border-bottom: 1px solid #eee;
-            color: #333;
-        }
-        .detail-row {
             display: flex;
-            padding: 8px 0;
-        }
-        .detail-label {
-            flex: 0 0 40%;
-            font-weight: bold;
-            color: #555;
-        }
-        .detail-value {
-            flex: 0 0 60%;
-        }
-        .status {
-            display: inline-block;
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-weight: bold;
-            text-transform: uppercase;
-            font-size: 12px;
-        }
-        .status-booked {
-            background-color: #e8f5e9;
-            color: #2E7D32;
-        }
-        .status-cancelled {
-            background-color: #ffebee;
-            color: #c62828;
-        }
-        .footer {
-            text-align: center;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #eee;
-            color: #666;
-        }
-        .buttons {
-            margin-top: 20px;
-            text-align: center;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
         }
         .btn {
-            background-color: #fcc41a;
+            background-color: #451a32;
             border: none;
             color: white;
             padding: 10px 20px;
@@ -106,132 +31,157 @@
             font-size: 16px;
             cursor: pointer;
             border-radius: 4px;
-            margin: 0 5px;
+            margin-right: 5px;
         }
         .btn-primary {
-            background-color: #451a32;
+            background-color: #fcc41a;
+        }
+        .confirmation-box {
+            background-color: #e8f5e9;
+            border: 1px solid #81c784;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .booking-details {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .stall-list {
+            margin-top: 10px;
         }
         .stall-item {
             background-color: #f5f5f5;
-            margin-bottom: 15px;
-            padding: 15px;
-            border-radius: 5px;
+            margin-bottom: 8px;
+            padding: 10px 15px;
+            border-radius: 4px;
             border-left: 4px solid #fcc41a;
         }
-        .total-price {
-            font-size: 18px;
+        .price {
+            font-size: 24px;
             font-weight: bold;
-            text-align: right;
-            padding: 10px 0;
-            border-top: 1px dashed #ddd;
-            margin-top: 10px;
+            color: #451a32;
+            margin-top: 15px;
+        }
+        .reference {
+            background-color: #fff3e0;
+            border: 1px solid #ffe0b2;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        .reference h3 {
+            margin-top: 0;
+        }
+        .reference-code {
+            font-size: 20px;
+            font-weight: bold;
+            color: #ff9800;
+            letter-spacing: 1px;
+        }
+        .discount-info {
+            background-color: #e3f2fd;
+            padding: 10px 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            border-left: 4px solid #2196F3;
+        }
+        .discount-badge {
+            background-color: #e91e63;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            margin-left: 5px;
+        }
+        .combo-badge {
+            background-color: #9c27b0;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            margin-left: 5px;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>Booking Confirmed!</h1>
-            <p>Thank you for your stall booking</p>
+            <h1>Booking Confirmation</h1>
+            <div>
+                <a href="{% url 'stall_booking' hall_id %}" class="btn btn-primary">Back to Hall Bookings</a>
+            </div>
         </div>
-
-        <div class="confirmation-number">
-            <h2>Booking Reference</h2>
-            <p>{{ booking.booking_reference }}</p>
+        
+        <div class="confirmation-box">
+            <h2>Booking Successful!</h2>
+            <p>Thank you, {{ booking.customer_name }}. Your stall booking has been confirmed.</p>
+            <p>A confirmation has been sent to your email: {{ booking.customer_email }}</p>
         </div>
-
+        
+        <div class="reference">
+            <h3>Your Booking Reference</h3>
+            <p class="reference-code">{{ booking.booking_reference }}</p>
+            <p>Please keep this reference number for future communications.</p>
+        </div>
+        
         <div class="booking-details">
-            <h3>Booking Information</h3>
-            <div class="detail-row">
-                <div class="detail-label">Booking Date:</div>
-                <div class="detail-value">{{ booking.booking_date|date:"F j, Y, H:i" }}</div>
-            </div>
-            <div class="detail-row">
-                <div class="detail-label">Status:</div>
-                <div class="detail-value">
-                    <span class="status status-{{ booking.status }}">{{ booking.get_status_display }}</span>
-                </div>
-            </div>
-            <div class="detail-row">
-                <div class="detail-label">Payment Status:</div>
-                <div class="detail-value">
-                    {% if booking.payment_status %}
-                    <span class="status status-booked">Paid</span>
-                    {% else %}
-                    <span class="status status-cancelled">Not Paid</span>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-
-        <div class="stall-details">
-            <h3>Stall Details</h3>
-            {% if stalls %}
-            {% for stall in stalls %}
-            <div class="stall-item">
-                <div class="detail-row">
-                    <div class="detail-label">Hall:</div>
-                    <div class="detail-value">{{ stall.hall.name }}</div>
-                </div>
-                <div class="detail-row">
-                    <div class="detail-label">Stall Number:</div>
-                    <div class="detail-value">{{ stall.stall_number }}</div>
-                </div>
-                <div class="detail-row">
-                    <div class="detail-label">Size:</div>
-                    <div class="detail-value">{{ stall.width }}m x {{ stall.height }}m ({{ stall.area }}m²)</div>
-                </div>
-                <div class="detail-row">
-                    <div class="detail-label">Price:</div>
-                    <div class="detail-value">₹{{ stall.price }}</div>
-                </div>
-            </div>
-            {% endfor %}
-            
-            <div class="total-price">
-                Total Price: ₹{{ total_price }}
-            </div>
-            {% else %}
-            <p>No stalls in this booking.</p>
-            {% endif %}
-        </div>
-
-        <div class="customer-details">
-            <h3>Customer Information</h3>
-            <div class="detail-row">
-                <div class="detail-label">Name:</div>
-                <div class="detail-value">{{ booking.customer_name }}</div>
-            </div>
-            <div class="detail-row">
-                <div class="detail-label">Email:</div>
-                <div class="detail-value">{{ booking.customer_email }}</div>
-            </div>
-            <div class="detail-row">
-                <div class="detail-label">Phone:</div>
-                <div class="detail-value">{{ booking.customer_phone }}</div>
-            </div>
+            <h2>Booking Details</h2>
+            <p><strong>Booking Date:</strong> {{ booking.booking_date|date:"F j, Y, g:i a" }}</p>
+            <p><strong>Customer Name:</strong> {{ booking.customer_name }}</p>
+            <p><strong>Customer Email:</strong> {{ booking.customer_email }}</p>
+            <p><strong>Customer Phone:</strong> {{ booking.customer_phone }}</p>
             {% if booking.company_name %}
-            <div class="detail-row">
-                <div class="detail-label">Company:</div>
-                <div class="detail-value">{{ booking.company_name }}</div>
-            </div>
+            <p><strong>Company Name:</strong> {{ booking.company_name }}</p>
             {% endif %}
             {% if booking.notes %}
-            <div class="detail-row">
-                <div class="detail-label">Additional Notes:</div>
-                <div class="detail-value">{{ booking.notes }}</div>
+            <p><strong>Additional Notes:</strong> {{ booking.notes }}</p>
+            {% endif %}
+            <p><strong>Payment Status:</strong> {% if booking.payment_status %}Paid{% else %}Pending{% endif %}</p>
+            
+            <h3>Stall Information</h3>
+            <p><strong>Number of Stalls:</strong> {{ stalls|length }}</p>
+            
+            <!-- Display regular stalls -->
+            {% if regular_stalls %}
+            <h4>Regular Stalls</h4>
+            <div class="stall-list">
+                {% for stall in regular_stalls %}
+                <div class="stall-item">
+                    <p><strong>Stall #{{ stall.stall_number }}</strong> | Size: {{ stall.width }}m x {{ stall.height }}m ({{ stall.area }}m²) | Price: ₹{{ stall.price|floatformat:2 }}</p>
+                </div>
+                {% endfor %}
             </div>
             {% endif %}
-        </div>
-
-        <div class="buttons">
-            <a href="{% url 'stall_booking' hall_id %}" class="btn btn-primary">Book Another Stall</a>
-            <a href="{% url 'root' %}" class="btn">Go to Home</a>
-        </div>
-
-        <div class="footer">
-            <p>A confirmation email has been sent to {{ booking.customer_email }}</p>
-            <p>If you have any questions, please contact us at support@stallbooking.com</p>
+            
+            <!-- Display combo stalls -->
+            {% if combo_stalls %}
+            <h4>Combo Stalls</h4>
+            <div class="stall-list">
+                {% for stall in combo_stalls %}
+                <div class="stall-item">
+                    <p><strong>Stall #{{ stall.stall_number }}</strong> <span class="combo-badge">Combo</span> | Size: {{ stall.width }}m x {{ stall.height }}m ({{ stall.area }}m²) | Price: ₹{{ stall.price|floatformat:2 }}</p>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <!-- Show discount information if applicable -->
+            {% if discount_percentage > 0 %}
+            <div class="discount-info">
+                <h3>Special Discount Applied! <span class="discount-badge">{{ discount_percentage }}% OFF</span></h3>
+                <p>You've booked {{ regular_stall_count }} regular stalls which qualified for a {{ discount_percentage }}% discount.</p>
+                <p>Regular Price: ₹{{ regular_stall_base_price|floatformat:2 }}</p>
+                <p>After Discount: ₹{{ discounted_regular_price|floatformat:2 }}</p>
+                <p>You Saved: ₹{{ discount_amount|floatformat:2 }}</p>
+            </div>
+            {% endif %}
+            
+            <div class="price">Total Price: ₹{{ total_price|floatformat:2 }}</div>
         </div>
     </div>
 </body>
