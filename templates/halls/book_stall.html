@@ -153,10 +153,11 @@
             <div class="stall-list">
                 {% for stall in combo_stalls %}
                 <div class="stall-item">
-                    <p><strong>Stall #{{ stall.stall_number }}</strong> <span class="combo-badge">Combo</span> | Size: {{ stall.width }}m x {{ stall.height }}m ({{ stall.area }}m²) | Fixed Price: ₹130,000.00</p>
+                    <p><strong>Stall #{{ stall.stall_number }}</strong> <span class="combo-badge">Combo</span> | Size: {{ stall.width }}m x {{ stall.height }}m ({{ stall.area }}m²)</p>
                 </div>
                 {% endfor %}
             </div>
+            <p><strong>Combo Package Price:</strong> ₹130,000.00 (fixed package price)</p>
             {% endif %}
         </div>
 
@@ -191,7 +192,7 @@
             {% endif %}
             
             {% if combo_stalls %}
-            <p>Combo Stalls: {{ combo_stalls|length }} (₹{{ combo_stall_price|floatformat:2 }})</p>
+            <p>Combo Stalls Package: {{ combo_stalls|length }} stalls (₹{{ combo_stall_price|floatformat:2 }})</p>
             {% endif %}
             
             <p class="price">Total Price: ₹{{ total_price|floatformat:2 }}</p>

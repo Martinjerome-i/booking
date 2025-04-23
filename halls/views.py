@@ -619,9 +619,9 @@ def book_stall(request):
         discount_amount = decimal.Decimal('5000') * regular_stall_count
         discounted_regular_price = regular_stall_base_price - discount_amount
     
-    # Calculate combo stalls price - fixed at ₹130,000 per combo stall
-    combo_stall_count = len(combo_stalls)
-    combo_stall_price = decimal.Decimal('130000.00') * combo_stall_count
+    # Combo stalls have a fixed price of 130,000 for the entire combo package
+    # regardless of how many combo stalls are selected
+    combo_stall_price = decimal.Decimal('130000.00') if combo_stalls else decimal.Decimal('0')
     
     # Total price
     total_price = discounted_regular_price + combo_stall_price
@@ -684,8 +684,8 @@ def booking_confirmation(request, booking_id):
         discount_amount = decimal.Decimal('5000') * regular_stall_count
         discounted_regular_price = regular_stall_base_price - discount_amount
     
-    # Combo stalls don't get discounts
-    combo_stall_price = sum(stall.price for stall in combo_stalls)
+    # Combo stalls have a fixed price of 130,000 for the entire combo package
+    combo_stall_price = decimal.Decimal('130000.00') if combo_stalls else decimal.Decimal('0')
     
     # Total price is the sum of discounted regular stalls and combo stalls
     total_price = discounted_regular_price + combo_stall_price
