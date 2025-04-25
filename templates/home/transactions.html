@@ -25,6 +25,22 @@
         background-color: #e2e3e5;
         color: #41464b;
     }
+    .admin-badge {
+        background-color: #cfe2ff;
+        color: #084298;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+    .user-badge {
+        background-color: #fff3cd;
+        color: #664d03;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
     .filters {
         padding: 15px;
         background-color: #f8f9fa;
@@ -48,6 +64,25 @@
         margin-right: 4px;
         display: inline-block;
         margin-bottom: 3px;
+    }
+    .stall-details {
+        font-size: 0.85rem;
+        margin-top: 3px;
+        color: #6c757d;
+    }
+    .payment-badge {
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+    .payment-badge.paid {
+        background-color: #d1e7dd;
+        color: #0f5132;
+    }
+    .payment-badge.unpaid {
+        background-color: #f8d7da;
+        color: #842029;
     }
 </style>
 {% endblock stylesheets %}
@@ -75,30 +110,48 @@
 <!-- Filter Section -->
 <div class="card mb-4">
     <div class="card-body filters">
-        <div class="row g-3">
-            <div class="col-md-5">
-                <label for="search-box" class="form-label">Search</label>
-                <div class="input-group">
-                    <span class="input-group-text">
-                        <svg class="icon icon-xs" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path></svg>
-                    </span>
-                    <input type="text" class="form-control" id="search-box" placeholder="Search by name, email, company or reference">
+        <form method="get" action="{% url 'admin_booking' %}">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="search" class="form-label">Search</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <svg class="icon icon-xs" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path></svg>
+                        </span>
+                        <input type="text" class="form-control" id="search" name="search" value="{{ search_query }}" placeholder="Search by name, email, phone, company or reference">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="" {% if not status_filter %}selected{% endif %}>All Statuses</option>
+                        <option value="booked" {% if status_filter == 'booked' %}selected{% endif %}>Booked</option>
+                        <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                        <!-- <option value="blocked" {% if status_filter == 'blocked' %}selected{% endif %}>Blocked</option> -->
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="source" class="form-label">Booking Source</label>
+                    <select class="form-select" id="source" name="source">
+                        <option value="" {% if not source_filter %}selected{% endif %}>All Sources</option>
+                        <option value="admin" {% if source_filter == 'admin' %}selected{% endif %}>Admin Bookings</option>
+                        <option value="user" {% if source_filter == 'user' %}selected{% endif %}>User Bookings</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="payment" class="form-label">Payment Status</label>
+                    <select class="form-select" id="payment" name="payment">
+                        <option value="" {% if not payment_filter %}selected{% endif %}>All Statuses</option>
+                        <option value="paid" {% if payment_filter == 'paid' %}selected{% endif %}>Paid</option>
+                        <option value="unpaid" {% if payment_filter == 'unpaid' %}selected{% endif %}>Unpaid</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">Filters</button>
+                    <a href="{% url 'admin_booking' %}" class="btn btn-light">Reset</a>
                 </div>
             </div>
-            <div class="col-md-3">
-                <label for="status-filter" class="form-label">Filter by Status</label>
-                <select class="form-select" id="status-filter">
-                    <option value="">All Statuses</option>
-                    <option value="booked">Booked</option>
-                    <option value="cancelled">Cancelled</option>
-                    <option value="blocked">Blocked</option>
-                </select>
-            </div>
-            <div class="col-md-4 d-flex align-items-end">
-                <button class="btn btn-primary me-2" id="apply-filters">Apply Filters</button>
-                <button class="btn btn-light" id="reset-filters">Reset</button>
-            </div>
-        </div>
+        </form>
     </div>
 </div>
 
@@ -109,23 +162,36 @@
             <tr>
                 <th class="border-gray-200">Reference</th>
                 <th class="border-gray-200">Customer</th>
-                <th class="border-gray-200">Email</th>
-                <th class="border-gray-200">Stall Numbers</th>
+                <th class="border-gray-200">Contact Info</th>
+                <th class="border-gray-200">Company</th>
+                <th class="border-gray-200">Stalls</th>
                 <th class="border-gray-200">Total Amount</th>
+                <th class="border-gray-200">Payment</th>
                 <th class="border-gray-200">Booking Date</th>
                 <th class="border-gray-200">Status</th>
+                <th class="border-gray-200">Source</th>
             </tr>
         </thead>
         <tbody>
             {% for booking in bookings %}
-            <tr data-id="{{ booking.id }}" data-customer="{{ booking.customer_name|lower }}" data-email="{{ booking.customer_email|lower }}" data-company="{{ booking.company_name|lower|default:'' }}" data-ref="{{ booking.booking_reference|lower }}" data-status="{{ booking.status }}">
+            <tr>
                 <td>
                     <span class="fw-bold">{{ booking.booking_reference }}</span>
                 </td>
                 <td>
                     <span class="fw-normal">{{ booking.customer_name }}</span>
                 </td>
-                <td><span class="fw-normal">{{ booking.customer_email }}</span></td>
+                <td>
+                    <div class="small">{{ booking.customer_email }}</div>
+                    <div class="small">{{ booking.customer_phone }}</div>
+                </td>
+                <td>
+                    {% if booking.company_name %}
+                    <span class="fw-normal">{{ booking.company_name }}</span>
+                    {% else %}
+                    <span class="text-muted">N/A</span>
+                    {% endif %}
+                </td>
                 <td>
                     <div>
                     {% for stall in booking.stalls.all %}
@@ -136,14 +202,28 @@
                 <td>
                     <span class="total-amount">{{ booking.total_amount }}</span>
                 </td>
+                <td>
+                    {% if booking.payment_status %}
+                        <span class="payment-badge paid">Paid</span>
+                    {% else %}
+                        <span class="payment-badge unpaid">Unpaid</span>
+                    {% endif %}
+                </td>
                 <td><span class="fw-normal">{{ booking.booking_date|date:"M d, Y" }}</span></td>
                 <td>
                     <span class="status {{ booking.status }}">{{ booking.get_status_display }}</span>
                 </td>
+                <td>
+                    {% if booking.is_admin_booking %}
+                        <span class="admin-badge">Admin</span>
+                    {% else %}
+                        <span class="user-badge">User</span>
+                    {% endif %}
+                </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="7" class="no-results">No bookings found</td>
+                <td colspan="10" class="no-results">No bookings found</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -152,17 +232,17 @@
         <nav aria-label="Page navigation">
             <ul class="pagination mb-0">
                 <li class="page-item {% if not bookings.has_previous %}disabled{% endif %}">
-                    <a class="page-link" href="?page={% if bookings.has_previous %}{{ bookings.previous_page_number }}{% else %}1{% endif %}">Previous</a>
+                    <a class="page-link" href="?page={% if bookings.has_previous %}{{ bookings.previous_page_number }}{% else %}1{% endif %}&search={{ search_query|urlencode }}&status={{ status_filter }}&source={{ source_filter }}&payment={{ payment_filter }}">Previous</a>
                 </li>
                 {% for page_num in bookings.paginator.page_range %}
                     {% if page_num == bookings.number %}
-                        <li class="page-item active"><a class="page-link" href="?page={{ page_num }}">{{ page_num }}</a></li>
+                        <li class="page-item active"><a class="page-link" href="?page={{ page_num }}&search={{ search_query|urlencode }}&status={{ status_filter }}&source={{ source_filter }}&payment={{ payment_filter }}">{{ page_num }}</a></li>
                     {% elif page_num > bookings.number|add:"-3" and page_num < bookings.number|add:"3" %}
-                        <li class="page-item"><a class="page-link" href="?page={{ page_num }}">{{ page_num }}</a></li>
+                        <li class="page-item"><a class="page-link" href="?page={{ page_num }}&search={{ search_query|urlencode }}&status={{ status_filter }}&source={{ source_filter }}&payment={{ payment_filter }}">{{ page_num }}</a></li>
                     {% endif %}
                 {% endfor %}
                 <li class="page-item {% if not bookings.has_next %}disabled{% endif %}">
-                    <a class="page-link" href="?page={% if bookings.has_next %}{{ bookings.next_page_number }}{% else %}{{ bookings.paginator.num_pages }}{% endif %}">Next</a>
+                    <a class="page-link" href="?page={% if bookings.has_next %}{{ bookings.next_page_number }}{% else %}{{ bookings.paginator.num_pages }}{% endif %}&search={{ search_query|urlencode }}&status={{ status_filter }}&source={{ source_filter }}&payment={{ payment_filter }}">Next</a>
                 </li>
             </ul>
         </nav>
@@ -172,70 +252,12 @@
 
 {% endblock content %}
 
-<!-- Specific Page JS goes HERE  -->
+<!-- Specific Page JS goes HERE - no client-side filtering since we moved to server-side filtering -->
 {% block javascripts %}
 <script>
+    // No client-side filtering needed as we're using server-side filtering now
     document.addEventListener('DOMContentLoaded', function() {
-        // Search and filter functionality
-        const searchBox = document.getElementById('search-box');
-        const statusFilter = document.getElementById('status-filter');
-        const applyFiltersBtn = document.getElementById('apply-filters');
-        const resetFiltersBtn = document.getElementById('reset-filters');
-        
-        applyFiltersBtn.addEventListener('click', function() {
-            filterTable();
-        });
-        
-        resetFiltersBtn.addEventListener('click', function() {
-            searchBox.value = '';
-            statusFilter.value = '';
-            filterTable();
-        });
-
-        function filterTable() {
-            const searchTerm = searchBox.value.toLowerCase();
-            const statusTerm = statusFilter.value.toLowerCase();
-            const rows = document.querySelectorAll('#bookings-table tbody tr');
-            
-            let visibleCount = 0;
-            
-            rows.forEach(row => {
-                if (row.classList.contains('no-results-row')) {
-                    row.remove();
-                    return;
-                }
-                
-                const customerName = row.getAttribute('data-customer');
-                const email = row.getAttribute('data-email');
-                const company = row.getAttribute('data-company');
-                const reference = row.getAttribute('data-ref');
-                const status = row.getAttribute('data-status');
-                
-                const matchesSearch = !searchTerm || 
-                    customerName.includes(searchTerm) || 
-                    email.includes(searchTerm) || 
-                    company.includes(searchTerm) || 
-                    reference.toLowerCase().includes(searchTerm);
-                
-                const matchesStatus = !statusTerm || status === statusTerm;
-                
-                if (matchesSearch && matchesStatus) {
-                    row.style.display = '';
-                    visibleCount++;
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-            
-            // Show no results message if needed
-            if (visibleCount === 0) {
-                const tbody = document.querySelector('#bookings-table tbody');
-                const noResultsRow = document.createElement('tr');
-                noResultsRow.classList.add('no-results-row');
-                noResultsRow.innerHTML = '<td colspan="7" class="no-results">No bookings match your filters</td>';
-                tbody.appendChild(noResultsRow);
-            }
-        }
+        // Form submission functionality is handled by Django
     });
 </script>
 {% endblock javascripts %}

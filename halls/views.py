@@ -23,6 +23,14 @@ from django.views.decorators.csrf import csrf_exempt
 from functools import wraps
 from django.contrib.auth.models import User
 import decimal
+import csv
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import HttpResponse
+from django.contrib import messages
+from django.db.models import Q
+
+
 
 
 def token_required(f):
@@ -1057,12 +1065,69 @@ def admin_update_stall_status(request, stall_id):
     
     return JsonResponse(response_data)
 
+
 def admin_booking(request):
-    bookings_list = Booking.objects.all().order_by('-booking_date')
-    paginator = Paginator(bookings_list, 10)  
+    # Get filter parameters from request
+    search_query = request.GET.get('search', '')
+    status_filter = request.GET.get('status', '')
+    source_filter = request.GET.get('source', '')
+    payment_filter = request.GET.get('payment', '')
+    
+    # Start with all bookings excluding blocked ones by default
+    queryset = Booking.objects.exclude(status='blocked')
+    
+    # Only include blocked bookings if specifically requested
+    if status_filter == 'blocked':
+        queryset = Booking.objects.filter(status='blocked')
+    
+    # Apply filters if provided
+    if search_query:
+        queryset = queryset.filter(
+            Q(customer_name__icontains=search_query) | 
+            Q(customer_email__icontains=search_query) | 
+            Q(company_name__icontains=search_query) | 
+            Q(booking_reference__icontains=search_query) |
+            Q(customer_phone__icontains=search_query)
+        )
+    
+    if status_filter and status_filter != 'blocked':  # Skip if we're already filtering for blocked
+        queryset = queryset.filter(status=status_filter)
+    
+    if source_filter == 'admin':
+        queryset = queryset.filter(is_admin_booking=True)
+    elif source_filter == 'user':
+        queryset = queryset.filter(is_admin_booking=False)
+    
+    if payment_filter == 'paid':
+        queryset = queryset.filter(payment_status=True)
+    elif payment_filter == 'unpaid':
+        queryset = queryset.filter(payment_status=False)
+    
+    # Order by booking date with most recent first
+    queryset = queryset.order_by('-booking_date')
+    
+    # Paginate results
+    paginator = Paginator(queryset, 10)
     page = request.GET.get('page', 1)
-    bookings = paginator.get_page(page)
-    return render(request, 'home/transactions.html', {'bookings': bookings})
+    
+    try:
+        bookings = paginator.page(page)
+    except PageNotAnInteger:
+        bookings = paginator.page(1)
+    except EmptyPage:
+        bookings = paginator.page(paginator.num_pages)
+    
+    # Pass the current filter params to template for maintaining state
+    context = {
+        'bookings': bookings,
+        'search_query': search_query,
+        'status_filter': status_filter,
+        'source_filter': source_filter,
+        'payment_filter': payment_filter
+    }
+    
+    return render(request, 'home/transactions.html', context)
+
 
 @require_POST
 def admin_delete_booking(request, booking_id):
