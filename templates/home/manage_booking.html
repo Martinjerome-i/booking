@@ -604,241 +604,241 @@
             loadingElement.textContent = 'Error loading stalls. Please try again later.';
         });
 
-// Update the updateSelectedStallsUI function to store the calculated price
-function updateSelectedStallsUI() {
-    // Clear the list
-    selectedStallsList.innerHTML = '';
-    
-    // Update counter
-    selectedStallsCount.textContent = `${selectedStalls.length} stalls selected`;
-    
-    if (selectedStalls.length === 0) {
-        stallInfo.style.display = 'none';
-        blockStallsBtn.disabled = true;
-        unblockStallsBtn.disabled = true;
-        bookStallsBtn.disabled = true;
-        return;
-    }
-    
-    // Show the stall info section
-    stallInfo.style.display = 'block';
-    
-    // Calculate total price and prepare discount info
-    let totalPrice = 0;
-    let regularStallCount = 0;
-    let discountAmount = 0;
-    
-    // Group selected stalls by combo
-    const comboGroups = {};
-    const singleStalls = [];
-    
-    // Track stall types for button visibility
-    const hasBookedStalls = selectedStalls.some(id => stallData[id] && stallData[id].status === 'booked');
-    const hasBlockedStalls = selectedStalls.some(id => stallData[id] && stallData[id].status === 'blocked');
-    const hasAvailableStalls = selectedStalls.some(id => stallData[id] && stallData[id].status === 'available');
-    
-    // FIX #2 - Set button visibility based on stall status selection
-    if (hasBookedStalls && !hasBlockedStalls && !hasAvailableStalls) {
-        // Only booked stalls selected - hide all buttons
-        blockStallsBtn.style.display = 'none';
-        unblockStallsBtn.style.display = 'none';
-        bookStallsBtn.style.display = 'none';
-    } else if (hasAvailableStalls && !hasBlockedStalls && !hasBookedStalls) {
-        // Only available stalls selected - show block and book buttons
-        blockStallsBtn.style.display = 'inline-block';
-        unblockStallsBtn.style.display = 'none';
-        bookStallsBtn.style.display = 'inline-block';
+    // Update the updateSelectedStallsUI function to store the calculated price
+    function updateSelectedStallsUI() {
+        // Clear the list
+        selectedStallsList.innerHTML = '';
         
-        // Enable buttons
-        blockStallsBtn.disabled = false;
-        bookStallsBtn.disabled = false;
-    } else if (hasBlockedStalls && !hasAvailableStalls && !hasBookedStalls) {
-        // Only blocked stalls selected - show unblock and book buttons
-        blockStallsBtn.style.display = 'none';
-        unblockStallsBtn.style.display = 'inline-block';
-        bookStallsBtn.style.display = 'inline-block'; // FIX #2 - Show book button for blocked stalls
+        // Update counter
+        selectedStallsCount.textContent = `${selectedStalls.length} stalls selected`;
         
-        // Enable unblock button
-        unblockStallsBtn.disabled = false;
-        // Enable book button - FIX #2 - Allow direct booking from blocked state
-        bookStallsBtn.disabled = false;
-    } else {
-        // Mixed selection - show all buttons but manage their enabled state
-        blockStallsBtn.style.display = 'inline-block';
-        unblockStallsBtn.style.display = 'inline-block';
-        bookStallsBtn.style.display = 'inline-block';
+        if (selectedStalls.length === 0) {
+            stallInfo.style.display = 'none';
+            blockStallsBtn.disabled = true;
+            unblockStallsBtn.disabled = true;
+            bookStallsBtn.disabled = true;
+            return;
+        }
         
-        // Enable/disable buttons based on selection
-        blockStallsBtn.disabled = !hasAvailableStalls;
-        unblockStallsBtn.disabled = !hasBlockedStalls;
-        // Allow booking if either available or blocked stalls are selected - FIX #2
-        bookStallsBtn.disabled = !(hasAvailableStalls || hasBlockedStalls);
-    }
-    
-    // Process selected stalls to group them by combo and calculate prices
-    selectedStalls.forEach(stallId => {
-        const stall = stallData[stallId];
-        if (!stall) return;
+        // Show the stall info section
+        stallInfo.style.display = 'block';
         
-        // Check if this stall is part of a combo where all other stalls are also selected
-        let partOfSelectedCombo = false;
+        // Calculate total price and prepare discount info
+        let totalPrice = 0;
+        let regularStallCount = 0;
+        let discountAmount = 0;
         
-        if (stallToComboMap[stallId]) {
-            for (const comboId of stallToComboMap[stallId]) {
-                const combo = comboData[comboId];
-                if (!combo) continue;
-                
-                // Check if all stalls in this combo are selected
-                const allSelected = combo.stall_ids.every(id => 
-                    selectedStalls.includes(id.toString())
-                );
-                
-                if (allSelected) {
-                    // Add to combo group
-                    if (!comboGroups[comboId]) {
-                        comboGroups[comboId] = {
-                            combo: combo,
-                            stalls: []
-                        };
+        // Group selected stalls by combo
+        const comboGroups = {};
+        const singleStalls = [];
+        
+        // Track stall types for button visibility
+        const hasBookedStalls = selectedStalls.some(id => stallData[id] && stallData[id].status === 'booked');
+        const hasBlockedStalls = selectedStalls.some(id => stallData[id] && stallData[id].status === 'blocked');
+        const hasAvailableStalls = selectedStalls.some(id => stallData[id] && stallData[id].status === 'available');
+        
+        // FIX #2 - Set button visibility based on stall status selection
+        if (hasBookedStalls && !hasBlockedStalls && !hasAvailableStalls) {
+            // Only booked stalls selected - hide all buttons
+            blockStallsBtn.style.display = 'none';
+            unblockStallsBtn.style.display = 'none';
+            bookStallsBtn.style.display = 'none';
+        } else if (hasAvailableStalls && !hasBlockedStalls && !hasBookedStalls) {
+            // Only available stalls selected - show block and book buttons
+            blockStallsBtn.style.display = 'inline-block';
+            unblockStallsBtn.style.display = 'none';
+            bookStallsBtn.style.display = 'inline-block';
+            
+            // Enable buttons
+            blockStallsBtn.disabled = false;
+            bookStallsBtn.disabled = false;
+        } else if (hasBlockedStalls && !hasAvailableStalls && !hasBookedStalls) {
+            // Only blocked stalls selected - show unblock and book buttons
+            blockStallsBtn.style.display = 'none';
+            unblockStallsBtn.style.display = 'inline-block';
+            bookStallsBtn.style.display = 'inline-block'; // FIX #2 - Show book button for blocked stalls
+            
+            // Enable unblock button
+            unblockStallsBtn.disabled = false;
+            // Enable book button - FIX #2 - Allow direct booking from blocked state
+            bookStallsBtn.disabled = false;
+        } else {
+            // Mixed selection - show all buttons but manage their enabled state
+            blockStallsBtn.style.display = 'inline-block';
+            unblockStallsBtn.style.display = 'inline-block';
+            bookStallsBtn.style.display = 'inline-block';
+            
+            // Enable/disable buttons based on selection
+            blockStallsBtn.disabled = !hasAvailableStalls;
+            unblockStallsBtn.disabled = !hasBlockedStalls;
+            // Allow booking if either available or blocked stalls are selected - FIX #2
+            bookStallsBtn.disabled = !(hasAvailableStalls || hasBlockedStalls);
+        }
+        
+        // Process selected stalls to group them by combo and calculate prices
+        selectedStalls.forEach(stallId => {
+            const stall = stallData[stallId];
+            if (!stall) return;
+            
+            // Check if this stall is part of a combo where all other stalls are also selected
+            let partOfSelectedCombo = false;
+            
+            if (stallToComboMap[stallId]) {
+                for (const comboId of stallToComboMap[stallId]) {
+                    const combo = comboData[comboId];
+                    if (!combo) continue;
+                    
+                    // Check if all stalls in this combo are selected
+                    const allSelected = combo.stall_ids.every(id => 
+                        selectedStalls.includes(id.toString())
+                    );
+                    
+                    if (allSelected) {
+                        // Add to combo group
+                        if (!comboGroups[comboId]) {
+                            comboGroups[comboId] = {
+                                combo: combo,
+                                stalls: []
+                            };
+                        }
+                        comboGroups[comboId].stalls.push(stall);
+                        partOfSelectedCombo = true;
+                        break;
                     }
-                    comboGroups[comboId].stalls.push(stall);
-                    partOfSelectedCombo = true;
-                    break;
                 }
             }
-        }
+            
+            if (!partOfSelectedCombo) {
+                // Add to single stalls
+                singleStalls.push(stall);
+                totalPrice += stall.price;
+                regularStallCount++; // Count for discount
+            }
+        });
         
-        if (!partOfSelectedCombo) {
-            // Add to single stalls
-            singleStalls.push(stall);
-            totalPrice += stall.price;
-            regularStallCount++; // Count for discount
-        }
-    });
-    
-    // Add combo groups to the list
-    for (const comboId in comboGroups) {
-        const { combo, stalls } = comboGroups[comboId];
-        
-        // Use combo price if available, otherwise sum individual stall prices
-        const comboPrice = combo.price;
-        totalPrice += comboPrice;
-        
-        const comboItem = document.createElement('div');
-        comboItem.className = 'selected-stall-item combo-stall-item';
-        comboItem.style.width = "100%";
-        comboItem.innerHTML = `
-            <div style="flex: 1;">
-                <strong>${combo.name}</strong> - Combo Pack (₹${comboPrice.toFixed(2)})
-                <div style="font-size: 0.85em; margin-top: 3px;">
-                    Includes: ${stalls.map(s => s.stall_number).join(', ')}
+        // Add combo groups to the list
+        for (const comboId in comboGroups) {
+            const { combo, stalls } = comboGroups[comboId];
+            
+            // Use combo price if available, otherwise sum individual stall prices
+            const comboPrice = combo.price;
+            totalPrice += comboPrice;
+            
+            const comboItem = document.createElement('div');
+            comboItem.className = 'selected-stall-item combo-stall-item';
+            comboItem.style.width = "100%";
+            comboItem.innerHTML = `
+                <div style="flex: 1;">
+                    <strong>${combo.name}</strong> - Combo Pack (₹${comboPrice.toFixed(2)})
+                    <div style="font-size: 0.85em; margin-top: 3px;">
+                        Includes: ${stalls.map(s => s.stall_number).join(', ')}
+                    </div>
                 </div>
-            </div>
-            <span class="remove-stall" data-combo-id="${comboId}">×</span>
-        `;
-        
-        selectedStallsList.appendChild(comboItem);
-        
-        // Add remove button click event
-        const removeBtn = comboItem.querySelector('.remove-stall');
-        removeBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const comboIdToRemove = this.getAttribute('data-combo-id');
-            const combo = comboData[comboIdToRemove];
+                <span class="remove-stall" data-combo-id="${comboId}">×</span>
+            `;
             
-            if (combo) {
-                // Remove all stalls in this combo
-                combo.stall_ids.forEach(stallId => {
-                    // Remove selection highlight
-                    const stallElement = document.querySelector(`.stall[data-stall-id="${stallId}"]`);
-                    if (stallElement) {
-                        stallElement.classList.remove('selected');
-                    }
-                    
-                    // Remove from selected array
-                    selectedStalls = selectedStalls.filter(id => id !== stallId.toString());
-                });
-            }
+            selectedStallsList.appendChild(comboItem);
             
-            // Update UI
-            updateSelectedStallsUI();
-        });
-    }
-    
-    // Add single stalls to the list
-    singleStalls.forEach(stall => {
-        const stallItem = document.createElement('div');
-        stallItem.className = 'selected-stall-item';
-        
-        // Add status class for visual indication
-        if (stall.status === 'booked') {
-            stallItem.classList.add('booked-stall-item');
-            stallItem.style.borderLeft = '3px solid #F44336';
-        } else if (stall.status === 'blocked') {
-            stallItem.classList.add('blocked-stall-item');
-            stallItem.style.borderLeft = '3px solid #9E9E9E';
+            // Add remove button click event
+            const removeBtn = comboItem.querySelector('.remove-stall');
+            removeBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const comboIdToRemove = this.getAttribute('data-combo-id');
+                const combo = comboData[comboIdToRemove];
+                
+                if (combo) {
+                    // Remove all stalls in this combo
+                    combo.stall_ids.forEach(stallId => {
+                        // Remove selection highlight
+                        const stallElement = document.querySelector(`.stall[data-stall-id="${stallId}"]`);
+                        if (stallElement) {
+                            stallElement.classList.remove('selected');
+                        }
+                        
+                        // Remove from selected array
+                        selectedStalls = selectedStalls.filter(id => id !== stallId.toString());
+                    });
+                }
+                
+                // Update UI
+                updateSelectedStallsUI();
+            });
         }
         
-        stallItem.innerHTML = `
-            Stall #${stall.stall_number} (₹${stall.price.toFixed(2)}) 
-            <span style="font-size: 0.85em; margin-left: 5px;">
-                [${stall.status.charAt(0).toUpperCase() + stall.status.slice(1)}]
-            </span>
-            <span class="remove-stall" data-stall-id="${stall.id}">×</span>
-        `;
-        
-        selectedStallsList.appendChild(stallItem);
-        
-        // Add remove button click event
-        const removeBtn = stallItem.querySelector('.remove-stall');
-        removeBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const stallIdToRemove = this.getAttribute('data-stall-id');
+        // Add single stalls to the list
+        singleStalls.forEach(stall => {
+            const stallItem = document.createElement('div');
+            stallItem.className = 'selected-stall-item';
             
-            // Remove selection highlight
-            const stallElement = document.querySelector(`.stall[data-stall-id="${stallIdToRemove}"]`);
-            if (stallElement) {
-                stallElement.classList.remove('selected');
+            // Add status class for visual indication
+            if (stall.status === 'booked') {
+                stallItem.classList.add('booked-stall-item');
+                stallItem.style.borderLeft = '3px solid #F44336';
+            } else if (stall.status === 'blocked') {
+                stallItem.classList.add('blocked-stall-item');
+                stallItem.style.borderLeft = '3px solid #9E9E9E';
             }
             
-            // Remove from selected array
-            selectedStalls = selectedStalls.filter(id => id !== stallIdToRemove);
+            stallItem.innerHTML = `
+                Stall #${stall.stall_number} (₹${stall.price.toFixed(2)}) 
+                <span style="font-size: 0.85em; margin-left: 5px;">
+                    [${stall.status.charAt(0).toUpperCase() + stall.status.slice(1)}]
+                </span>
+                <span class="remove-stall" data-stall-id="${stall.id}">×</span>
+            `;
             
-            // Update UI
-            updateSelectedStallsUI();
+            selectedStallsList.appendChild(stallItem);
+            
+            // Add remove button click event
+            const removeBtn = stallItem.querySelector('.remove-stall');
+            removeBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const stallIdToRemove = this.getAttribute('data-stall-id');
+                
+                // Remove selection highlight
+                const stallElement = document.querySelector(`.stall[data-stall-id="${stallIdToRemove}"]`);
+                if (stallElement) {
+                    stallElement.classList.remove('selected');
+                }
+                
+                // Remove from selected array
+                selectedStalls = selectedStalls.filter(id => id !== stallIdToRemove);
+                
+                // Update UI
+                updateSelectedStallsUI();
+            });
         });
-    });
-    
-    // FIX #3 - Calculate discount based on regular stalls count
-    let originalPrice = totalPrice;
-    
-    if (regularStallCount === 2) {
-        // Flat ₹5,000 discount for 2 stalls
-        discountAmount = 5000;
-        totalPrice -= discountAmount;
-    } else if (regularStallCount > 2) {
-        // ₹5,000 discount per stall for 3+ stalls
-        discountAmount = 5000 * regularStallCount;
-        totalPrice -= discountAmount;
+        
+        // FIX #3 - Calculate discount based on regular stalls count
+        let originalPrice = totalPrice;
+        
+        if (regularStallCount === 2) {
+            // Flat ₹5,000 discount for 2 stalls
+            discountAmount = 5000;
+            totalPrice -= discountAmount;
+        } else if (regularStallCount > 2) {
+            // ₹5,000 discount per stall for 3+ stalls
+            discountAmount = 5000 * regularStallCount;
+            totalPrice -= discountAmount;
+        }
+        
+        // Update total price
+        totalPriceElement.textContent = `Total: ₹${totalPrice.toFixed(2)}`;
+        
+        // Store the calculated price globally - FIX #5 - Store final price for confirmation
+        calculatedTotalPrice = totalPrice;
+        
+        // Update discount info - FIX #3
+        if (discountAmount > 0) {
+            discountInfoElement.style.display = 'block';
+            discountInfoElement.textContent = `Discount applied: ₹${discountAmount.toFixed(2)} (Original price: ₹${originalPrice.toFixed(2)})`;
+        } else {
+            discountInfoElement.style.display = 'none';
+        }
     }
-    
-    // Update total price
-    totalPriceElement.textContent = `Total: ₹${totalPrice.toFixed(2)}`;
-    
-    // Store the calculated price globally - FIX #5 - Store final price for confirmation
-    calculatedTotalPrice = totalPrice;
-    
-    // Update discount info - FIX #3
-    if (discountAmount > 0) {
-        discountInfoElement.style.display = 'block';
-        discountInfoElement.textContent = `Discount applied: ₹${discountAmount.toFixed(2)} (Original price: ₹${originalPrice.toFixed(2)})`;
-    } else {
-        discountInfoElement.style.display = 'none';
-    }
-}
 
-// Update the updateStallStatus function to use the calculated price
-function updateStallStatus(stallIds, newStatus, customerData = null) {
+    // Update the updateStallStatus function to use the calculated price
+    function updateStallStatus(stallIds, newStatus, customerData = null) {
     const loadingElement = document.getElementById('loading');
     loadingElement.style.display = 'flex';
     loadingElement.textContent = `Updating ${stallIds.length} stall(s)...`;
@@ -848,92 +848,183 @@ function updateStallStatus(stallIds, newStatus, customerData = null) {
         customerData.booking_reference = lastBookingReference;
     }
 
-    const promises = stallIds.map(stallId => {
+    // For booked status, create a single booking by handling the first stall differently
+    if (newStatus === 'booked' && customerData) {
+        // Create a booking with the first stall
+        const firstStallId = stallIds[0];
         const data = new FormData();
         data.append('status', newStatus);
-
-        if (customerData) {
-            for (const [key, value] of Object.entries(customerData)) {
-                data.append(key, value);
-            }
+        
+        // Add customer data
+        for (const [key, value] of Object.entries(customerData)) {
+            data.append(key, value);
         }
-
-        return fetch(`/admin_stall/${stallId}/update-status/`, {
+        
+        // Add the total_amount from our calculation
+        if (calculatedTotalPrice) {
+            data.append('total_amount', calculatedTotalPrice);
+        }
+        
+        // Process first stall to create booking
+        fetch(`/admin_stall/${firstStallId}/update-status/`, {
             method: 'POST',
             body: data,
             headers: {
                 'X-CSRFToken': getCookie('csrftoken')
             }
-        }).then(response => response.json());
-    });
-
-    Promise.all(promises)
-        .then(results => {
-            loadingElement.style.display = 'none';
-
-            const failures = results.filter(r => !r.success);
-            if (failures.length > 0) {
-                alert(`Warning: ${failures.length} stall updates failed.`);
-            }
-
-            // For booking operations, store the booking reference for future use
-            if (newStatus === 'booked') {
-                const bookingResult = results.find(r => r.booking_reference);
-                if (bookingResult && bookingResult.booking_reference) {
-                    lastBookingReference = bookingResult.booking_reference;
-                    
-                    // FIX #5 - Use the calculated total price instead of the response price
-                    if (customerData) {
-                        showBookingConfirmation(
-                            bookingResult.booking_reference,
-                            customerData.customer_name,
-                            calculatedTotalPrice,  // Use calculated price with discounts applied
-                            stallIds.map(id => stallData[id]?.stall_number).filter(Boolean).join(', ')
-                        );
-                    }
-                }
-            }
-
-            stallIds.forEach(stallId => {
-                const stallElement = document.querySelector(`.stall[data-stall-id="${stallId}"]`);
-                if (stallElement) {
-                    stallElement.classList.remove('available', 'booked', 'blocked');
-                    stallElement.classList.add(newStatus);
-                    stallElement.setAttribute('data-stall-status', newStatus);
-                    if (stallData[stallId]) {
-                        stallData[stallId].status = newStatus;
-                    }
-                    
-                    // FIX #1 - Remove click event for booked stalls
-                    if (newStatus === 'booked') {
-                        const newElement = stallElement.cloneNode(true);
-                        stallElement.parentNode.replaceChild(newElement, stallElement);
-                        newElement.style.cursor = 'not-allowed';
-                    }
-                }
-            });
-
-            selectedStalls = [];
-            document.querySelectorAll('.stall.selected').forEach(el => {
-                el.classList.remove('selected');
-            });
-
-            updateSelectedStallsUI();
         })
-        .catch(() => {
+        .then(response => response.json())
+        .then(result => {
+            if (result.success && result.booking_reference) {
+                // Store the booking reference for the remaining stalls
+                lastBookingReference = result.booking_reference;
+                
+                // Now process remaining stalls with the same booking reference
+                const remainingStallIds = stallIds.slice(1);
+                
+                if (remainingStallIds.length > 0) {
+                    const promises = remainingStallIds.map(stallId => {
+                        const remainingData = new FormData();
+                        remainingData.append('status', newStatus);
+                        
+                        // Add customer data including the booking reference
+                        for (const [key, value] of Object.entries(customerData)) {
+                            remainingData.append(key, value);
+                        }
+                        remainingData.append('booking_reference', lastBookingReference);
+                        remainingData.append('total_amount', calculatedTotalPrice);
+                        
+                        return fetch(`/admin_stall/${stallId}/update-status/`, {
+                            method: 'POST',
+                            body: remainingData,
+                            headers: {
+                                'X-CSRFToken': getCookie('csrftoken')
+                            }
+                        }).then(response => response.json());
+                    });
+                    
+                    return Promise.all(promises).then(remainingResults => {
+                        // Process all results
+                        const allResults = [result, ...remainingResults];
+                        processResults(allResults, stallIds, newStatus, customerData);
+                    });
+                } else {
+                    // Only one stall was selected
+                    processResults([result], stallIds, newStatus, customerData);
+                }
+            } else {
+                // Handle failure
+                loadingElement.style.display = 'none';
+                alert('Failed to create booking. Please try again.');
+            }
+        })
+        .catch(error => {
+            console.error('Error in booking:', error);
             loadingElement.style.display = 'none';
             alert('There was an error updating the stall status. Please try again.');
         });
+    } else {
+        // For other statuses (blocked, available), process normally
+        const promises = stallIds.map(stallId => {
+            const data = new FormData();
+            data.append('status', newStatus);
+
+            if (customerData) {
+                for (const [key, value] of Object.entries(customerData)) {
+                    data.append(key, value);
+                }
+            }
+
+            return fetch(`/admin_stall/${stallId}/update-status/`, {
+                method: 'POST',
+                body: data,
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            }).then(response => response.json());
+        });
+
+        Promise.all(promises)
+            .then(results => {
+                processResults(results, stallIds, newStatus, customerData);
+            })
+            .catch(error => {
+                console.error('Error updating stalls:', error);
+                loadingElement.style.display = 'none';
+                alert('There was an error updating the stall status. Please try again.');
+            });
+    }
 }
 
-// Modified showBookingConfirmation function to format the amount correctly
-function showBookingConfirmation(reference, customer, amount, stallNumbers) {
-    document.getElementById('confirmation-reference').textContent = reference;
-    document.getElementById('confirmation-customer').textContent = customer;
-    document.getElementById('confirmation-amount').textContent = parseFloat(amount).toFixed(2);  // Ensure proper formatting
-    document.getElementById('confirmation-stalls').textContent = stallNumbers;
-    confirmationModal.style.display = 'flex';
-}
+    // Helper function to process results after stall updates
+    function processResults(results, stallIds, newStatus, customerData) {
+        const loadingElement = document.getElementById('loading');
+        loadingElement.style.display = 'none';
+
+        const failures = results.filter(r => !r.success);
+        if (failures.length > 0) {
+            alert(`Warning: ${failures.length} stall updates failed.`);
+        }
+
+        // For booking operations, handle the booking reference
+        if (newStatus === 'booked') {
+            const bookingResult = results.find(r => r.booking_reference);
+            if (bookingResult && bookingResult.booking_reference) {
+                lastBookingReference = bookingResult.booking_reference;
+                
+                // Show booking confirmation with calculated total price
+                if (customerData) {
+                    showBookingConfirmation(
+                        bookingResult.booking_reference,
+                        customerData.customer_name,
+                        calculatedTotalPrice,  // Use calculated price with discounts applied
+                        stallIds.map(id => stallData[id]?.stall_number).filter(Boolean).join(', ')
+                    );
+                }
+            }
+        }
+
+        // Update stall UI elements
+        stallIds.forEach(stallId => {
+            const stallElement = document.querySelector(`.stall[data-stall-id="${stallId}"]`);
+            if (stallElement) {
+                // Update classes and data attributes
+                stallElement.classList.remove('available', 'booked', 'blocked');
+                stallElement.classList.add(newStatus);
+                stallElement.setAttribute('data-stall-status', newStatus);
+                
+                // Update data store
+                if (stallData[stallId]) {
+                    stallData[stallId].status = newStatus;
+                }
+                
+                // Remove click event for booked stalls
+                if (newStatus === 'booked') {
+                    const newElement = stallElement.cloneNode(true);
+                    stallElement.parentNode.replaceChild(newElement, stallElement);
+                    newElement.style.cursor = 'not-allowed';
+                }
+            }
+        });
+
+        // Clear selected stalls
+        selectedStalls = [];
+        document.querySelectorAll('.stall.selected').forEach(el => {
+            el.classList.remove('selected');
+        });
+
+        // Update UI
+        updateSelectedStallsUI();
+    }
+
+    // Modified showBookingConfirmation function to format the amount correctly
+    function showBookingConfirmation(reference, customer, amount, stallNumbers) {
+        document.getElementById('confirmation-reference').textContent = reference;
+        document.getElementById('confirmation-customer').textContent = customer;
+        document.getElementById('confirmation-amount').textContent = parseFloat(amount).toFixed(2);  // Ensure proper formatting
+        document.getElementById('confirmation-stalls').textContent = stallNumbers;
+        confirmationModal.style.display = 'flex';
+    }
 
     // Helper function to get CSRF token
     function getCookie(name) {
@@ -1039,14 +1130,15 @@ function showBookingConfirmation(reference, customer, amount, stallNumbers) {
             return;
         }
         
-        // Collect customer data - FIX #6 - Set is_admin_booking
+        // Collect customer data
         const customerData = {
             customer_name: document.getElementById('customer_name').value,
             customer_email: document.getElementById('customer_email').value,
             customer_phone: document.getElementById('customer_phone').value,
             company_name: document.getElementById('company_name').value,
             notes: document.getElementById('notes').value,
-            is_admin_booking: true // This field is set in the Django view
+            is_admin_booking: true,
+            total_amount: calculatedTotalPrice // Include the total amount in the customer data
         };
         
         // Validate required fields
@@ -1055,7 +1147,7 @@ function showBookingConfirmation(reference, customer, amount, stallNumbers) {
             return;
         }
         
-        // Update status and create booking
+        // Update status and create booking for all stalls at once
         updateStallStatus(stallIds, 'booked', customerData);
         
         // Clear form and hide modal

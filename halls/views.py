@@ -895,6 +895,7 @@ def admin_update_stall_status(request, stall_id):
     company_name = request.POST.get('company_name', '')
     notes = request.POST.get('notes', '')
     booking_reference = request.POST.get('booking_reference', '')  # To link multiple stalls
+    total_amount = request.POST.get('total_amount', '0.00')  # Add this line to get total_amount from frontend
     
     if status not in [s[0] for s in Stall.STATUS_CHOICES]:
         return JsonResponse({'success': False, 'error': 'Invalid status'})
@@ -909,6 +910,18 @@ def admin_update_stall_status(request, stall_id):
             # Try to find existing booking with this reference
             try:
                 booking = Booking.objects.get(booking_reference=booking_reference)
+                # Update the booking with the latest information
+                booking.customer_name = customer_name
+                booking.customer_email = customer_email
+                booking.customer_phone = customer_phone
+                booking.company_name = company_name
+                if notes:
+                    booking.notes = notes
+                booking.status = 'booked'
+                # Update the total amount from the request if provided
+                if total_amount:
+                    booking.total_amount = decimal.Decimal(total_amount)
+                booking.save()
             except Booking.DoesNotExist:
                 # Create new booking with provided reference
                 booking = Booking.objects.create(
@@ -919,7 +932,8 @@ def admin_update_stall_status(request, stall_id):
                     notes=notes,
                     status='booked',
                     booking_reference=booking_reference,
-                    is_admin_booking=True  # Mark as admin booking
+                    is_admin_booking=True,  # Mark as admin booking
+                    total_amount=decimal.Decimal(total_amount)  # Set the total amount
                 )
         else:
             # Create new booking with generated reference
@@ -930,39 +944,12 @@ def admin_update_stall_status(request, stall_id):
                 company_name=company_name,
                 notes=notes,
                 status='booked',
-                is_admin_booking=True  # Mark as admin booking
+                is_admin_booking=True,  # Mark as admin booking
+                total_amount=decimal.Decimal(total_amount)  # Set the total amount
             )
         
         # Add stall to booking
         booking.stalls.add(stall)
-        
-        # Calculate total amount with discount
-        # This is now handled by the calculate_discounted_price function
-        # which should respect that combo stalls are not eligible for discounts
-        stalls_in_booking = booking.stalls.all()
-        
-        # First, identify combo stalls
-        combo_stalls = []
-        regular_stalls = []
-        
-        for s in stalls_in_booking:
-            # Check if stall is part of a combo
-            if hasattr(s, 'combos') and s.combos.exists():
-                combo_stalls.append(s)
-            else:
-                regular_stalls.append(s)
-        
-        # Calculate price for combo stalls (no discount)
-        combo_price = sum(s.price for s in combo_stalls)
-        
-        # Calculate price with discount for regular stalls
-        regular_count = len(regular_stalls)
-        regular_price = sum(s.price for s in regular_stalls)
-        discounted_regular_price = calculate_discounted_price(regular_count, regular_price)
-        
-        # Total price is the sum of combo price and discounted regular price
-        booking.total_amount = combo_price + discounted_regular_price
-        booking.save()
         
         response_data = {
             'success': True, 
@@ -1064,7 +1051,6 @@ def admin_update_stall_status(request, stall_id):
         }
     
     return JsonResponse(response_data)
-
 
 def admin_booking(request):
     # Get filter parameters from request
