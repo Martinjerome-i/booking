@@ -150,14 +150,12 @@
             <!-- Display combo stalls -->
             {% if combo_stalls %}
             <h3>Combo Stalls</h3>
-            <div class="stall-list">
-                {% for stall in combo_stalls %}
-                <div class="stall-item">
-                    <p><strong>Stall #{{ stall.stall_number }}</strong> <span class="combo-badge">Combo</span> | Size: {{ stall.width }}m x {{ stall.height }}m ({{ stall.area }}m²)</p>
-                </div>
-                {% endfor %}
+            <div class="stall-item">
+                <p><strong>Combo Package:</strong> <span class="combo-badge">Combo</span></p>
+                <p><strong>Stalls included:</strong> {% for stall in combo_stalls %}#{{ stall.stall_number }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+                <p><strong>Total Area:</strong> {{ combo_area }}m²</p>
+                <p><strong>Package Price:</strong> ₹130,000.00 (fixed package price)</p>
             </div>
-            <p><strong>Combo Package Price:</strong> ₹130,000.00 (fixed package price)</p>
             {% endif %}
         </div>
 
