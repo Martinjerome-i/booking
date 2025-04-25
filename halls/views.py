@@ -874,7 +874,6 @@ def admin_stall_management(request, hall_id):
     stalls = hall.stalls.all()
     return render(request, 'home/manage_booking.html', {'hall': hall, 'stalls': stalls})
 
-
 @require_POST
 def admin_update_stall_status(request, stall_id):
     """
@@ -911,11 +910,11 @@ def admin_update_stall_status(request, stall_id):
                     company_name=company_name,
                     notes=notes,
                     status='booked',
-                    booking_reference=booking_reference
+                    booking_reference=booking_reference,
+                    is_admin_booking=True  # Mark as admin booking
                 )
         else:
             # Create new booking with generated reference
-            booking_reference = f"BK{timezone.now().strftime('%Y%m%d%H%M%S')}"
             booking = Booking.objects.create(
                 customer_name=customer_name,
                 customer_email=customer_email,
@@ -923,23 +922,46 @@ def admin_update_stall_status(request, stall_id):
                 company_name=company_name,
                 notes=notes,
                 status='booked',
-                booking_reference=booking_reference
+                is_admin_booking=True  # Mark as admin booking
             )
         
         # Add stall to booking
         booking.stalls.add(stall)
         
-        # Update total amount with discount
-        stall_count = booking.stalls.count()
-        total_price = sum(s.price for s in booking.stalls.all())
-        booking.total_amount = calculate_discounted_price(stall_count, total_price)
+        # Calculate total amount with discount
+        # This is now handled by the calculate_discounted_price function
+        # which should respect that combo stalls are not eligible for discounts
+        stalls_in_booking = booking.stalls.all()
+        
+        # First, identify combo stalls
+        combo_stalls = []
+        regular_stalls = []
+        
+        for s in stalls_in_booking:
+            # Check if stall is part of a combo
+            if hasattr(s, 'combos') and s.combos.exists():
+                combo_stalls.append(s)
+            else:
+                regular_stalls.append(s)
+        
+        # Calculate price for combo stalls (no discount)
+        combo_price = sum(s.price for s in combo_stalls)
+        
+        # Calculate price with discount for regular stalls
+        regular_count = len(regular_stalls)
+        regular_price = sum(s.price for s in regular_stalls)
+        discounted_regular_price = calculate_discounted_price(regular_count, regular_price)
+        
+        # Total price is the sum of combo price and discounted regular price
+        booking.total_amount = combo_price + discounted_regular_price
         booking.save()
         
         response_data = {
             'success': True, 
             'status': status,
             'status_display': dict(Stall.STATUS_CHOICES).get(status, status),
-            'booking_reference': booking.booking_reference
+            'booking_reference': booking.booking_reference,
+            'total_amount': float(booking.total_amount)
         }
     
     # If blocking the stall, create a 'blocked' booking record
@@ -957,19 +979,19 @@ def admin_update_stall_status(request, stall_id):
                     customer_phone="N/A",
                     notes=notes or f"Blocked by admin on {timezone.now().strftime('%Y-%m-%d %H:%M')}",
                     status='blocked',
-                    booking_reference=booking_reference
+                    booking_reference=booking_reference,
+                    is_admin_booking=True  # Mark as admin booking
                 )
                 booking.stalls.add(stall)
         else:
             # Create new booking with generated reference
-            booking_reference = f"BL{timezone.now().strftime('%Y%m%d%H%M%S')}"
             booking = Booking.objects.create(
                 customer_name="Admin Blocked",
                 customer_email="admin@example.com",
                 customer_phone="N/A",
                 notes=notes or f"Blocked by admin on {timezone.now().strftime('%Y-%m-%d %H:%M')}",
                 status='blocked',
-                booking_reference=booking_reference
+                is_admin_booking=True  # Mark as admin booking
             )
             booking.stalls.add(stall)
         
@@ -994,9 +1016,30 @@ def admin_update_stall_status(request, stall_id):
                 booking.stalls.remove(stall)
                 
                 # Recalculate total amount with discount for remaining stalls
-                stall_count = booking.stalls.count()
-                total_price = sum(s.price for s in booking.stalls.all())
-                booking.total_amount = calculate_discounted_price(stall_count, total_price)
+                # Similar logic as above for combo vs regular stalls
+                stalls_in_booking = booking.stalls.all()
+                
+                # First, identify combo stalls
+                combo_stalls = []
+                regular_stalls = []
+                
+                for s in stalls_in_booking:
+                    # Check if stall is part of a combo
+                    if hasattr(s, 'combos') and s.combos.exists():
+                        combo_stalls.append(s)
+                    else:
+                        regular_stalls.append(s)
+                
+                # Calculate price for combo stalls (no discount)
+                combo_price = sum(s.price for s in combo_stalls)
+                
+                # Calculate price with discount for regular stalls
+                regular_count = len(regular_stalls)
+                regular_price = sum(s.price for s in regular_stalls)
+                discounted_regular_price = calculate_discounted_price(regular_count, regular_price)
+                
+                # Total price is the sum of combo price and discounted regular price
+                booking.total_amount = combo_price + discounted_regular_price
                 booking.save()
         
         response_data = {

@@ -80,10 +80,11 @@ class Booking(models.Model):
     notes = models.TextField(blank=True, null=True)
     payment_status = models.BooleanField(default=False)
     booking_reference = models.CharField(max_length=20, unique=True)
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # Add this field
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    is_admin_booking = models.BooleanField(default=False)  # Added field to track admin bookings
     
     def save(self, *args, **kwargs):
-    # Generate booking reference if not provided
+        # Generate booking reference if not provided
         if not self.booking_reference:
             # Use timestamp to create unique reference
             import random
@@ -104,4 +105,5 @@ class Booking(models.Model):
     
     def __str__(self):
         return f"Booking {self.booking_reference} - {self.customer_name}"
+    
     
