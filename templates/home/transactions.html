@@ -134,14 +134,7 @@
                     </div>
                 </td>
                 <td>
-                    <span class="total-amount">
-                        ₹{% with total_price=0 %}
-                            {% for stall in booking.stalls.all %}
-                                {% with total_price=total_price|add:stall.price %}{% endwith %}
-                            {% endfor %}
-                            {{ total_price }}
-                        {% endwith %}
-                    </span>
+                    <span class="total-amount">{{ booking.total_amount }}</span>
                 </td>
                 <td><span class="fw-normal">{{ booking.booking_date|date:"M d, Y" }}</span></td>
                 <td>

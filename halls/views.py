@@ -572,27 +572,6 @@ def book_stall(request):
         hall_id = stalls.first().hall.id if stalls.exists() else 1
         return redirect('stall_booking', hall_id=hall_id)
     
-    if request.method == 'POST':
-        form = BookingForm(request.POST)
-        if form.is_valid():
-            # Create booking but don't save stall relationship yet
-            booking = form.save(commit=False)
-            booking.status = 'booked'  # Directly set to booked status
-            booking.save()  # Save to generate ID
-            
-            # Now add all stalls to the booking
-            booking.stalls.set(stalls)
-            
-            # Update stall status to booked
-            stalls.update(status='booked')
-            
-            return redirect('booking_confirmation', booking_id=booking.id)
-    else:
-        form = BookingForm()
-    
-    # Get the hall info from the first stall
-    hall = stalls.first().hall if stalls.exists() else None
-    
     # Separate regular stalls and combo stalls
     regular_stalls = []
     combo_stalls = []
@@ -620,11 +599,32 @@ def book_stall(request):
         discounted_regular_price = regular_stall_base_price - discount_amount
     
     # Combo stalls have a fixed price of 130,000 for the entire combo package
-    # regardless of how many combo stalls are selected
     combo_stall_price = decimal.Decimal('130000.00') if combo_stalls else decimal.Decimal('0')
     
     # Total price
     total_price = discounted_regular_price + combo_stall_price
+
+    if request.method == 'POST':
+        form = BookingForm(request.POST)
+        if form.is_valid():
+            # Create booking but don't save stall relationship yet
+            booking = form.save(commit=False)
+            booking.status = 'booked'  # Directly set to booked status
+            booking.total_amount = total_price  # Save the total amount
+            booking.save()  # Save to generate ID
+            
+            # Now add all stalls to the booking
+            booking.stalls.set(stalls)
+            
+            # Update stall status to booked
+            stalls.update(status='booked')
+            
+            return redirect('booking_confirmation', booking_id=booking.id)
+    else:
+        form = BookingForm()
+    
+    # Get the hall info from the first stall
+    hall = stalls.first().hall if stalls.exists() else None
     
     # Calculate discount percentage for display purposes
     discount_percentage = 0
@@ -687,8 +687,8 @@ def booking_confirmation(request, booking_id):
     # Combo stalls have a fixed price of 130,000 for the entire combo package
     combo_stall_price = decimal.Decimal('130000.00') if combo_stalls else decimal.Decimal('0')
     
-    # Total price is the sum of discounted regular stalls and combo stalls
-    total_price = discounted_regular_price + combo_stall_price
+    # Use the total_amount from the booking model
+    total_price = booking.total_amount
     
     # Calculate discount percentage for display purposes
     discount_percentage = 0
@@ -712,6 +712,7 @@ def booking_confirmation(request, booking_id):
         'discount_amount': discount_amount,
         'discount_percentage': discount_percentage
     })
+
 
 @require_POST
 def update_booking_status(request, booking_id):
@@ -886,6 +887,7 @@ def admin_update_stall_status(request, stall_id):
     customer_phone = request.POST.get('customer_phone', '')
     company_name = request.POST.get('company_name', '')
     notes = request.POST.get('notes', '')
+    booking_reference = request.POST.get('booking_reference', '')  # To link multiple stalls
     
     if status not in [s[0] for s in Stall.STATUS_CHOICES]:
         return JsonResponse({'success': False, 'error': 'Invalid status'})
@@ -894,28 +896,89 @@ def admin_update_stall_status(request, stall_id):
     stall.status = status
     stall.save()
     
-    # If booking the stall, create a booking record
+    # If booking the stall, create or update a booking record
     if status == 'booked' and customer_name and customer_email:
-        booking = Booking.objects.create(
-            customer_name=customer_name,
-            customer_email=customer_email,
-            customer_phone=customer_phone,
-            company_name=company_name,
-            notes=notes,
-            status='booked'
-        )
+        if booking_reference:
+            # Try to find existing booking with this reference
+            try:
+                booking = Booking.objects.get(booking_reference=booking_reference)
+            except Booking.DoesNotExist:
+                # Create new booking with provided reference
+                booking = Booking.objects.create(
+                    customer_name=customer_name,
+                    customer_email=customer_email,
+                    customer_phone=customer_phone,
+                    company_name=company_name,
+                    notes=notes,
+                    status='booked',
+                    booking_reference=booking_reference
+                )
+        else:
+            # Create new booking with generated reference
+            booking_reference = f"BK{timezone.now().strftime('%Y%m%d%H%M%S')}"
+            booking = Booking.objects.create(
+                customer_name=customer_name,
+                customer_email=customer_email,
+                customer_phone=customer_phone,
+                company_name=company_name,
+                notes=notes,
+                status='booked',
+                booking_reference=booking_reference
+            )
+        
+        # Add stall to booking
         booking.stalls.add(stall)
+        
+        # Update total amount with discount
+        stall_count = booking.stalls.count()
+        total_price = sum(s.price for s in booking.stalls.all())
+        booking.total_amount = calculate_discounted_price(stall_count, total_price)
+        booking.save()
+        
+        response_data = {
+            'success': True, 
+            'status': status,
+            'status_display': dict(Stall.STATUS_CHOICES).get(status, status),
+            'booking_reference': booking.booking_reference
+        }
     
     # If blocking the stall, create a 'blocked' booking record
     elif status == 'blocked':
-        booking = Booking.objects.create(
-            customer_name="Admin Blocked",
-            customer_email="admin@example.com",
-            customer_phone="N/A",
-            notes=notes or f"Blocked by admin on {timezone.now().strftime('%Y-%m-%d %H:%M')}",
-            status='blocked'
-        )
-        booking.stalls.add(stall)
+        if booking_reference:
+            # Try to find existing blocked booking with this reference
+            try:
+                booking = Booking.objects.get(booking_reference=booking_reference, status='blocked')
+                booking.stalls.add(stall)
+            except Booking.DoesNotExist:
+                # Create new booking with provided reference
+                booking = Booking.objects.create(
+                    customer_name="Admin Blocked",
+                    customer_email="admin@example.com",
+                    customer_phone="N/A",
+                    notes=notes or f"Blocked by admin on {timezone.now().strftime('%Y-%m-%d %H:%M')}",
+                    status='blocked',
+                    booking_reference=booking_reference
+                )
+                booking.stalls.add(stall)
+        else:
+            # Create new booking with generated reference
+            booking_reference = f"BL{timezone.now().strftime('%Y%m%d%H%M%S')}"
+            booking = Booking.objects.create(
+                customer_name="Admin Blocked",
+                customer_email="admin@example.com",
+                customer_phone="N/A",
+                notes=notes or f"Blocked by admin on {timezone.now().strftime('%Y-%m-%d %H:%M')}",
+                status='blocked',
+                booking_reference=booking_reference
+            )
+            booking.stalls.add(stall)
+        
+        response_data = {
+            'success': True, 
+            'status': status,
+            'status_display': dict(Stall.STATUS_CHOICES).get(status, status),
+            'booking_reference': booking.booking_reference
+        }
     
     # If unblocking (setting to available), find and update related bookings
     elif status == 'available':
@@ -926,16 +989,30 @@ def admin_update_stall_status(request, stall_id):
             if booking.stalls.count() == 1:  # If this is the only stall in the booking
                 booking.status = 'cancelled'
                 booking.save()
-                print(f"DEBUG: Cancelled booking {booking.booking_reference}")
             else:
                 # If there are other stalls in this booking, just remove this stall
                 booking.stalls.remove(stall)
+                
+                # Recalculate total amount with discount for remaining stalls
+                stall_count = booking.stalls.count()
+                total_price = sum(s.price for s in booking.stalls.all())
+                booking.total_amount = calculate_discounted_price(stall_count, total_price)
+                booking.save()
+        
+        response_data = {
+            'success': True, 
+            'status': status,
+            'status_display': dict(Stall.STATUS_CHOICES).get(status, status)
+        }
     
-    return JsonResponse({
-        'success': True, 
-        'status': status,
-        'status_display': dict(Stall.STATUS_CHOICES).get(status, status)
-    })
+    else:
+        response_data = {
+            'success': True, 
+            'status': status,
+            'status_display': dict(Stall.STATUS_CHOICES).get(status, status)
+        }
+    
+    return JsonResponse(response_data)
 
 def admin_booking(request):
     bookings_list = Booking.objects.all().order_by('-booking_date')

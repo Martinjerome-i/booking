@@ -202,7 +202,7 @@
                 <p>Combo Stalls Package: ₹{{ combo_stall_price|floatformat:2 }}</p>
                 {% endif %}
                 
-                <p class="price">Total Price: ₹{{ total_price|floatformat:2 }}</p>
+                <p class="price">Total Price: ₹{{ booking.total_amount|floatformat:2 }}</p>
             </div>
             
             <div class="payment-info">
