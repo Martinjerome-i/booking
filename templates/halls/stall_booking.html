@@ -615,39 +615,38 @@
         });
     });
     
-    // Then add combo stalls
+    // Then add combo stalls - CONSOLIDATED VERSION
     Object.values(comboGroups).forEach(group => {
-        const comboStalls = group.stalls;
+        const comboItem = document.createElement('div');
+        comboItem.className = 'selected-stall-item combo-stall-item';
         
-        // Create a combo group element
-        comboStalls.forEach(stall => {
-            const stallItem = document.createElement('div');
-            stallItem.className = 'selected-stall-item combo-stall-item';
-            stallItem.innerHTML = `
-                Stall #${stall.stall_number} <span class="combo-badge">Combo</span> <span class="remove-stall" data-stall-id="${stall.id}" data-combo-id="${group.combo.id}">×</span>
-            `;
-            selectedStallsList.appendChild(stallItem);
+        // Create a comma-separated list of stall numbers
+        const stallNumbers = group.stalls.map(stall => stall.stall_number).join(', ');
+        
+        comboItem.innerHTML = `
+            <span>Combo Package: Stalls #${stallNumbers}</span> <span class="remove-stall" data-combo-id="${group.combo.id}">×</span>
+        `;
+        selectedStallsList.appendChild(comboItem);
+        
+        // Add click event to remove button that removes the whole combo
+        comboItem.querySelector('.remove-stall').addEventListener('click', function() {
+            const comboId = this.getAttribute('data-combo-id');
+            const combo = comboData[comboId];
             
-            // Add click event to remove button that removes the whole combo
-            stallItem.querySelector('.remove-stall').addEventListener('click', function() {
-                const comboId = this.getAttribute('data-combo-id');
-                const combo = comboData[comboId];
-                
-                if (combo) {
-                    // Deselect all stalls in this combo
-                    combo.stall_ids.forEach(id => {
-                        const comboStallElement = document.querySelector(
-                            `.stall[data-stall-id="${id}"]`
-                        );
-                        if (comboStallElement) {
-                            comboStallElement.classList.remove('selected');
-                        }
-                        selectedStalls = selectedStalls.filter(sid => sid !== id.toString());
-                    });
-                }
-                
-                updateSelectedStallsUI();
-            });
+            if (combo) {
+                // Deselect all stalls in this combo
+                combo.stall_ids.forEach(id => {
+                    const comboStallElement = document.querySelector(
+                        `.stall[data-stall-id="${id}"]`
+                    );
+                    if (comboStallElement) {
+                        comboStallElement.classList.remove('selected');
+                    }
+                    selectedStalls = selectedStalls.filter(sid => sid !== id.toString());
+                });
+            }
+            
+            updateSelectedStallsUI();
         });
     });
     
@@ -685,7 +684,8 @@
         }
     };
 }
-        });
+
+});
     </script>
 </body>
 </html>
