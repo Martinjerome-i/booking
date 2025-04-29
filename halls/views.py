@@ -1055,16 +1055,11 @@ def admin_update_stall_status(request, stall_id):
 def admin_booking(request):
     # Get filter parameters from request
     search_query = request.GET.get('search', '')
-    status_filter = request.GET.get('status', '')
     source_filter = request.GET.get('source', '')
     payment_filter = request.GET.get('payment', '')
     
-    # Start with all bookings excluding blocked ones by default
-    queryset = Booking.objects.exclude(status='blocked')
-    
-    # Only include blocked bookings if specifically requested
-    if status_filter == 'blocked':
-        queryset = Booking.objects.filter(status='blocked')
+    # Start with all bookings that are not cancelled or blocked
+    queryset = Booking.objects.exclude(status='cancelled').exclude(status='blocked')
     
     # Apply filters if provided
     if search_query:
@@ -1075,9 +1070,6 @@ def admin_booking(request):
             Q(booking_reference__icontains=search_query) |
             Q(customer_phone__icontains=search_query)
         )
-    
-    if status_filter and status_filter != 'blocked':  # Skip if we're already filtering for blocked
-        queryset = queryset.filter(status=status_filter)
     
     if source_filter == 'admin':
         queryset = queryset.filter(is_admin_booking=True)
@@ -1107,13 +1099,11 @@ def admin_booking(request):
     context = {
         'bookings': bookings,
         'search_query': search_query,
-        'status_filter': status_filter,
         'source_filter': source_filter,
         'payment_filter': payment_filter
     }
     
     return render(request, 'home/transactions.html', context)
-
 
 @require_POST
 def admin_delete_booking(request, booking_id):
