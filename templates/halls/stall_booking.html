@@ -2,24 +2,33 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <!--<meta name="viewport" content="width=device-width, initial-scale=1.0">-->
-    <title>Book a Stall - {{ hall.name }}</title>
+    <title>INTERNATIONAL BIRYANI FESTIVAL AND EXPO</title>
     <link rel="icon" type="image/png" href="/static/favicon.ico">
+    <!-- Added preload for key resources -->
+    <link rel="preload" href="/static/ibfe_logo.png" as="image">
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Roboto, Arial, sans-serif;
             margin: 0;
             padding: 20px;
+            background-color: #f9f9f9;
+            color: #333333;
         }
         .container {
-            max-width: 1200px;
+            max-width: 1400px; /* Already set to 1400px in the original */
             margin: 0 auto;
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            padding: 25px;
+            border-radius: 6px;
         }
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
+            border-bottom: 0.5px solid #e0e0e0;
+            padding-bottom: 15px;
         }
         
         .logo {
@@ -43,6 +52,11 @@
             cursor: pointer;
             border-radius: 4px;
             margin-right: 5px;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+        .btn:hover {
+            background-color: #5c263f;
         }
         .btn-primary {
             background-color: #2196F3;
@@ -52,167 +66,226 @@
             cursor: not-allowed;
         }
         .hall-display {
-            /*border: 1px solid #ddd;*/
-            /*overflow: auto;*/
-            /*margin-bottom: 20px;*/
             position: relative;
         }
         .stall {
             position: absolute;
-            border: 1px solid #2E7D32;
+            border: 0.5px solid #000; /* Changed border color to #000 */
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            font-weight: bold;
+            color: #333333;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
         .stall:hover {
-            filter: brightness(1.1);
-            transform: scale(1.02);
-            z-index: 10;
+            filter: brightness(1.05);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
         }
-        .stall.available {
-            background-color: #451a32;
-            border: 1px solid #FFFFFF;
+        /* Eatery stalls */
+        .stall.available.eatery {
+            background-color: #cce7d3;
         }
+        .stall.available.eatery.combo {
+            background-color: #a3d9b0; /* Darker for combos */
+        }
+        /* Non-eatery stalls */
+        .stall.available.non-eatery {
+            background-color: #fffcd5;
+        }
+        .stall.available.non-eatery.combo {
+            background-color: #f2efa2; /* Darker for combos */
+        }
+        /* Booked/blocked stalls */
         .stall.booked, .stall.blocked {
-            background-color: #868585;
-            border: 1px solid #FFFFFF;
+            background-color: #f0f0f0;
+            border: 0.5px solid #000; /* Changed border color to #000 */
+            color: #9e9e9e;
             cursor: not-allowed;
         }
+        /* Selected stalls - changed to dark gray for all selected stalls */
         .stall.selected {
-            border: 1px solid #FFFFFF;
-            background-color: #fcc41a;
+            background-color: #4d4d4d !important; /* Dark gray for all selected stalls */
+            color: #ffffff;
+            border: 0.5px solid #000; /* Changed border color to #000 */
         }
         .stall-info {
-            background-color: #f9f9f9;
-            border: 1px solid #ddd;
-            padding: 20px;
-            border-radius: 5px;
+            background-color: #ffffff;
+            border: 0.5px solid #e0e0e0;
+            padding: 25px;
+            border-radius: 6px;
             display: none;
-            margin-bottom: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
         .stall-info h3 {
             margin-top: 0;
+            color: #333333;
+            font-weight: 500;
         }
         .legend {
             display: flex;
-            gap: 20px;
+            gap: 25px;
             margin-bottom: 20px;
             flex-wrap: wrap;
+            padding: 15px;
+            background-color: #ffffff;
+            border-radius: 4px;
+            border: 0.5px solid #e0e0e0;
         }
         .legend-item {
             display: flex;
             align-items: center;
+            opacity: 0.9;
         }
         .legend-color {
             width: 20px;
             height: 20px;
-            margin-right: 5px;
-            border: 1px solid #333;
+            margin-right: 8px;
+            border: 0.5px solid #000; /* Changed border color to #000 */
+            border-radius: 3px;
         }
         .loading {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background-color: rgba(255,255,255,0.8);
+            background-color: rgba(255,255,255,0.9);
             padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 6px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             z-index: 100;
         }
         .selected-stalls-list {
-            margin-top: 10px;
+            margin-top: 15px;
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 10px;
         }
         .selected-stall-item {
-            background-color: #e3f2fd;
-            padding: 5px 10px;
+            background-color: #f5f5f5;
+            padding: 8px 12px;
             border-radius: 4px;
             display: flex;
             align-items: center;
+            border: 0.5px solid #000; /* Changed border color to #000 */
         }
         .combo-stall-item {
             background-color: #f3e5f5;
+            border-color: #000; /* Changed border color to #000 */
         }
         .remove-stall {
             color: #F44336;
             cursor: pointer;
-            margin-left: 5px;
-            font-weight: bold;
+            margin-left: 8px;
+            font-weight: 500;
         }
         .selection-info {
             margin-top: 15px;
-            font-weight: bold;
+            font-weight: 500;
+            color: #333333;
         }
-        /* Added styles for entry/exit markers */
+        /* Entry/exit markers */
         .entry-exit-marker {
             position: absolute;
             z-index: 20;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: bold;
             pointer-events: none;
         }
         .entry-exit-marker svg {
-            filter: drop-shadow(0px 0px 3px rgba(0,0,0,0.3));
+            filter: drop-shadow(0px 0px 2px rgba(0,0,0,0.2));
         }
         .entry-exit-label {
             position: absolute;
-            font-size: 14px;
-            font-weight: bold;
-            color: #333;
+            font-size: 13px;
+            font-weight: 500;
+            color: #333333;
             text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
             text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        /* Type indicator in stall item */
+        .stall-type-indicator {
+            font-size: 12px;
+            margin-left: 6px;
+            padding: 2px 8px;
+            color: #333;
+            font-weight: 500;
+        }
+        .eatery-indicator {
+            background-color: #cce7d3;
+        }
+        .non-eatery-indicator {
+            background-color: #fffcd5;
+        }
+        /* Hall info styling */
+        .hall-info {
+            margin-bottom: 20px;
+            padding: 10px 15px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            border: 0.5px solid #e0e0e0;
+        }
+        /* Title styling */
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333333;
+            margin: 0;
+        }
+        /* Stall number styling */
+        .stall-number {
+            font-weight: 300;
+            font-size: 14px;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>Book a Stall - {{ hall.name }}</h1>
+            <h1>INTERNATIONAL BIRYANI FESTIVAL AND EXPO</h1>
             <div class="logo">
-                <img src="/static/ibfe_logo.png" alt="Company Logo" height="60">
+                <img src="/static/ibfe_logo.png" alt="IBFE Logo" height="60">
             </div>
         </div>
 
         <div class="hall-info">
-            <p>Size: {{ hall.length }}m x {{ hall.breadth }}m ({{ hall.total_area }}m²)</p>
+            <p>CHENNAI TRADE CENTRE - HALL 3 - 4400 SQM | 12, 13 & 14 SEPTEMBER 2025</p>
         </div>
 
         <!-- Hall View Section -->
-        <div id="hall-view-container">
+        <div id="hall-view-container" class="hall">
             <div class="legend">
                 <div class="legend-item">
-                    <div class="legend-color" style="background-color: #451a32;"></div>
-                    <span>Available</span>
+                    <div class="legend-color" style="background-color: #fffcd5; border: 0.5px solid #000;"></div>
+                    <span>Non-Eatery</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background-color: #868585;"></div>
+                    <div class="legend-color" style="background-color: #cce7d3; border: 0.5px solid #000;"></div>
+                    <span>Eatery</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #f0f0f0; border: 0.5px solid #000;"></div>
                     <span>Booked</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background-color: #fcc41a;"></div>
+                    <div class="legend-color" style="background-color: #4d4d4d; border: 0.5px solid #000;"></div>
                     <span>Selected</span>
                 </div>
             </div>
 
             <div class="hall-display" id="hall-display"
-                style="width: 100%; height: 550px;"
+                style="width: 100%; height: 700px;"
                 data-hall-id="{{ hall.id }}"
                 data-length="{{ hall.length }}"
                 data-breadth="{{ hall.breadth }}">
                 <div id="loading" class="loading">Loading stalls...</div>
                 <!-- Stalls will be drawn here using JavaScript -->
-                
-                <!-- Entry marker will be added dynamically -->
-                <!-- Exit marker will be added dynamically -->
             </div>
 
             <!-- Selected stall information -->
@@ -229,10 +302,16 @@
     </div>
 
     <script>
+        // Preload hall data
         document.addEventListener('DOMContentLoaded', function() {
-            // Load hall data and render stalls
+            // Prefetch hall data
             const hallDisplay = document.getElementById('hall-display');
             const hallId = hallDisplay.dataset.hallId;
+            
+            // Start loading data as soon as possible
+            fetch(`/halls/${hallId}/data/`);
+            
+            // Load hall data and render stalls
             const hallLength = parseInt(hallDisplay.dataset.length);
             const hallBreadth = parseInt(hallDisplay.dataset.breadth);
             const stallInfo = document.getElementById('stall-info');
@@ -268,7 +347,7 @@
                     gridBox.style.top = `${y * scale}px`;
                     gridBox.style.width = `${scale}px`;
                     gridBox.style.height = `${scale}px`;
-                    gridBox.style.border = '1px solid #eee';
+                    gridBox.style.border = '0.1px solid #f0f0f0';
                     hallDisplay.appendChild(gridBox);
                 }
             }
@@ -278,12 +357,12 @@
             entryMarker.className = 'entry-exit-marker';
             // Position above the specified coordinates
             const entryX = ((14 + 25) / 2) * scale; // Center between 14 and 25
-            const entryY = 562; // Above row 1
+            const entryY = 634; // Above row 1
             entryMarker.style.left = `${entryX - 25}px`; // Center the marker
             entryMarker.style.top = `${entryY - 40}px`;
             entryMarker.innerHTML = `              
                 <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
-                    <path d="M4 15L12 9L20 15" stroke="#000000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M4 15L12 9L20 15" stroke="#451a32" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
                 <span class="entry-exit-label" style="top: 35px;">ENTRY</span>
             `;
@@ -294,12 +373,12 @@
             exitMarker.className = 'entry-exit-marker';
             // Position above the specified coordinates
             const exitX = ((76 + 87) / 2) * scale; // Center between 76 and 87
-            const exitY = 562; // Above row 1
+            const exitY = 634; // Above row 1
             exitMarker.style.left = `${exitX - 25}px`; // Center the marker
             exitMarker.style.top = `${exitY - 40}px`;
             exitMarker.innerHTML = `
                 <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
-                    <path d="M4 9L12 15L20 9" stroke="#000000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M4 9L12 15L20 9" stroke="#451a32" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
                 <span class="entry-exit-label" style="top: 35px;">EXIT</span>
             `;
@@ -347,11 +426,15 @@
                         
                         // Handle blocked stalls as booked stalls for display purposes
                         const displayStatus = stall.status === 'blocked' ? 'booked' : stall.status;
-                        stallElement.className = `stall ${displayStatus}`;
+                        
+                        // Add stall type class for styling
+                        stallElement.className = `stall ${displayStatus} ${stall.stall_type}`;
+                        
                         stallElement.setAttribute('data-stall-id', stall.id);
                         stallElement.setAttribute('data-stall-number', stall.stall_number);
                         stallElement.setAttribute('data-stall-status', stall.status);
                         stallElement.setAttribute('data-stall-price', stall.price);
+                        stallElement.setAttribute('data-stall-type', stall.stall_type);
                         
                         // If the stall is part of a combo, add the combo class
                         if (stallToComboMap[stall.id]) {
@@ -367,15 +450,15 @@
                         stallElement.style.height = `${(maxY - minY + 1) * scale}px`;
                         stallElement.style.zIndex = '5'; // Ensure stalls appear above grid lines
 
-                        // Add the stall number
+                        // Add the stall number with font-weight 300
                         const stallLabel = document.createElement('div');
                         stallLabel.textContent = stall.stall_number;
+                        stallLabel.className = 'stall-number';
                         stallLabel.style.position = 'absolute';
                         stallLabel.style.top = '50%';
                         stallLabel.style.left = '50%';
                         stallLabel.style.transform = 'translate(-50%, -50%)';
-                        stallLabel.style.color = 'white';
-                        stallLabel.style.fontWeight = 'bold';
+                        stallLabel.style.fontWeight = '300';
                         stallLabel.style.fontSize = `${Math.max(14, scale / 3)}px`;
                         stallLabel.style.textAlign = 'center';
 
@@ -489,203 +572,205 @@
 
             // Function to update the selected stalls UI
             function updateSelectedStallsUI() {
-    // Clear the list
-    selectedStallsList.innerHTML = '';
-    
-    // Update counter
-    selectedStallsCount.textContent = `${selectedStalls.length} stalls selected`;
-    
-    if (selectedStalls.length === 0) {
-        stallInfo.style.display = 'none';
-        bookNowBtn.disabled = true;
-        return;
-    }
-    
-    // Show the stall info section
-    stallInfo.style.display = 'block';
-    bookNowBtn.disabled = false;
-    
-    // Group selected stalls by combo
-    const comboGroups = {};
-    const singleStalls = [];
-    
-    selectedStalls.forEach(stallId => {
-        const stall = stallData[stallId];
-        if (!stall) return;
-        
-        // Check if this stall is part of a combo where all other stalls are also selected
-        let partOfSelectedCombo = false;
-        
-        if (stallToComboMap[stallId]) {
-            for (const comboId of stallToComboMap[stallId]) {
-                const combo = comboData[comboId];
-                if (!combo) continue;
+                // Clear the list
+                selectedStallsList.innerHTML = '';
                 
-                // Check if all stalls in this combo are selected
-                const allSelected = combo.stall_ids.every(id => 
-                    selectedStalls.includes(id.toString())
-                );
+                // Update counter
+                selectedStallsCount.textContent = `${selectedStalls.length} stalls selected`;
                 
-                if (allSelected) {
-                    // Add to combo group
-                    if (!comboGroups[comboId]) {
-                        comboGroups[comboId] = {
-                            combo: combo,
-                            stalls: []
-                        };
-                    }
-                    comboGroups[comboId].stalls.push(stall);
-                    partOfSelectedCombo = true;
-                    break;
+                if (selectedStalls.length === 0) {
+                    stallInfo.style.display = 'none';
+                    bookNowBtn.disabled = true;
+                    return;
                 }
-            }
-        }
-        
-        if (!partOfSelectedCombo) {
-            // Add to single stalls
-            singleStalls.push(stall);
-        }
-    });
-    
-    // Regular stall count for discount calculation
-    const regularStallCount = singleStalls.length;
-    
-    // Calculate base price for regular stalls
-    let regularStallBasePrice = 0;
-    singleStalls.forEach(stall => {
-        regularStallBasePrice += parseFloat(stall.price);
-    });
-    
-    // Calculate discount based on new requirements
-    let discountAmount = 0;
-    let discountedRegularPrice = regularStallBasePrice;
-    let discountPerStall = 0;
-    
-    if (regularStallCount === 1) {
-        // No discount
-        discountAmount = 0;
-    } else if (regularStallCount === 2) {
-        // Flat ₹5,000 discount
-        discountAmount = 5000;
-        discountPerStall = 2500; // For display purposes only
-    } else if (regularStallCount >= 3) {
-        // ₹5,000 discount per stall
-        discountAmount = 5000 * regularStallCount;
-        discountPerStall = 5000;
-    }
-    
-    // Apply discount
-    discountedRegularPrice = regularStallBasePrice - discountAmount;
-    
-    // Calculate combo stall price (no discount)
-    let comboStallPrice = 0;
-    Object.values(comboGroups).forEach(group => {
-        comboStallPrice += parseFloat(group.combo.price);
-    });
-    
-    // Total price
-    const totalPrice = discountedRegularPrice + comboStallPrice;
-    
-    // Calculate discount percentage for display purposes
-    let discountPercentage = 0;
-    if (regularStallBasePrice > 0 && discountAmount > 0) {
-        discountPercentage = (discountAmount / regularStallBasePrice) * 100;
-        discountPercentage = discountPercentage.toFixed(2); // Format to 2 decimal places
-    }
-    
-    // Add each stall to the UI
-    // First add regular stalls
-    singleStalls.forEach(stall => {
-        const stallItem = document.createElement('div');
-        stallItem.className = 'selected-stall-item';
-        stallItem.innerHTML = `
-            Stall #${stall.stall_number} <span class="remove-stall" data-stall-id="${stall.id}">×</span>
-        `;
-        selectedStallsList.appendChild(stallItem);
-        
-        // Add click event to remove button
-        stallItem.querySelector('.remove-stall').addEventListener('click', function() {
-            const stallId = this.getAttribute('data-stall-id');
-            const stallElement = document.querySelector(`.stall[data-stall-id="${stallId}"]`);
-            if (stallElement) {
-                stallElement.classList.remove('selected');
-            }
-            selectedStalls = selectedStalls.filter(id => id !== stallId);
-            updateSelectedStallsUI();
-        });
-    });
-    
-    // Then add combo stalls - CONSOLIDATED VERSION
-    Object.values(comboGroups).forEach(group => {
-        const comboItem = document.createElement('div');
-        comboItem.className = 'selected-stall-item combo-stall-item';
-        
-        // Create a comma-separated list of stall numbers
-        const stallNumbers = group.stalls.map(stall => stall.stall_number).join(', ');
-        
-        comboItem.innerHTML = `
-            <span>Combo Package: Stalls #${stallNumbers}</span> <span class="remove-stall" data-combo-id="${group.combo.id}">×</span>
-        `;
-        selectedStallsList.appendChild(comboItem);
-        
-        // Add click event to remove button that removes the whole combo
-        comboItem.querySelector('.remove-stall').addEventListener('click', function() {
-            const comboId = this.getAttribute('data-combo-id');
-            const combo = comboData[comboId];
-            
-            if (combo) {
-                // Deselect all stalls in this combo
-                combo.stall_ids.forEach(id => {
-                    const comboStallElement = document.querySelector(
-                        `.stall[data-stall-id="${id}"]`
-                    );
-                    if (comboStallElement) {
-                        comboStallElement.classList.remove('selected');
+                
+                // Show the stall info section
+                stallInfo.style.display = 'block';
+                bookNowBtn.disabled = false;
+                
+                // Group selected stalls by combo
+                const comboGroups = {};
+                const singleStalls = [];
+                
+                selectedStalls.forEach(stallId => {
+                    const stall = stallData[stallId];
+                    if (!stall) return;
+                    
+                    // Check if this stall is part of a combo where all other stalls are also selected
+                    let partOfSelectedCombo = false;
+                    
+                    if (stallToComboMap[stallId]) {
+                        for (const comboId of stallToComboMap[stallId]) {
+                            const combo = comboData[comboId];
+                            if (!combo) continue;
+                            
+                            // Check if all stalls in this combo are selected
+                            const allSelected = combo.stall_ids.every(id => 
+                                selectedStalls.includes(id.toString())
+                            );
+                            
+                            if (allSelected) {
+                                // Add to combo group
+                                if (!comboGroups[comboId]) {
+                                    comboGroups[comboId] = {
+                                        combo: combo,
+                                        stalls: []
+                                    };
+                                }
+                                comboGroups[comboId].stalls.push(stall);
+                                partOfSelectedCombo = true;
+                                break;
+                            }
+                        }
                     }
-                    selectedStalls = selectedStalls.filter(sid => sid !== id.toString());
+                    
+                    if (!partOfSelectedCombo) {
+                        // Add to single stalls
+                        singleStalls.push(stall);
+                    }
                 });
+                
+                // Regular stall count for discount calculation
+                const regularStallCount = singleStalls.length;
+                
+                // Calculate base price for regular stalls
+                let regularStallBasePrice = 0;
+                singleStalls.forEach(stall => {
+                    regularStallBasePrice += parseFloat(stall.price);
+                });
+                
+                // Calculate discount based on new requirements
+                let discountAmount = 0;
+                let discountedRegularPrice = regularStallBasePrice;
+                let discountPerStall = 0;
+                
+                if (regularStallCount === 1) {
+                    // No discount
+                    discountAmount = 0;
+                } else if (regularStallCount === 2) {
+                    // Flat ₹5,000 discount
+                    discountAmount = 5000;
+                    discountPerStall = 2500; // For display purposes only
+                } else if (regularStallCount >= 3) {
+                    // ₹5,000 discount per stall
+                    discountAmount = 5000 * regularStallCount;
+                    discountPerStall = 5000;
+                }
+                
+                // Apply discount
+                discountedRegularPrice = regularStallBasePrice - discountAmount;
+                
+                // Calculate combo stall price (no discount)
+                let comboStallPrice = 0;
+                Object.values(comboGroups).forEach(group => {
+                    comboStallPrice += parseFloat(group.combo.price);
+                });
+                
+                // Total price
+                const totalPrice = discountedRegularPrice + comboStallPrice;
+                
+                // Calculate discount percentage for display purposes
+                let discountPercentage = 0;
+                if (regularStallBasePrice > 0 && discountAmount > 0) {
+                    discountPercentage = (discountAmount / regularStallBasePrice) * 100;
+                    discountPercentage = discountPercentage.toFixed(2); // Format to 2 decimal places
+                }
+                
+                // Add each stall to the UI
+                // First add regular stalls
+                singleStalls.forEach(stall => {
+                    const stallItem = document.createElement('div');
+                    stallItem.className = 'selected-stall-item';
+                    
+                    stallItem.innerHTML = `
+                        Stall #${stall.stall_number} 
+                        <span class="remove-stall" data-stall-id="${stall.id}">×</span>
+                    `;
+                    
+                    selectedStallsList.appendChild(stallItem);
+                    
+                    // Add click event to remove button
+                    stallItem.querySelector('.remove-stall').addEventListener('click', function() {
+                        const stallId = this.getAttribute('data-stall-id');
+                        const stallElement = document.querySelector(`.stall[data-stall-id="${stallId}"]`);
+                        if (stallElement) {
+                            stallElement.classList.remove('selected');
+                        }
+                        selectedStalls = selectedStalls.filter(id => id !== stallId);
+                        updateSelectedStallsUI();
+                    });
+                });
+                
+                // Then add combo stalls - CONSOLIDATED VERSION
+                Object.values(comboGroups).forEach(group => {
+                    const comboItem = document.createElement('div');
+                    comboItem.className = 'selected-stall-item combo-stall-item';
+                    
+                    // Create a comma-separated list of stall numbers
+                    const stallNumbers = group.stalls.map(stall => stall.stall_number).join(', ');
+                    
+                    comboItem.innerHTML = `
+                        <span>Combo Package: Stalls #${stallNumbers}</span> <span class="remove-stall" data-combo-id="${group.combo.id}">×</span>
+                    `;
+                    selectedStallsList.appendChild(comboItem);
+                    
+                    // Add click event to remove button that removes the whole combo
+                    comboItem.querySelector('.remove-stall').addEventListener('click', function() {
+                        const comboId = this.getAttribute('data-combo-id');
+                        const combo = comboData[comboId];
+                        
+                        if (combo) {
+                            // Deselect all stalls in this combo
+                            combo.stall_ids.forEach(id => {
+                                const comboStallElement = document.querySelector(
+                                    `.stall[data-stall-id="${id}"]`
+                                );
+                                if (comboStallElement) {
+                                    comboStallElement.classList.remove('selected');
+                                }
+                                selectedStalls = selectedStalls.filter(sid => sid !== id.toString());
+                            });
+                        }
+                        
+                        updateSelectedStallsUI();
+                    });
+                });
+                
+                // Update price information
+                let priceInfo = '';
+                
+                if (regularStallCount > 0) {
+                    priceInfo += `Regular Stalls: ₹${Math.round(regularStallBasePrice)}`;
+                    
+                    if (discountAmount > 0) {
+                        if (regularStallCount === 2) {
+                            priceInfo += ` <span style="color: #e91e63;">(Flat ₹${discountAmount} discount)</span><br>`;
+                        } else {
+                            priceInfo += ` <span style="color: #e91e63;">(₹${discountPerStall} × ${regularStallCount} stalls = -₹${discountAmount})</span><br>`;
+                        }
+                        priceInfo += `Discounted Price: ₹${Math.round(discountedRegularPrice)}<br>`;
+                    } else {
+                        priceInfo += `<br>`;
+                    }
+                }
+                
+                if (Object.keys(comboGroups).length > 0) {
+                    priceInfo += `Combo Stalls: ₹${Math.round(comboStallPrice)}<br>`;
+                }
+                
+                priceInfo += `<strong>Total: ₹${Math.round(totalPrice)}</strong>`;
+                
+                totalPriceElement.innerHTML = priceInfo;
+                
+                // Update the book now button with the correct stall IDs
+                bookNowBtn.onclick = function() {
+                    if (selectedStalls.length > 0) {
+                        // Redirect to booking form with selected stall IDs
+                        window.location.href = `/stalls/book/?stall_ids=${selectedStalls.join(',')}`;
+                    }
+                };
             }
-            
-            updateSelectedStallsUI();
         });
-    });
-    
-    // Update price information
-    let priceInfo = '';
-    
-    if (regularStallCount > 0) {
-        priceInfo += `Regular Stalls: ₹${Math.round(regularStallBasePrice)}`;
-        
-        if (discountAmount > 0) {
-            if (regularStallCount === 2) {
-                priceInfo += ` <span style="color: #e91e63;">(Flat ₹${discountAmount} discount)</span><br>`;
-            } else {
-                priceInfo += ` <span style="color: #e91e63;">(₹${discountPerStall} × ${regularStallCount} stalls = -₹${discountAmount})</span><br>`;
-            }
-            priceInfo += `Discounted Price: ₹${Math.round(discountedRegularPrice)}<br>`;
-        } else {
-            priceInfo += `<br>`;
-        }
-    }
-    
-    if (Object.keys(comboGroups).length > 0) {
-        priceInfo += `Combo Stalls: ₹${Math.round(comboStallPrice)}<br>`;
-    }
-    
-    priceInfo += `<strong>Total: ₹${Math.round(totalPrice)}</strong>`;
-    
-    totalPriceElement.innerHTML = priceInfo;
-    
-    // Update the book now button with the correct stall IDs
-    bookNowBtn.onclick = function() {
-        if (selectedStalls.length > 0) {
-            // Redirect to booking form with selected stall IDs
-            window.location.href = `/stalls/book/?stall_ids=${selectedStalls.join(',')}`;
-        }
-    };
-}
-
-});
     </script>
 </body>
 </html>

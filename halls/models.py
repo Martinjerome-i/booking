@@ -22,16 +22,23 @@ class Stall(models.Model):
         ('booked', 'Booked'),
         ('blocked', 'Blocked'), 
     ]
+    
+    # Add stall type choices
+    TYPE_CHOICES = [
+        ('eatery', 'Eatery'),
+        ('non-eatery', 'Non-Eatery'),
+    ]
 
     hall = models.ForeignKey(Hall, on_delete=models.CASCADE, related_name='stalls')
     stall_number = models.CharField(max_length=20)
+    stall_type = models.CharField(max_length=20, choices=TYPE_CHOICES, default='eatery')
     x_start = models.IntegerField()
     y_start = models.IntegerField()
     width = models.IntegerField()
     height = models.IntegerField()
     selected_boxes = models.JSONField(default=list)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available')
-    price = models.DecimalField(max_digits=10, decimal_places=2, default=55000.00)  # Updated default price
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=55000.00)
     
     @property
     def area(self):

@@ -7,104 +7,151 @@
     <title>Create Stall - {{ hall.name }}</title>
     <style>
         body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 20px;
-}
-.container {
-    max-width: 1200px;
-    margin: 0 auto;
-}
-.header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-}
-.btn {
-    background-color: #4CAF50;
-    border: none;
-    color: white;
-    padding: 10px 20px;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-    font-size: 16px;
-    cursor: pointer;
-    border-radius: 4px;
-}
-.btn-secondary {
-    background-color: #2196F3;
-}
-.btn-disabled {
-    background-color: #cccccc;
-    cursor: not-allowed;
-}
-.grid-container {
-    border: 1px solid #ddd;
-    overflow: auto;
-    margin-bottom: 20px;
-    position: relative;
-    background-color: #f9f9f9;
-}
-.grid-box {
-    position: absolute;
-    border: 1px solid #ccc;
-    box-sizing: border-box;
-    transition: background-color 0.1s;
-}
-.grid-box:hover {
-    background-color: rgba(76, 175, 80, 0.3);
-}
-.grid-box.selected {
-    background-color: rgba(76, 175, 80, 0.7);
-}
-.grid-box.selectable {
-    background-color: rgba(76, 175, 80, 0.2);
-}
-.existing-stall {
-    position: absolute;
-    background-color: rgba(255, 87, 34, 0.7);
-    border: 1px solid #E64A19;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: bold;
-    pointer-events: none;
-}
-.form-group {
-    margin-bottom: 15px;
-}
-label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-}
-input {
-    padding: 8px;
-    width: 100%;
-    box-sizing: border-box;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-}
-.selection-info {
-    margin-top: 20px;
-    padding: 15px;
-    background-color: #f0f0f0;
-    border-radius: 4px;
-}
-.instructions {
-    background-color: #e3f2fd;
-    padding: 15px;
-    border-radius: 4px;
-    margin-bottom: 20px;
-    border-left: 5px solid #2196F3;
-}
-.instructions ul {
-    margin-top: 10px;
-    padding-left: 20px;
-}
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .btn {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .btn-secondary {
+            background-color: #2196F3;
+        }
+        .btn-disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .grid-container {
+            border: 1px solid #ddd;
+            overflow: auto;
+            margin-bottom: 20px;
+            position: relative;
+            background-color: #f9f9f9;
+        }
+        .grid-box {
+            position: absolute;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+            transition: background-color 0.1s;
+        }
+        .grid-box:hover {
+            background-color: rgba(76, 175, 80, 0.3);
+        }
+        .grid-box.selected {
+            background-color: rgba(76, 175, 80, 0.7);
+        }
+        .grid-box.selectable {
+            background-color: rgba(76, 175, 80, 0.2);
+        }
+        .existing-stall {
+            position: absolute;
+            background-color: rgba(255, 87, 34, 0.7);
+            border: 1px solid #E64A19;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            pointer-events: none;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            padding: 8px;
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .selection-info {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+        }
+        .instructions {
+            background-color: #e3f2fd;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border-left: 5px solid #2196F3;
+        }
+        .instructions ul {
+            margin-top: 10px;
+            padding-left: 20px;
+        }
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .form-row .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+    .existing-stall.eatery {
+        background-color: rgba(255, 87, 34, 0.7); /* Orange-red for eatery */
+        border: 1px solid #E64A19;
+    }
+    
+    .existing-stall.non-eatery {
+        background-color: rgba(33, 150, 243, 0.7); /* Blue for non-eatery */
+        border: 1px solid #1976D2;
+    }
+    
+    /* Add legend for stall types */
+    .stall-legend {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 15px;
+    }
+    
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .color-box {
+        width: 20px;
+        height: 20px;
+        border-radius: 3px;
+    }
+    
+    .color-box.eatery {
+        background-color: rgba(255, 87, 34, 0.7);
+        border: 1px solid #E64A19;
+    }
+    
+    .color-box.non-eatery {
+        background-color: rgba(33, 150, 243, 0.7);
+        border: 1px solid #1976D2;
+    }
     </style>
 </head>
 <body>
@@ -118,6 +165,16 @@ input {
             <p>Hall Size: {{ hall.length }}m x {{ hall.breadth }}m ({{ hall.total_area }}m²)</p>
             <p>Each grid box represents 1 square meter.</p>
             <p>Click or drag to select boxes for your stall.</p>
+            <div class="stall-legend">
+                <div class="legend-item">
+                    <div class="color-box eatery"></div>
+                    <span>Eatery</span>
+                </div>
+                <div class="legend-item">
+                    <div class="color-box non-eatery"></div>
+                    <span>Non-Eatery</span>
+                </div>
+            </div>
         </div>
 
         <div class="selection-info">
@@ -133,9 +190,24 @@ input {
             <!-- Grid boxes will be generated here -->
         </div>
 
-        <div class="form-group">
-            <label for="stall-number">Stall Number:</label>
-            <input type="text" id="stall-number" placeholder="Enter stall number">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="stall-number">Stall Number:</label>
+                <input type="text" id="stall-number" placeholder="Enter stall number">
+            </div>
+            
+            <div class="form-group">
+                <label for="stall-type">Stall Type:</label>
+                <select id="stall-type">
+                    <option value="eatery">Eatery</option>
+                    <option value="non-eatery">Non-Eatery</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="price">Price (₹):</label>
+                <input type="number" id="price" placeholder="Price" value="55000.00">
+            </div>
         </div>
 
         <div class="actions">
@@ -154,8 +226,22 @@ input {
         const clearSelectionBtn = document.getElementById('clear-selection');
         const createStallBtn = document.getElementById('create-stall');
         const stallNumberInput = document.getElementById('stall-number');
+        const stallTypeSelect = document.getElementById('stall-type');
+        const priceInput = document.getElementById('price');
         const selectedAreaSpan = document.getElementById('selected-area');
         const selectionDimensionsSpan = document.getElementById('selection-dimensions');
+
+        // Set default prices based on stall type
+        const defaultPrices = {
+            'eatery': 55000.00,
+            'non-eatery': 55000.00
+        };
+
+        // Update price when stall type changes
+        stallTypeSelect.addEventListener('change', function() {
+            const selectedType = stallTypeSelect.value;
+            priceInput.value = defaultPrices[selectedType] || 55000.00;
+        });
 
         // Determine the scale to fit the display
         const maxWidth = hallGrid.clientWidth;
@@ -235,6 +321,9 @@ input {
         // Create stall button
         createStallBtn.addEventListener('click', function() {
             const stallNumber = stallNumberInput.value.trim();
+            const stallType = stallTypeSelect.value;
+            const price = parseFloat(priceInput.value);
+
             if (stallNumber === '') {
                 alert('Please enter a stall number');
                 return;
@@ -279,7 +368,9 @@ input {
             // Prepare data for submission with rectangle boxes
             const data = {
                 stall_number: stallNumber,
-                selected_boxes: rectangleBoxes  // Use the rectangle boxes
+                stall_type: stallType,
+                price: price,
+                selected_boxes: rectangleBoxes
             };
 
             // Submit the data
@@ -324,6 +415,7 @@ input {
             // Store existing stalls
             data.stalls.forEach(stall => {
                 const selectedBoxes = stall.selected_boxes;
+                const stallType = stall.stall_type; // Get stall type from data
 
                 // Find the boundaries of the stall
                 let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -333,32 +425,28 @@ input {
                     minY = Math.min(minY, box.y);
                     maxX = Math.max(maxX, box.x);
                     maxY = Math.max(maxY, box.y);
-
-                    // Store in existingStalls array for validation
-                    existingStalls.push({
-                        stallNumber: stall.stall_number,
-                        boxes: selectedBoxes
-                    });
                 });
 
-                // Create a map to track which boxes belong to this stall
-                const stallBoxMap = {};
-                selectedBoxes.forEach(box => {
-                    stallBoxMap[`${box.x}-${box.y}`] = true;
+                // Store in existingStalls array for validation
+                existingStalls.push({
+                    stallNumber: stall.stall_number,
+                    stallType: stallType,
+                    boxes: selectedBoxes
                 });
 
                 // Create a stall container
                 const stallContainer = document.createElement('div');
-                stallContainer.className = 'existing-stall-container';
+                stallContainer.className = `existing-stall ${stallType}`;
                 stallContainer.style.position = 'absolute';
                 stallContainer.style.left = `${minX * scale}px`;
                 stallContainer.style.top = `${minY * scale}px`;
                 stallContainer.style.width = `${(maxX - minX + 1) * scale}px`;
                 stallContainer.style.height = `${(maxY - minY + 1) * scale}px`;
-                stallContainer.style.backgroundColor = 'rgba(255, 87, 34, 0.7)';
-                stallContainer.style.border = '1px solid #E64A19';
                 stallContainer.style.zIndex = '5';
                 stallContainer.style.pointerEvents = 'none';
+                stallContainer.style.display = 'flex';
+                stallContainer.style.alignItems = 'center';
+                stallContainer.style.justifyContent = 'center';
 
                 // Add stall number label
                 const stallLabel = document.createElement('div');

@@ -1,4 +1,3 @@
-<!-- Update your hall_detail.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -48,13 +47,19 @@
         }
         .stall {
             position: absolute;
-            background-color: #4CAF50;
             border: 1px solid #2E7D32;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
             font-weight: bold;
+        }
+        /* Stall type styling */
+        .stall-eatery {
+            background-color: #4CAF50; /* Green for eatery */
+        }
+        .stall-non-eatery {
+            background-color: #2196F3; /* Blue for non-eatery */
         }
         .stall-table, .combo-table {
             width: 100%;
@@ -172,6 +177,40 @@
             border-radius: 4px;
             font-size: 12px;
         }
+        /* Stall type badge */
+        .stall-type-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+            margin-left: 5px;
+        }
+        .eatery-badge {
+            background-color: #4CAF50;
+        }
+        .non-eatery-badge {
+            background-color: #2196F3;
+        }
+        /* Legend for stall types */
+        .stall-legend {
+            display: flex;
+            margin-top: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-right: 20px;
+        }
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
+            border-radius: 3px;
+        }
     </style>
 </head>
 <body>
@@ -189,6 +228,18 @@
         <div class="hall-info">
             <p>Size: {{ hall.length }}m x {{ hall.breadth }}m ({{ hall.total_area }}m²)</p>
             <p>Number of Stalls: {{ hall.stalls.count }}</p>
+        </div>
+        
+        <!-- Stall type legend -->
+        <div class="stall-legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #4CAF50;"></div>
+                <span>Eatery</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #2196F3;"></div>
+                <span>Non-Eatery</span>
+            </div>
         </div>
 
         <div class="hall-display" id="hall-display"
@@ -220,6 +271,7 @@
                 <thead>
                     <tr>
                         <th>Stall Number</th>
+                        <th>Type</th>
                         <th>Size</th>
                         <th>Area</th>
                         <th>Position</th>
@@ -229,14 +281,26 @@
                 </thead>
                 <tbody>
                     {% for stall in stalls %}
-                    <tr data-stall-id="{{ stall.id }}">
+                    <tr data-stall-id="{{ stall.id }}" data-stall-type="{{ stall.stall_type }}">
                         <td>{{ stall.stall_number }}</td>
+                        <td>
+                            {% if stall.stall_type == 'eatery' %}
+                            <span class="stall-type-badge eatery-badge">Eatery</span>
+                            {% else %}
+                            <span class="stall-type-badge non-eatery-badge">Non-Eatery</span>
+                            {% endif %}
+                        </td>
                         <td>{{ stall.width }}m x {{ stall.height }}m</td>
                         <td>{{ stall.area }}m²</td>
                         <td>({{ stall.x_start }}, {{ stall.y_start }})</td>
                         <td class="stall-combos"><!-- Combo badges will be inserted here --></td>
                         <td>
-                            <button class="btn btn-warning edit-stall-btn" data-stall-id="{{ stall.id }}" data-stall-number="{{ stall.stall_number }}">Edit</button>
+                            <button class="btn btn-warning edit-stall-btn" 
+                                data-stall-id="{{ stall.id }}" 
+                                data-stall-number="{{ stall.stall_number }}" 
+                                data-stall-type="{{ stall.stall_type }}" 
+                                data-stall-price="{{ stall.price }}" 
+                                data-stall-status="{{ stall.status }}">Edit</button>
                             <a href="{% url 'delete_stall' hall.id stall.id %}" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this stall?')">Delete</a>
                         </td>
                     </tr>
@@ -259,6 +323,25 @@
                 <div class="form-group">
                     <label for="editStallNumber">Stall Number:</label>
                     <input type="text" id="editStallNumber" name="stall_number" required>
+                </div>
+                <div class="form-group">
+                    <label for="editStallType">Stall Type:</label>
+                    <select id="editStallType" name="stall_type" required>
+                        <option value="eatery">Eatery</option>
+                        <option value="non-eatery">Non-Eatery</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editStallPrice">Price (₹):</label>
+                    <input type="number" id="editStallPrice" name="price" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="editStallStatus">Status:</label>
+                    <select id="editStallStatus" name="status" required>
+                        <option value="available">Available</option>
+                        <option value="booked">Booked</option>
+                        <option value="blocked">Blocked</option>
+                    </select>
                 </div>
                 <button type="submit" class="btn">Save Changes</button>
             </form>
@@ -353,18 +436,17 @@
 
                     // Create a single stall element instead of individual boxes
                     const stallElement = document.createElement('div');
-                    stallElement.className = 'stall';
+                    stallElement.className = `stall stall-${stall.stall_type}`; // Add stall type class
                     stallElement.setAttribute('data-stall-id', stall.id);
+                    stallElement.setAttribute('data-stall-type', stall.stall_type);
                     stallElement.style.position = 'absolute';
                     stallElement.style.left = `${minX * scale}px`;
                     stallElement.style.top = `${minY * scale}px`;
                     stallElement.style.width = `${(maxX - minX + 1) * scale}px`;
                     stallElement.style.height = `${(maxY - minY + 1) * scale}px`;
-                    stallElement.style.backgroundColor = '#4CAF50';
-                    stallElement.style.border = '1px solid #2E7D32';
                     stallElement.style.zIndex = '5'; // Ensure stalls appear above grid lines
 
-                    // Add the stall number
+                    // Add the stall number and type indicator
                     const stallLabel = document.createElement('div');
                     stallLabel.textContent = stall.stall_number;
                     stallLabel.style.position = 'absolute';
@@ -398,11 +480,13 @@
                 
                 for (let i = 0; i < rows.length; i++) {
                     const stallNumber = rows[i].getElementsByTagName('td')[0].textContent.toLowerCase();
-                    const size = rows[i].getElementsByTagName('td')[1].textContent.toLowerCase();
-                    const area = rows[i].getElementsByTagName('td')[2].textContent.toLowerCase();
-                    const position = rows[i].getElementsByTagName('td')[3].textContent.toLowerCase();
+                    const stallType = rows[i].getAttribute('data-stall-type').toLowerCase();
+                    const size = rows[i].getElementsByTagName('td')[2].textContent.toLowerCase();
+                    const area = rows[i].getElementsByTagName('td')[3].textContent.toLowerCase();
+                    const position = rows[i].getElementsByTagName('td')[4].textContent.toLowerCase();
                     
                     if (stallNumber.includes(searchQuery) || 
+                        stallType.includes(searchQuery) ||
                         size.includes(searchQuery) || 
                         area.includes(searchQuery) || 
                         position.includes(searchQuery)) {
@@ -432,9 +516,15 @@
             editBtns[i].onclick = function() {
                 const stallId = this.getAttribute("data-stall-id");
                 const stallNumber = this.getAttribute("data-stall-number");
+                const stallType = this.getAttribute("data-stall-type");
+                const stallPrice = this.getAttribute("data-stall-price");
+                const stallStatus = this.getAttribute("data-stall-status");
                 
                 document.getElementById("editStallId").value = stallId;
                 document.getElementById("editStallNumber").value = stallNumber;
+                document.getElementById("editStallType").value = stallType;
+                document.getElementById("editStallPrice").value = stallPrice;
+                document.getElementById("editStallStatus").value = stallStatus;
                 
                 stallModal.style.display = "block";
             }
@@ -479,6 +569,9 @@
             
             const stallId = document.getElementById("editStallId").value;
             const stallNumber = document.getElementById("editStallNumber").value;
+            const stallType = document.getElementById("editStallType").value;
+            const stallPrice = document.getElementById("editStallPrice").value;
+            const stallStatus = document.getElementById("editStallStatus").value;
             
             // Make AJAX request to update stall
             fetch(`/halls/${hallId}/stall/${stallId}/edit/`, {
@@ -488,7 +581,10 @@
                     'X-CSRFToken': getCookie('csrftoken')
                 },
                 body: JSON.stringify({
-                    stall_number: stallNumber
+                    stall_number: stallNumber,
+                    stall_type: stallType,
+                    price: stallPrice,
+                    status: stallStatus
                 })
             })
             .then(response => response.json())
@@ -733,15 +829,23 @@
         
         // Function to update stall visualization with combo information
         function updateStallVisualization() {
-            // Reset all stalls to default color
+            // Reset all stalls to their default color based on stall type
             const stallElements = document.querySelectorAll('.stall');
             stallElements.forEach(el => {
-                el.style.backgroundColor = '#4CAF50';
-                el.style.border = '1px solid #2E7D32';
+                const stallType = el.getAttribute('data-stall-type');
                 
-                // Store original colors as data attributes for hover effects
-                el.dataset.originalBg = '#4CAF50';
-                el.dataset.originalBorder = '#2E7D32';
+                // Set base color based on stall type
+                if (stallType === 'eatery') {
+                    el.style.backgroundColor = '#4CAF50'; // Green for eateries
+                    el.style.border = '1px solid #2E7D32';
+                    el.dataset.originalBg = '#4CAF50';
+                    el.dataset.originalBorder = '#2E7D32';
+                } else if (stallType === 'non-eatery') {
+                    el.style.backgroundColor = '#2196F3'; // Blue for non-eateries
+                    el.style.border = '1px solid #1565C0';
+                    el.dataset.originalBg = '#2196F3';
+                    el.dataset.originalBorder = '#1565C0';
+                }
                 
                 // Add hover effect
                 el.onmouseenter = function() {
@@ -755,13 +859,13 @@
                 };
             });
             
-            // Color-code stalls by combos (optional: for multiple combos, you could use patterns or borders)
+            // Color-code stalls by combos
             const comboColors = [
                 { bg: '#9C27B0', border: '#7B1FA2' }, // Purple
-                { bg: '#2196F3', border: '#1976D2' }, // Blue
                 { bg: '#FF9800', border: '#F57C00' }, // Orange
                 { bg: '#E91E63', border: '#C2185B' }, // Pink
-                { bg: '#00BCD4', border: '#0097A7' }  // Cyan
+                { bg: '#00BCD4', border: '#0097A7' }, // Cyan
+                { bg: '#8BC34A', border: '#689F38' }  // Light Green
             ];
             
             combos.forEach((combo, index) => {
@@ -794,6 +898,39 @@
                         }
                     }
                 });
+            });
+        }
+
+        // Function to preview combo stalls on hover
+        function previewComboStalls(stallId, isHover) {
+            // Find which combos this stall belongs to
+            const stallCombos = [];
+            combos.forEach(combo => {
+                if (combo.stalls.some(s => s.id == stallId)) {
+                    stallCombos.push(combo.id);
+                }
+            });
+            
+            if (stallCombos.length === 0) return; // Not in any combo
+            
+            // For each combo this stall belongs to, highlight all stalls in that combo
+            combos.forEach(combo => {
+                if (stallCombos.includes(combo.id)) {
+                    combo.stalls.forEach(stall => {
+                        const el = document.querySelector(`.stall[data-stall-id="${stall.id}"]`);
+                        if (el) {
+                            if (isHover) {
+                                // Highlight effect
+                                el.style.boxShadow = '0 0 10px #FFEB3B';
+                                el.style.zIndex = '10';
+                            } else {
+                                // Remove highlight
+                                el.style.boxShadow = 'none';
+                                el.style.zIndex = '5';
+                            }
+                        }
+                    });
+                }
             });
         }
 

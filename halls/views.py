@@ -390,6 +390,7 @@ def create_stall(request, hall_id):
     if request.method == 'POST':
         data = json.loads(request.body)
         stall_number = data.get('stall_number')
+        stall_type = data.get('stall_type', 'standard')  # Default to 'standard' if not provided
         selected_boxes = data.get('selected_boxes', [])
         price = data.get('price', 0)
 
@@ -412,10 +413,11 @@ def create_stall(request, hall_id):
         width = (x_end - x_start) + 1
         height = (y_end - y_start) + 1
 
-        # Create the stall
+        # Create the stall with the stall_type
         stall = Stall.objects.create(
             hall=hall,
             stall_number=stall_number,
+            stall_type=stall_type,  # Add the stall type
             x_start=x_start,
             y_start=y_start,
             width=width,
@@ -428,7 +430,6 @@ def create_stall(request, hall_id):
 
     return render(request, 'halls/create_stall.html', {'hall': hall})
 
-
 def get_hall_data(request, hall_id):
     hall = get_object_or_404(Hall, id=hall_id)
     stalls = hall.stalls.all()
@@ -439,6 +440,7 @@ def get_hall_data(request, hall_id):
         stall_data.append({
             'id': stall.id,
             'stall_number': stall.stall_number,
+            'stall_type': stall.stall_type,  # Include stall_type in the response
             'selected_boxes': stall.selected_boxes,
             'status': stall.status,
             'price': float(stall.price),
@@ -483,27 +485,132 @@ def edit_stall(request, hall_id, stall_id):
     
     if request.method == 'POST':
         data = json.loads(request.body)
-        stall_number = data.get('stall_number')
-        price = data.get('price')
+        stall_number = data.get('stall_number', stall.stall_number)
+        stall_type = data.get('stall_type', stall.stall_type)
+        price = data.get('price', stall.price)
+        status = data.get('status', stall.status)
         
-        if not stall_number:
-            return JsonResponse({'success': False, 'error': 'Stall number is required'})
-        
-        # Check if a stall with the same number already exists in this hall
-        # Exclude the current stall from the check
+        # Check if another stall with the same number already exists (excluding the current stall)
         if Stall.objects.filter(hall=hall, stall_number=stall_number).exclude(id=stall_id).exists():
             return JsonResponse({
-                'success': False, 
+                'success': False,
                 'error': 'A stall with this number already exists in this hall.'
             }, status=400)
         
+        # Update the stall
         stall.stall_number = stall_number
-        if price is not None:
-            stall.price = price
+        stall.stall_type = stall_type
+        stall.price = price
+        stall.status = status
         stall.save()
+        
         return JsonResponse({'success': True})
+        
+    # For GET requests, return the stall details for editing
+    return JsonResponse({
+        'stall': {
+            'id': stall.id,
+            'stall_number': stall.stall_number,
+            'stall_type': stall.stall_type,
+            'price': float(stall.price),
+            'status': stall.status,
+        }
+    })
+
+
+# Combo stall related views
+def create_combo(request, hall_id):
+    hall = get_object_or_404(Hall, id=hall_id)
     
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        name = data.get('name')
+        description = data.get('description', '')
+        stall_ids = data.get('stall_ids', [])
+        price = data.get('price')
+        
+        # Validate
+        if not name:
+            return JsonResponse({'success': False, 'error': 'Combo name is required'})
+        if not stall_ids:
+            return JsonResponse({'success': False, 'error': 'You must select at least one stall'})
+            
+        # Create combo with default price if none provided
+        # This avoids the NOT NULL constraint failure
+        combo = ComboStall.objects.create(
+            name=name,
+            hall=hall,
+            description=description,
+            # Use the provided price if available, otherwise use the default (130000.00)
+            price=price if price is not None else 130000.00
+        )
+        
+        # Add stalls to combo
+        stalls = Stall.objects.filter(id__in=stall_ids, hall=hall)
+        combo.stalls.set(stalls)
+        
+        return JsonResponse({'success': True, 'combo_id': combo.id})
+        
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+# Also need to fix the edit_combo function for the same reason:
+
+def edit_combo(request, combo_id):
+    combo = get_object_or_404(ComboStall, id=combo_id)
+    
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        name = data.get('name')
+        description = data.get('description', '')
+        stall_ids = data.get('stall_ids', [])
+        price = data.get('price')
+        
+        # Validate
+        if not name:
+            return JsonResponse({'success': False, 'error': 'Combo name is required'})
+        if not stall_ids:
+            return JsonResponse({'success': False, 'error': 'You must select at least one stall'})
+            
+        # Update combo
+        combo.name = name
+        combo.description = description
+        # Use the provided price if available, otherwise use the default (130000.00)
+        combo.price = price if price is not None else 130000.00
+        combo.save()
+        
+        # Update stalls in combo
+        stalls = Stall.objects.filter(id__in=stall_ids, hall=combo.hall)
+        combo.stalls.set(stalls)
+        
+        return JsonResponse({'success': True})
+        
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+def delete_combo(request, combo_id):
+    combo = get_object_or_404(ComboStall, id=combo_id)
+    hall_id = combo.hall.id
+    combo.delete()
+    return redirect('hall_detail', hall_id=hall_id)
+
+def get_combos(request, hall_id):
+    hall = get_object_or_404(Hall, id=hall_id)
+    combos = hall.combos.all()
+    
+    combo_data = []
+    for combo in combos:
+        stalls = list(combo.stalls.values('id', 'stall_number'))
+        combo_data.append({
+            'id': combo.id,
+            'name': combo.name,
+            'description': combo.description,
+            'stalls': stalls,
+            'price': float(combo.total_price),
+            'custom_price': float(combo.price) if combo.price else None,
+            'stall_count': combo.stall_count
+        })
+    
+    return JsonResponse({'success': True, 'combos': combo_data})
+
 
 
 # Booking Related Views
@@ -783,96 +890,6 @@ def send_booking_confirmation(booking):
     recipient_list = [booking.customer_email]
     
     send_mail(subject, message, from_email, recipient_list)
-
-
-# Combo stall related views
-def create_combo(request, hall_id):
-    hall = get_object_or_404(Hall, id=hall_id)
-    
-    if request.method == 'POST':
-        data = json.loads(request.body)
-        name = data.get('name')
-        description = data.get('description', '')
-        stall_ids = data.get('stall_ids', [])
-        price = data.get('price')
-        
-        # Validate
-        if not name:
-            return JsonResponse({'success': False, 'error': 'Combo name is required'})
-        if not stall_ids:
-            return JsonResponse({'success': False, 'error': 'You must select at least one stall'})
-            
-        # Create combo
-        combo = ComboStall.objects.create(
-            name=name,
-            hall=hall,
-            description=description,
-            price=price if price else None
-        )
-        
-        # Add stalls to combo
-        stalls = Stall.objects.filter(id__in=stall_ids, hall=hall)
-        combo.stalls.set(stalls)
-        
-        return JsonResponse({'success': True, 'combo_id': combo.id})
-        
-    return JsonResponse({'success': False, 'error': 'Invalid request method'})
-
-def edit_combo(request, combo_id):
-    combo = get_object_or_404(ComboStall, id=combo_id)
-    
-    if request.method == 'POST':
-        data = json.loads(request.body)
-        name = data.get('name')
-        description = data.get('description', '')
-        stall_ids = data.get('stall_ids', [])
-        price = data.get('price')
-        
-        # Validate
-        if not name:
-            return JsonResponse({'success': False, 'error': 'Combo name is required'})
-        if not stall_ids:
-            return JsonResponse({'success': False, 'error': 'You must select at least one stall'})
-            
-        # Update combo
-        combo.name = name
-        combo.description = description
-        combo.price = price if price else None
-        combo.save()
-        
-        # Update stalls in combo
-        stalls = Stall.objects.filter(id__in=stall_ids, hall=combo.hall)
-        combo.stalls.set(stalls)
-        
-        return JsonResponse({'success': True})
-        
-    return JsonResponse({'success': False, 'error': 'Invalid request method'})
-
-def delete_combo(request, combo_id):
-    combo = get_object_or_404(ComboStall, id=combo_id)
-    hall_id = combo.hall.id
-    combo.delete()
-    return redirect('hall_detail', hall_id=hall_id)
-
-def get_combos(request, hall_id):
-    hall = get_object_or_404(Hall, id=hall_id)
-    combos = hall.combos.all()
-    
-    combo_data = []
-    for combo in combos:
-        stalls = list(combo.stalls.values('id', 'stall_number'))
-        combo_data.append({
-            'id': combo.id,
-            'name': combo.name,
-            'description': combo.description,
-            'stalls': stalls,
-            'price': float(combo.total_price),
-            'custom_price': float(combo.price) if combo.price else None,
-            'stall_count': combo.stall_count
-        })
-    
-    return JsonResponse({'success': True, 'combos': combo_data})
-
 
 def admin_stall_management(request, hall_id):
     """
