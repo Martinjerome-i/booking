@@ -113,4 +113,14 @@ class Booking(models.Model):
     def __str__(self):
         return f"Booking {self.booking_reference} - {self.customer_name}"
     
+class BookingCancellation(models.Model):
+    booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name='cancellations', null=True, blank=True)
+    feedback = models.TextField()
+    cancellation_date = models.DateTimeField(default=timezone.now)
+    stall_ids = models.JSONField(default=list, help_text="Stores stall IDs if cancellation happens before booking is created")
+    
+    def __str__(self):
+        if self.booking:
+            return f"Cancellation for Booking {self.booking.booking_reference}"
+        return f"Cancellation at {self.cancellation_date}"
     

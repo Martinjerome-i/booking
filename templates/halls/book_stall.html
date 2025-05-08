@@ -1,278 +1,659 @@
 <!DOCTYPE html>
+{% load custom_filters %}
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Book Stalls - {{ hall.name }}</title>
     <link rel="icon" type="image/png" href="/static/favicon.ico">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <style>
+        :root {
+            --primary-color: #451a32;
+            --accent-color: #fcc41a;
+            --light-gray: #f8f9fa;
+            --border-color: #e0e0e0;
+            --text-dark: #333;
+            --text-light: #666;
+            --success-color: #28a745;
+            --info-color: #17a2b8;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+        }
+        
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 0;
+            background-color: #f9f9f9;
+            color: var(--text-dark);
+            line-height: 1.6;
         }
+        
         .container {
-            max-width: 800px;
+            width: 1400px;
+            max-width: 95%;
             margin: 0 auto;
+            padding: 30px 0;
         }
+        
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 20px;
         }
-        .btn {
-            background-color: #451a32;
-            border: none;
-            color: white;
-            padding: 10px 20px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 16px;
-            cursor: pointer;
-            border-radius: 4px;
-            margin-right: 5px;
+        
+        .header h1 {
+            color: var(--primary-color);
+            margin: 0;
+            font-size: 32px;
         }
-        .btn-primary {
-            background-color: #fcc41a;
+        
+        .logo {
+            max-height: 60px;
         }
-        .stall-info {
-            background-color: #f9f9f9;
-            border: 1px solid #ddd;
-            padding: 20px;
-            border-radius: 5px;
-            margin-bottom: 20px;
+        
+        .checkout-container {
+            display: flex;
+            gap: 30px;
         }
-        .booking-form {
+        
+        .checkout-details {
+            flex: 2;
+        }
+        
+        .checkout-summary {
+            flex: 1;
+        }
+        
+        .card {
             background-color: #fff;
-            border: 1px solid #ddd;
-            padding: 20px;
-            border-radius: 5px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            padding: 25px;
+            margin-bottom: 25px;
         }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        .form-group label {
-            display: block;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        .form-group input,
-        .form-group textarea {
-            width: 100%;
-            padding: 8px;
-            box-sizing: border-box;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        .form-group .help-text {
-            font-size: 0.85em;
-            color: #666;
-            margin-top: 5px;
-        }
-        .errorlist {
-            color: #f44336;
-            margin: 5px 0;
-            padding-left: 20px;
-        }
-        .summary {
-            background-color: #fcfde3;
-            padding: 15px;
-            border-radius: 5px;
+        
+        .card-header {
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
             margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        .price {
-            font-size: 24px;
+        
+        .card-header h2 {
+            margin: 0;
+            color: var(--primary-color);
+            font-size: 22px;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
             font-weight: bold;
-            color: #451a32;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
-        .stall-list {
-            margin-top: 10px;
+        
+        .badge-primary {
+            background-color: var(--primary-color);
+            color: white;
         }
-        .stall-item {
-            background-color: #f5f5f5;
-            margin-bottom: 8px;
-            padding: 10px 15px;
-            border-radius: 4px;
-            border-left: 4px solid #fcc41a;
+        
+        .badge-accent {
+            background-color: var(--accent-color);
+            color: var(--primary-color);
         }
-        .discount-info {
-            background-color: #e3f2fd;
-            padding: 10px 15px;
-            border-radius: 4px;
-            margin: 10px 0;
-            border-left: 4px solid #2196F3;
-        }
-        .discount-badge {
+        
+        .badge-discount {
             background-color: #e91e63;
             color: white;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 0.85em;
-            margin-left: 5px;
         }
-        .combo-badge {
-            background-color: #9c27b0;
-            color: white;
-            padding: 3px 8px;
-            border-radius: 12px;
+        
+        .stall-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--light-gray);
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border-left: 4px solid var(--accent-color);
+        }
+        
+        .stall-details {
+            flex: 1;
+        }
+        
+        .stall-list {
+            margin-top: 10px;
+            list-style-type: none;
+            padding-left: 5px;
+        }
+        
+        .stall-list li {
+            margin-bottom: 5px;
+            padding-left: 15px;
+            position: relative;
+        }
+        
+        .stall-list li:before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: var(--accent-color);
+        }
+        
+        .stall-price {
+            font-weight: bold;
+            color: var(--primary-color);
+            text-align: right;
+        }
+        
+        .discount-info {
+            background-color: #e3f2fd;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            border-left: 4px solid #2196F3;
+        }
+        
+        .discount-info h3 {
+            margin-top: 0;
+            color: #0d47a1;
+        }
+        
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px dashed var(--border-color);
+        }
+        
+        .summary-item.total {
+            font-weight: bold;
+            font-size: 20px;
+            border-bottom: 2px solid var(--border-color);
+            margin-top: 20px;
+            padding-top: 10px;
+        }
+        
+        .btn {
+            display: inline-block;
+            font-weight: 500;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: middle;
+            user-select: none;
+            border: 1px solid transparent;
+            padding: 12px 25px;
+            font-size: 16px;
+            line-height: 1.5;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+            text-decoration: none;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: #fff;
+        }
+        
+        .btn-primary:hover {
+            background-color: #3a1529;
+        }
+        
+        .btn-accent {
+            background-color: var(--accent-color);
+            color: var(--primary-color);
+        }
+        
+        .btn-accent:hover {
+            background-color: #e6b118;
+        }
+        
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid var(--primary-color);
+            color: var(--primary-color);
+        }
+        
+        .btn-outline:hover {
+            background-color: var(--primary-color);
+            color: #fff;
+        }
+        
+        .btn-block {
+            display: block;
+            width: 100%;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-dark);
+        }
+        
+        .form-control {
+            display: block;
+            width: 95%;
+            padding: 10px 15px;
+            font-size: 16px;
+            font-weight: 400;
+            line-height: 1.5;
+            color: var(--text-dark);
+            background-color: #fff;
+            background-clip: padding-box;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary-color);
+            outline: 0;
+            box-shadow: 0 0 0 0.2rem rgba(69, 26, 50, 0.25);
+        }
+        
+        .help-text {
             font-size: 0.85em;
-            margin-left: 5px;
+            color: var(--text-light);
+            margin-top: 5px;
+        }
+        
+        .errorlist {
+            color: var(--danger-color);
+            margin: 5px 0;
+            padding-left: 20px;
+            font-size: 0.9em;
+        }
+        
+        .action-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            color: var(--text-light);
+            font-size: 0.9em;
+        }
+        
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1050;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal-content {
+            position: relative;
+            background-color: #fff;
+            margin: 10% auto;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            width: 500px;
+            max-width: 90%;
+        }
+        
+        .close {
+            position: absolute;
+            right: 15px;
+            top: 10px;
+            font-size: 28px;
+            font-weight: bold;
+            color: #aaa;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            color: #333;
+        }
+        
+        .modal-header {
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .modal-header h3 {
+            margin: 0;
+        }
+        
+        .modal-body {
+            margin-bottom: 20px;
+        }
+        
+        .modal-footer {
+            padding-top: 15px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        
+        /* Responsive styles */
+        @media screen and (max-width: 992px) {
+            .checkout-container {
+                flex-direction: column;
+            }
+            
+            .checkout-details, .checkout-summary {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>Book Stalls</h1>
-            <div>
-                <a href="{% url 'stall_booking' hall.id %}" class="btn btn-primary">Back to Stall Selection</a>
+            <h1>Complete Your Booking</h1>
+            <img src="/static/ibfe_logo.png" alt="IBFE Logo" class="logo">
+        </div>
+
+        <div class="checkout-container">
+            <div class="checkout-details">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Customer Information</h2>
+                    </div>
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="errorlist">
+                            {{ form.non_field_errors }}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="form-group">
+                            <label for="{{ form.customer_name.id_for_label }}">Full Name *</label>
+                            <input type="text" id="{{ form.customer_name.id_for_label }}" name="{{ form.customer_name.name }}" class="form-control" required>
+                            {% if form.customer_name.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.customer_name.errors %}
+                                <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="{{ form.customer_email.id_for_label }}">Email Address *</label>
+                            <input type="email" id="{{ form.customer_email.id_for_label }}" name="{{ form.customer_email.name }}" class="form-control" required>
+                            {% if form.customer_email.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.customer_email.errors %}
+                                <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="{{ form.customer_phone.id_for_label }}">Phone Number *</label>
+                            <input type="tel" id="{{ form.customer_phone.id_for_label }}" name="{{ form.customer_phone.name }}" class="form-control" required>
+                            {% if form.customer_phone.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.customer_phone.errors %}
+                                <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="{{ form.company_name.id_for_label }}">Company/Organization Name</label>
+                            <input type="text" id="{{ form.company_name.id_for_label }}" name="{{ form.company_name.name }}" class="form-control">
+                            <div class="help-text">Optional</div>
+                            {% if form.company_name.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.company_name.errors %}
+                                <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="{{ form.notes.id_for_label }}">Additional Notes</label>
+                            <textarea id="{{ form.notes.id_for_label }}" name="{{ form.notes.name }}" rows="3" class="form-control"></textarea>
+                            <div class="help-text">Any special requirements or information</div>
+                            {% if form.notes.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.notes.errors %}
+                                <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="action-buttons">
+                            <button type="button" id="cancelBtn" class="btn btn-outline">Cancel Booking</button>
+                            <button type="submit" class="btn btn-primary">Complete Booking</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="checkout-summary">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Booking Summary</h2>
+                        <span class="badge badge-accent">{{ stalls|length }} Stall(s)</span>
+                    </div>
+                    
+                    <div>
+                        <p><strong>Event Location:</strong> {{ hall.name }}</p>
+                        <p><strong>Hall No:</strong> 3, Old Building, Chennai Trade Center</p>
+                    </div>
+                    
+                    {% if regular_stalls %}
+                    <div>
+                        <h3>Regular Stalls</h3>
+                        <div class="stall-item">
+                            <div class="stall-details">
+                                <strong>{{ regular_stalls|length }} Regular Stalls</strong>
+                                <ul class="stall-list">
+                                    {% for stall in regular_stalls %}
+                                    <li>Stall #{{ stall.stall_number }} - {{ stall.width }}m x {{ stall.height }}m ({{ stall.area }}m²)</li>
+                                    {% endfor %}
+                                </ul>
+                                
+                                {% with total_regular_area=0 %}
+                                    {% for stall in regular_stalls %}
+                                        {% with stall_area=stall.width|multiply:stall.height %}
+                                            {% with total_regular_area=total_regular_area|add:stall_area %}
+                                                {% if forloop.last %}
+                                                    <p>Total area: {{ total_regular_area }}m²</p>
+                                                {% endif %}
+                                            {% endwith %}
+                                        {% endwith %}
+                                    {% endfor %}
+                                {% endwith %}
+                            </div>
+                            <div class="stall-price">₹{{ regular_stall_base_price|floatformat:2 }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if combo_stalls %}
+                    <div>
+                        <h3>Combo Package{% if combo_stalls|length > 1 %}s{% endif %}</h3>
+                        {% regroup combo_stalls by combos.first as combo_groups %}
+                        {% for combo_group in combo_groups %}
+                        <div class="stall-item">
+                            <div class="stall-details">
+                                <strong>{{ combo_group.grouper.name }}</strong>
+                                <ul class="stall-list">
+                                    {% for stall in combo_group.list %}
+                                    <li>Stall #{{ stall.stall_number }} - {{ stall.width }}m x {{ stall.height }}m ({{ stall.area }}m²)</li>
+                                    {% endfor %}
+                                </ul>
+                                
+                                {% with total_combo_area=0 %}
+                                    {% for stall in combo_group.list %}
+                                        {% with stall_area=stall.width|multiply:stall.height %}
+                                            {% with total_combo_area=total_combo_area|add:stall_area %}
+                                                {% if forloop.last %}
+                                                    <p>Total combo area: {{ total_combo_area }}m²</p>
+                                                {% endif %}
+                                            {% endwith %}
+                                        {% endwith %}
+                                    {% endfor %}
+                                {% endwith %}
+                            </div>
+                            <div class="stall-price">₹{{ combo_group.grouper.price|floatformat:2 }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    {% if discount_amount > 0 %}
+                    <div class="discount-info">
+                        <h3>Special Discount <span class="badge badge-discount">Save ₹{{ discount_amount|floatformat:0 }}</span></h3>
+                        {% if regular_stall_count == 2 %}
+                            <p>You're eligible for a flat ₹5,000 discount when booking 2 stalls.</p>
+                        {% elif regular_stall_count > 2 %}
+                            <p>You're eligible for our premium discount of ₹5,000 per stall when booking {{ regular_stall_count }} stalls.</p>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <div style="margin-top: 20px;">
+                        <div class="summary-item">
+                            <span>Regular Stalls ({{ regular_stall_count }})</span>
+                            <span>₹{{ regular_stall_base_price|floatformat:2 }}</span>
+                        </div>
+                        
+                        {% if discount_amount > 0 %}
+                        <div class="summary-item">
+                            <span>Discount</span>
+                            <span>-₹{{ discount_amount|floatformat:2 }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if combo_stalls %}
+                        {% regroup combo_stalls by combos.first as combo_groups %}
+                        {% for combo_group in combo_groups %}
+                        <div class="summary-item">
+                            <span>{{ combo_group.grouper.name }} ({{ combo_group.list|length }} stalls)</span>
+                            <span>₹{{ combo_group.grouper.price|floatformat:2 }}</span>
+                        </div>
+                        {% endfor %}
+                        {% endif %}
+                        
+                        <div class="summary-item total">
+                            <span>Total</span>
+                            <span>₹{{ total_price|floatformat:2 }}</span>
+                        </div>
+                        
+                        {% with total_area=0 %}
+                            {% for stall in stalls %}
+                                {% with stall_area=stall.width|multiply:stall.height %}
+                                    {% with total_area=total_area|add:stall_area %}
+                                        {% if forloop.last %}
+                                            <div class="summary-item">
+                                                <span>Total Area</span>
+                                                <span>{{ total_area }}m²</span>
+                                            </div>
+                                        {% endif %}
+                                    {% endwith %}
+                                {% endwith %}
+                            {% endfor %}
+                        {% endwith %}
+                    </div>
+                </div>
             </div>
         </div>
-
-        <div class="stall-info">
-            <h2>Selected Stalls Information</h2>
-            <p><strong>Hall:</strong> Hall No 3, Old Building , Chennai trade center</p>
-            <p><strong>Number of Stalls:</strong> {{ stalls|length }}</p>
-            
-            <!-- Display regular stalls -->
-            {% if regular_stalls %}
-            <h3>Regular Stalls</h3>
-            <div class="stall-list">
-                {% for stall in regular_stalls %}
-                <div class="stall-item">
-                    <p><strong>Stall #{{ stall.stall_number }}</strong> | Size: {{ stall.width }}m x {{ stall.height }}m ({{ stall.area }}m²) | Base Price: ₹{{ stall.price|floatformat:2 }}</p>
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
-            
-            <!-- Display combo stalls -->
-            {% if combo_stalls %}
-            <h3>Combo Stalls</h3>
-            <div class="stall-item">
-                <p><strong>Combo Package:</strong> <span class="combo-badge">Combo</span></p>
-                <p><strong>Stalls included:</strong> {% for stall in combo_stalls %}#{{ stall.stall_number }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
-                <p><strong>Total Area:</strong> {{ combo_area }}m²</p>
-                <p><strong>Package Price:</strong> ₹130,000.00 (fixed package price)</p>
-            </div>
-            {% endif %}
-        </div>
-
-        <!-- Show discount information if applicable -->
-        {% if discount_amount > 0 %}
-        <div class="discount-info">
-            <h3>Special Discount Applied! <span class="discount-badge">Save ₹{{ discount_amount|floatformat:0 }}</span></h3>
-            {% if regular_stall_count == 2 %}
-                <p>You're booking 2 regular stalls which qualifies for a flat ₹5,000 discount.</p>
-            {% elif regular_stall_count > 2 %}
-                <p>You're booking {{ regular_stall_count }} regular stalls which qualifies for a discount of ₹5,000 per stall (₹{{ discount_amount|floatformat:0 }} total).</p>
-            {% endif %}
-            <p>Regular Price: ₹{{ regular_stall_base_price|floatformat:2 }}</p>
-            <p>After Discount: ₹{{ discounted_regular_price|floatformat:2 }}</p>
-            <p>You Save: ₹{{ discount_amount|floatformat:2 }}</p>
-            <p><small>Note: Discounts apply only to regular stalls, not to combo stalls.</small></p>
-        </div>
-        {% endif %}
-
-        <div class="summary">
-            <h3>Booking Summary</h3>
-            <p>You are about to book {{ stalls|length }} stall(s) in {{ hall.name }}</p>
-            
-            {% if regular_stall_count > 0 %}
-            <p>Regular Stalls: {{ regular_stall_count }} 
-            {% if discount_amount > 0 %}
-                (₹{{ regular_stall_base_price|floatformat:2 }} - ₹{{ discount_amount|floatformat:2 }} discount = ₹{{ discounted_regular_price|floatformat:2 }})
-            {% else %}
-                (₹{{ regular_stall_base_price|floatformat:2 }})
-            {% endif %}
-            </p>
-            {% endif %}
-            
-            {% if combo_stalls %}
-            <p>Combo Stalls Package: {{ combo_stalls|length }} stalls (₹{{ combo_stall_price|floatformat:2 }})</p>
-            {% endif %}
-            
-            <p class="price">Total Price: ₹{{ total_price|floatformat:2 }}</p>
-        </div>
-
-        <div class="booking-form">
-            <h2>Customer Details</h2>
-            <form method="post">
-                {% csrf_token %}
-                
-                {% if form.non_field_errors %}
-                <div class="errorlist">
-                    {{ form.non_field_errors }}
-                </div>
-                {% endif %}
-                
-                <div class="form-group">
-                    <label for="{{ form.customer_name.id_for_label }}">Name *</label>
-                    {{ form.customer_name }}
-                    {% if form.customer_name.errors %}
-                    <ul class="errorlist">
-                        {% for error in form.customer_name.errors %}
-                        <li>{{ error }}</li>
-                        {% endfor %}
-                    </ul>
-                    {% endif %}
-                </div>
-                
-                <div class="form-group">
-                    <label for="{{ form.customer_email.id_for_label }}">Email *</label>
-                    {{ form.customer_email }}
-                    {% if form.customer_email.errors %}
-                    <ul class="errorlist">
-                        {% for error in form.customer_email.errors %}
-                        <li>{{ error }}</li>
-                        {% endfor %}
-                    </ul>
-                    {% endif %}
-                </div>
-                
-                <div class="form-group">
-                    <label for="{{ form.customer_phone.id_for_label }}">Phone Number *</label>
-                    {{ form.customer_phone }}
-                    {% if form.customer_phone.errors %}
-                    <ul class="errorlist">
-                        {% for error in form.customer_phone.errors %}
-                        <li>{{ error }}</li>
-                        {% endfor %}
-                    </ul>
-                    {% endif %}
-                </div>
-                
-                <div class="form-group">
-                    <label for="{{ form.company_name.id_for_label }}">Company Name</label>
-                    {{ form.company_name }}
-                    <div class="help-text">Optional</div>
-                    {% if form.company_name.errors %}
-                    <ul class="errorlist">
-                        {% for error in form.company_name.errors %}
-                        <li>{{ error }}</li>
-                        {% endfor %}
-                    </ul>
-                    {% endif %}
-                </div>
-                
-                <div class="form-group">
-                    <label for="{{ form.notes.id_for_label }}">Additional Notes</label>
-                    {{ form.notes }}
-                    <div class="help-text">Any special requirements or information</div>
-                    {% if form.notes.errors %}
-                    <ul class="errorlist">
-                        {% for error in form.notes.errors %}
-                        <li>{{ error }}</li>
-                        {% endfor %}
-                    </ul>
-                    {% endif %}
-                </div>
-                
-                <button type="submit" class="btn">Complete Booking</button>
-            </form>
+        
+        <div class="footer">
+            <p>&copy; 2025 IBFE. All rights reserved.</p>
         </div>
     </div>
+    
+    <!-- Cancellation Modal -->
+    <div id="cancelModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div class="modal-header">
+                <h3>Cancellation Feedback</h3>
+            </div>
+            <div class="modal-body">
+                <p>We're sorry to see you go. Please let us know why you're cancelling this booking:</p>
+                <form id="cancelForm" action="{% url 'cancel_booking_process' %}" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="stall_ids" value="{{ stall_ids_string }}">
+                    <div class="form-group">
+                        <label for="feedback">Feedback</label>
+                        <textarea id="feedback" name="feedback" rows="5" class="form-control" required></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline close-modal">Go Back</button>
+                        <button type="submit" class="btn btn-primary">Submit & Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Calculate total area for stalls
+        document.addEventListener('DOMContentLoaded', function() {
+            // The calculation is now handled in the template with the multiply filter
+            
+            // Get the modal
+            const modal = document.getElementById("cancelModal");
+            
+            // Get the button that opens the modal
+            const btn = document.getElementById("cancelBtn");
+            
+            // Get all elements that close the modal
+            const closeButtons = document.querySelectorAll(".close, .close-modal");
+            
+            // When the user clicks the button, open the modal
+            btn.onclick = function() {
+                modal.style.display = "block";
+            }
+            
+            // When the user clicks on close button, close the modal
+            closeButtons.forEach(button => {
+                button.onclick = function() {
+                    modal.style.display = "none";
+                }
+            });
+            
+            // When the user clicks anywhere outside of the modal, close it
+            window.onclick = function(event) {
+                if (event.target == modal) {
+                    modal.style.display = "none";
+                }
+            }
+        });
+    </script>
 </body>
 </html>

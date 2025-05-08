@@ -758,9 +758,9 @@ def book_stall(request):
         'discount_amount': discount_amount,
         'discount_percentage': discount_percentage,
         'regular_stalls': regular_stalls,
-        'combo_stalls': combo_stalls
+        'combo_stalls': combo_stalls,
+        'stall_ids_string': ','.join(stall_ids)  # Add this to pass to cancellation form
     })
-
 
 def booking_confirmation(request, booking_id):
     """
@@ -828,6 +828,38 @@ def booking_confirmation(request, booking_id):
         'discount_percentage': discount_percentage
     })
 
+
+
+@require_POST
+def cancel_booking_process(request):
+    """
+    View for handling booking cancellations with feedback
+    """
+    from django.shortcuts import redirect
+    from .models import Stall, BookingCancellation  # Import BookingCancellation explicitly here
+    
+    feedback = request.POST.get('feedback', '')
+    stall_ids = request.POST.get('stall_ids', '').split(',')
+    stall_ids = [id for id in stall_ids if id]  # Filter out empty strings
+    
+    # Create cancellation record
+    cancellation = BookingCancellation(
+        feedback=feedback,
+        stall_ids=stall_ids
+    )
+    cancellation.save()
+    
+    # Redirect to stall booking page (first stall's hall or default to hall 1)
+    if stall_ids:
+        try:
+            first_stall = Stall.objects.get(id=stall_ids[0])
+            hall_id = first_stall.hall.id
+        except Stall.DoesNotExist:
+            hall_id = 1
+    else:
+        hall_id = 1
+        
+    return redirect('stall_booking', hall_id=hall_id)
 
 @require_POST
 def update_booking_status(request, booking_id):

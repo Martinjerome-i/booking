@@ -29,6 +29,7 @@ urlpatterns = [
     path('halls/<int:hall_id>/create-combo/', views.create_combo, name='create_combo'),
     path('combo/<int:combo_id>/edit/', views.edit_combo, name='edit_combo'),
     path('combo/<int:combo_id>/delete/', views.delete_combo, name='delete_combo'),
+    path('cancel-booking/', views.cancel_booking_process, name='cancel_booking_process'),
 
     path('admin_halls/<int:hall_id>/manage/', views.admin_stall_management, name='admin_stall_management'),
     path('admin_stall/<int:stall_id>/update-status/', views.admin_update_stall_status, name='admin_update_stall_status'),
