@@ -1,26 +1,290 @@
+{% load custom_filters %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Booking Confirmation</title>
+    <title>Booking Confirmation - IBFE</title>
     <link rel="icon" type="image/png" href="/static/favicon.ico">
+    <link rel="preload" href="/static/ibfe_logo.png" as="image">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <style>
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes checkmark {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.2);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes borderPulse {
+            0% { box-shadow: 0 0 0 0 rgba(69, 26, 50, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(69, 26, 50, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(69, 26, 50, 0); }
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Roboto, Arial, sans-serif;
             margin: 0;
             padding: 20px;
+            background-color: #f9f9f9;
+            color: #333333;
         }
+        
         .container {
-            max-width: 800px;
+            max-width: 1400px;
             margin: 0 auto;
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            padding: 25px;
+            border-radius: 6px;
         }
+        
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
+            border-bottom: 0.5px solid #e0e0e0;
+            padding-bottom: 15px;
+            animation: fadeIn 0.8s ease-in-out forwards;
         }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo img {
+            max-height: 60px;
+            width: auto;
+        }
+        
+        .hall-info {
+            margin-bottom: 20px;
+            padding: 10px 15px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            border: 0.5px solid #e0e0e0;
+            animation: fadeIn 1s ease-in-out forwards;
+        }
+        
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333333;
+            margin: 0;
+        }
+        
+        .confirmation-container {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .confirmation-details {
+            flex: 2;
+            min-width: 300px;
+        }
+        
+        .confirmation-summary {
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .card {
+            background-color: #ffffff;
+            border-radius: 6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 0.5px solid #e0e0e0;
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .card-header {
+            border-bottom: 0.5px solid #e0e0e0;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .card-header h2 {
+            margin: 0;
+            color: #333333;
+            font-size: 20px;
+            font-weight: 500;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .badge-accent {
+            background-color: #451a32;
+            color: white;
+        }
+        
+        .badge-discount {
+            background-color: #f44336;
+            color: white;
+        }
+        
+        .badge-combo {
+            background-color: #9c27b0;
+            color: white;
+        }
+        
+        .badge-pending {
+            background-color: #ff9800;
+            color: white;
+        }
+        
+        .badge-paid {
+            background-color: #4caf50;
+            color: white;
+        }
+        
+        .stall-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border: 0.5px solid #e0e0e0;
+            animation: fadeInUp 0.5s ease-in-out forwards;
+            animation-delay: calc(var(--animation-order) * 0.1s);
+            opacity: 0;
+        }
+        
+        .stall-details {
+            flex: 1;
+        }
+        
+        .stall-list {
+            margin-top: 10px;
+            list-style-type: none;
+            padding-left: 5px;
+        }
+        
+        .stall-list li {
+            margin-bottom: 5px;
+            padding-left: 15px;
+            position: relative;
+            animation: fadeInUp 0.3s ease-in-out forwards;
+            animation-delay: calc(var(--item-order) * 0.1s + 0.3s);
+            opacity: 0;
+        }
+        
+        .stall-list li:before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #451a32;
+        }
+        
+        .stall-price {
+            font-weight: 500;
+            color: #333333;
+            text-align: right;
+        }
+        
+        .discount-info {
+            background-color: #fffcd5;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            border: 0.5px solid #e0e0e0;
+            animation: fadeInUp 0.6s ease-in-out forwards;
+            animation-delay: 0.9s;
+            opacity: 0;
+        }
+        
+        .discount-info h3 {
+            margin-top: 0;
+            color: #333333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 0.5px dashed #e0e0e0;
+            animation: fadeInUp 0.4s ease-in-out forwards;
+            animation-delay: calc(var(--summary-order) * 0.1s + 0.5s);
+            opacity: 0;
+        }
+        
+        .summary-item.total {
+            font-weight: 500;
+            font-size: 18px;
+            border-bottom: 1px solid #e0e0e0;
+            margin-top: 20px;
+            padding-top: 10px;
+            animation: fadeInUp 0.5s ease-in-out forwards;
+            animation-delay: 1.2s;
+            opacity: 0;
+        }
+        
         .btn {
             background-color: #451a32;
             border: none;
@@ -33,188 +297,398 @@
             cursor: pointer;
             border-radius: 4px;
             margin-right: 5px;
+            transition: all 0.2s ease;
+            font-weight: 500;
         }
-        .btn-primary {
-            background-color: #fcc41a;
+        
+        .btn:hover {
+            background-color: #5c263f;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
+        
+        .btn-outline {
+            background-color: transparent;
+            border: 0.5px solid #451a32;
+            color: #451a32;
+        }
+        
+        .btn-outline:hover {
+            background-color: #451a32;
+            color: white;
+        }
+        
         .confirmation-box {
             background-color: #e8f5e9;
-            border: 1px solid #81c784;
-            border-radius: 5px;
+            border-left: 4px solid #4caf50;
             padding: 20px;
             margin-bottom: 20px;
+            border-radius: 6px;
+            position: relative;
+            animation: fadeInUp 0.5s ease-in-out forwards;
+            animation-delay: 0.3s;
+            opacity: 0;
         }
-        .booking-details {
-            background-color: #f9f9f9;
-            border: 1px solid #ddd;
-            padding: 20px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-        }
-        .stall-list {
-            margin-top: 10px;
-        }
-        .stall-item {
-            background-color: #f5f5f5;
-            margin-bottom: 8px;
-            padding: 10px 15px;
-            border-radius: 4px;
-            border-left: 4px solid #fcc41a;
-        }
-        .price {
-            font-size: 24px;
-            font-weight: bold;
-            color: #451a32;
-            margin-top: 15px;
-        }
-        .reference {
-            background-color: #fff3e0;
-            border: 1px solid #ffe0b2;
-            padding: 15px;
-            border-radius: 5px;
-            margin-top: 20px;
-            text-align: center;
-        }
-        .reference h3 {
+        
+        .confirmation-box h2 {
             margin-top: 0;
+            color: #2e7d32;
+            display: flex;
+            align-items: center;
         }
+        
+        .checkmark-circle {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: #4caf50;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            animation: checkmark 0.8s ease-in-out forwards;
+            animation-delay: 0.5s;
+            opacity: 0;
+        }
+        
+        .checkmark-circle i {
+            color: white;
+        }
+        
+        .reference-card {
+            background-color: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            text-align: center;
+            animation: fadeInUp 0.5s ease-in-out forwards;
+            animation-delay: 0.6s;
+            opacity: 0;
+        }
+        
+        .reference-card h3 {
+            margin-top: 0;
+            color: #e65100;
+        }
+        
         .reference-code {
-            font-size: 20px;
+            font-size: 24px;
             font-weight: bold;
             color: #ff9800;
             letter-spacing: 1px;
-        }
-        .discount-info {
-            background-color: #e3f2fd;
-            padding: 10px 15px;
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #fff;
             border-radius: 4px;
-            margin: 10px 0;
-            border-left: 4px solid #2196F3;
+            border: 1px dashed #ffcc80;
+            display: inline-block;
+            animation: pulse 2s infinite;
         }
-        .discount-badge {
-            background-color: #e91e63;
-            color: white;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 0.85em;
-            margin-left: 5px;
+        
+        .info-row {
+            display: flex;
+            margin-bottom: 10px;
+            animation: fadeInUp 0.4s ease-in-out forwards;
+            animation-delay: calc(var(--info-order) * 0.1s + 0.7s);
+            opacity: 0;
         }
-        .combo-badge {
-            background-color: #9c27b0;
+        
+        .info-label {
+            flex: 1;
+            font-weight: 500;
+            color: #666;
+        }
+        
+        .info-value {
+            flex: 2;
+        }
+        
+        .info-icon {
+            width: 20px;
+            text-align: center;
+            margin-right: 10px;
+            color: #451a32;
+        }
+        
+        .payment-info {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            animation: fadeInUp 0.5s ease-in-out forwards;
+            animation-delay: 1.1s;
+            opacity: 0;
+        }
+        
+        .payment-info h3 {
+            margin-top: 0;
+            color: #0d47a1;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 0.5px solid #e0e0e0;
+            color: #666666;
+            font-size: 14px;
+            animation: fadeIn 1s ease-in-out forwards;
+            animation-delay: 1.5s;
+            opacity: 0;
+        }
+        
+        .print-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #451a32;
             color: white;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 0.85em;
-            margin-left: 5px;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: all 0.3s;
+            animation: borderPulse 2s infinite;
+        }
+        
+        .print-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        /* Responsive styles */
+        @media screen and (max-width: 992px) {
+            .confirmation-container {
+                flex-direction: column;
+            }
+            
+            .confirmation-details, .confirmation-summary {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>Booking Confirmation</h1>
-            <div>
-                <a href="{% url 'stall_booking' hall_id %}" class="btn btn-primary">Back to Hall Bookings</a>
+            <h1>INTERNATIONAL BIRYANI FESTIVAL AND EXPO</h1>
+            <div class="logo">
+                <img src="/static/ibfe_logo.png" alt="IBFE Logo" height="60">
             </div>
         </div>
-        
-        <div class="confirmation-box">
-            <h2>Booking Successful!</h2>
-            <p>Thank you, {{ booking.customer_name }}. Your stall booking has been confirmed.</p>
-            <p>A confirmation has been sent to your email: {{ booking.customer_email }}</p>
+
+        <div class="hall-info">
+            <p>CHENNAI TRADE CENTRE - HALL 3 - 4400 SQM | 12, 13 & 14 SEPTEMBER 2025</p>
         </div>
-        
-        <div class="reference">
-            <h3>Your Booking Reference</h3>
-            <p class="reference-code">{{ booking.booking_reference }}</p>
-            <p>Please keep this reference number for future communications.</p>
-        </div>
-        
-        <div class="booking-details">
-            <h2>Booking Details</h2>
-            <p><strong>Booking Date:</strong> {{ booking.booking_date|date:"F j, Y, g:i a" }}</p>
-            <p><strong>Customer Name:</strong> {{ booking.customer_name }}</p>
-            <p><strong>Customer Email:</strong> {{ booking.customer_email }}</p>
-            <p><strong>Customer Phone:</strong> {{ booking.customer_phone }}</p>
-            {% if booking.company_name %}
-            <p><strong>Company Name:</strong> {{ booking.company_name }}</p>
-            {% endif %}
-            {% if booking.notes %}
-            <p><strong>Additional Notes:</strong> {{ booking.notes }}</p>
-            {% endif %}
-            <p><strong>Payment Status:</strong> {% if booking.payment_status %}Paid{% else %}Pending{% endif %}</p>
-            
-            <h3>Stall Information</h3>
-            <p><strong>Number of Stalls:</strong> {{ stalls|length }}</p>
-            
-            <!-- Display regular stalls -->
-            {% if regular_stalls %}
-            <h4>Regular Stalls</h4>
-            <div class="stall-list">
-                {% for stall in regular_stalls %}
-                <div class="stall-item">
-                    <p><strong>Stall #{{ stall.stall_number }}</strong> | Size: {{ stall.width }}m x {{ stall.height }}m ({{ stall.area }}m²) | Base Price: ₹{{ stall.price|floatformat:2 }}</p>
+
+        <div class="confirmation-container">
+            <div class="confirmation-details">
+                <div class="confirmation-box">
+                    <h2>
+                        <div class="checkmark-circle">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        Booking Successful!
+                    </h2>
+                    <p>Thank you, {{ booking.customer_name }}. Your stall booking has been confirmed.</p>
+                    <p>A confirmation has been sent to your email: {{ booking.customer_email }}</p>
                 </div>
-                {% endfor %}
+
+                <div class="reference-card">
+                    <h3>Your Booking Reference</h3>
+                    <div class="reference-code">{{ booking.booking_reference }}</div>
+                    <p>Please keep this reference number for future communications.</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Booking Details</h2>
+                        <span class="badge badge-accent">{{ stalls|length }} Stalls</span>
+                    </div>
+                    
+                    <div class="info-row" style="--info-order: 1;">
+                        <div class="info-icon"><i class="fas fa-calendar-alt"></i></div>
+                        <div class="info-label">Booking Date:</div>
+                        <div class="info-value">{{ booking.booking_date|date:"F j, Y, g:i a" }}</div>
+                    </div>
+                    
+                    <div class="info-row" style="--info-order: 2;">
+                        <div class="info-icon"><i class="fas fa-user"></i></div>
+                        <div class="info-label">Customer Name:</div>
+                        <div class="info-value">{{ booking.customer_name }}</div>
+                    </div>
+                    
+                    <div class="info-row" style="--info-order: 3;">
+                        <div class="info-icon"><i class="fas fa-envelope"></i></div>
+                        <div class="info-label">Customer Email:</div>
+                        <div class="info-value">{{ booking.customer_email }}</div>
+                    </div>
+                    
+                    <div class="info-row" style="--info-order: 4;">
+                        <div class="info-icon"><i class="fas fa-phone"></i></div>
+                        <div class="info-label">Customer Phone:</div>
+                        <div class="info-value">{{ booking.customer_phone }}</div>
+                    </div>
+                    
+                    {% if booking.company_name %}
+                    <div class="info-row" style="--info-order: 5;">
+                        <div class="info-icon"><i class="fas fa-building"></i></div>
+                        <div class="info-label">Company Name:</div>
+                        <div class="info-value">{{ booking.company_name }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if booking.notes %}
+                    <div class="info-row" style="--info-order: 6;">
+                        <div class="info-icon"><i class="fas fa-sticky-note"></i></div>
+                        <div class="info-label">Additional Notes:</div>
+                        <div class="info-value">{{ booking.notes }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="info-row" style="--info-order: 7;">
+                        <div class="info-icon"><i class="fas fa-credit-card"></i></div>
+                        <div class="info-label">Payment Status:</div>
+                        <div class="info-value">
+                            {% if booking.payment_status %}
+                            <span class="badge badge-paid">Paid</span>
+                            {% else %}
+                            <span class="badge badge-pending">Pending</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                </div>
             </div>
-            {% endif %}
             
-            <!-- Display combo stalls without individual prices -->
-            {% if combo_stalls %}
-            <h4>Combo Stalls</h4>
-            <div class="stall-item">
-                <p><strong>Combo Package:</strong> <span class="combo-badge">Combo</span></p>
-                <p><strong>Stalls included:</strong> {% for stall in combo_stalls %}#{{ stall.stall_number }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
-                <p><strong>Total Area:</strong> {{ combo_area }}m²</p>
-                <p><strong>Package Price:</strong> ₹130,000.00</p>
-            </div>
-            {% endif %}
-            
-            <!-- Show discount information if applicable -->
-            {% if discount_amount > 0 %}
-            <div class="discount-info">
-                <h3>Special Discount Applied! <span class="discount-badge">Save ₹{{ discount_amount|floatformat:0 }}</span></h3>
-                {% if regular_stall_count == 2 %}
-                    <p>You've booked 2 regular stalls which qualifies for a flat ₹5,000 discount.</p>
-                {% elif regular_stall_count > 2 %}
-                    <p>You've booked {{ regular_stall_count }} regular stalls which qualifies for a discount of ₹5,000 per stall (₹{{ discount_amount|floatformat:0 }} total).</p>
-                {% endif %}
-                <p>Regular Price: ₹{{ regular_stall_base_price|floatformat:2 }}</p>
-                <p>After Discount: ₹{{ discounted_regular_price|floatformat:2 }}</p>
-                <p>You Save: ₹{{ discount_amount|floatformat:2 }}</p>
-                <p><small>Note: Discounts apply only to regular stalls, not to combo stalls.</small></p>
-            </div>
-            {% endif %}
-            
-            <div class="price-summary">
-                <h3>Price Summary</h3>
-                {% if regular_stall_count > 0 %}
-                <p>Regular Stalls: {{ regular_stall_count }} 
-                {% if discount_amount > 0 %}
-                    (₹{{ regular_stall_base_price|floatformat:2 }} - ₹{{ discount_amount|floatformat:2 }} discount = ₹{{ discounted_regular_price|floatformat:2 }})
-                {% else %}
-                    (₹{{ regular_stall_base_price|floatformat:2 }})
-                {% endif %}
-                </p>
-                {% endif %}
-                
-                {% if combo_stalls %}
-                <p>Combo Stalls Package: ₹{{ combo_stall_price|floatformat:2 }}</p>
-                {% endif %}
-                
-                <p class="price">Total Price: ₹{{ booking.total_amount|floatformat:2 }}</p>
-            </div>
-            
-            <div class="payment-info">
-                <h3>Payment Information</h3>
-                <p>Please complete your payment to finalize your booking. Our team will contact you shortly with payment instructions.</p>
-                <p><strong>Payment Status:</strong> {% if booking.payment_status %}Paid{% else %}Pending{% endif %}</p>
+            <div class="confirmation-summary">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Stall Information</h2>
+                        <span class="badge badge-accent">{{ stalls|length }} Stalls</span>
+                    </div>
+                    
+                    {% if regular_stalls %}
+                    <h3>Regular Stalls</h3>
+                    <div class="stall-item" style="--animation-order: 1;">
+                        <div class="stall-details">
+                            <strong>{{ regular_stalls|length }} Regular Stalls</strong>
+                            <ul class="stall-list">
+                                {% for stall in regular_stalls %}
+                                <li style="--item-order: {{ forloop.counter }};">
+                                    Stall #{{ stall.stall_number }} - {{ stall.width }}m x {{ stall.height }}m ({{ stall.area }}m²)
+                                </li>
+                                {% endfor %}
+                            </ul>
+                            <p>Total area: {{ regular_stalls|length|multiply:9 }}m²</p>
+                        </div>
+                        <div class="stall-price">₹{{ regular_stall_base_price|floatformat:2 }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if combo_stalls %}
+                    <h3>Combo Package</h3>
+                    <div class="stall-item" style="--animation-order: 2;">
+                        <div class="stall-details">
+                            <strong>Premium Combo <span class="badge badge-combo">Combo</span></strong>
+                            <ul class="stall-list">
+                                {% for stall in combo_stalls %}
+                                <li style="--item-order: {{ forloop.counter|add:regular_stalls|length }};">
+                                    Stall #{{ stall.stall_number }} - {{ stall.width }}m x {{ stall.height }}m ({{ stall.area }}m²)
+                                </li>
+                                {% endfor %}
+                            </ul>
+                            {% with total_combo_area=0 %}
+                                {% for stall in combo_stalls %}
+                                    {% with stall_area=stall.area %}
+                                        {% with total_combo_area=total_combo_area|add:stall_area %}
+                                        {% endwith %}
+                                    {% endwith %}
+                                {% endfor %}
+                                <p>Total combo area: {{ total_combo_area }}m²</p>
+                            {% endwith %}
+                        </div>
+                        <div class="stall-price">₹{{ combo_stall_price|floatformat:2 }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if discount_amount > 0 %}
+                    <div class="discount-info">
+                        <h3>
+                            Special Discount 
+                            <span class="badge badge-discount">Save ₹{{ discount_amount|floatformat:0 }}</span>
+                        </h3>
+                        <p>You've booked {{ regular_stall_count }} regular stalls which qualifies for a discount of 
+                            {% if regular_stall_count == 2 %}
+                                ₹5,000 (flat discount)
+                            {% else %}
+                                ₹5,000 per stall (₹{{ discount_amount|floatformat:0 }} total)
+                            {% endif %}
+                        </p>
+                        <p>Regular Price: ₹{{ regular_stall_base_price|floatformat:2 }}</p>
+                        <p>After Discount: ₹{{ discounted_regular_price|floatformat:2 }}</p>
+                        <p>You Save: ₹{{ discount_amount|floatformat:2 }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    <div style="margin-top: 20px;">
+                        {% if regular_stalls %}
+                        <div class="summary-item" style="--summary-order: 1;">
+                            <span>Regular Stalls ({{ regular_stalls|length }})</span>
+                            <span>₹{{ regular_stall_base_price|floatformat:2 }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if discount_amount > 0 %}
+                        <div class="summary-item" style="--summary-order: 2;">
+                            <span>Discount</span>
+                            <span>-₹{{ discount_amount|floatformat:2 }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if combo_stalls %}
+                        <div class="summary-item" style="--summary-order: 3;">
+                            <span>Combo Package</span>
+                            <span>₹{{ combo_stall_price|floatformat:2 }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="summary-item total">
+                            <span>Total</span>
+                            <span>₹{{ total_price|floatformat:2 }}</span>
+                        </div>
+                        
+                        <div class="summary-item" style="--summary-order: 4;">
+                            <span>Total Area</span>
+                            {% with total_area=0 %}
+                                {% for stall in stalls %}
+                                    {% with stall_area=stall.area %}
+                                        {% with total_area=total_area|add:stall_area %}
+                                        {% endwith %}
+                                    {% endwith %}
+                                {% endfor %}
+                                <span>{{ total_area }}m²</span>
+                            {% endwith %}
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
         
-        <div style="margin-top: 30px; text-align: center;">
-            <p>Thank you for booking with IBF Expo. We look forward to seeing you at the event.</p>
+        <div class="footer">
+            <p>&copy; {% now "Y" %} International Biryani Festival and Expo. All rights reserved.</p>
         </div>
     </div>
+    
+    <button class="print-button" onclick="window.print();" title="Print Confirmation">
+        <i class="fas fa-print"></i>
+    </button>
 </body>
 </html>
