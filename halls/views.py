@@ -719,8 +719,14 @@ def book_stall(request):
         discount_amount = decimal.Decimal('5000') * regular_stall_count
         discounted_regular_price = regular_stall_base_price - discount_amount
     
-    # Combo stalls have a fixed price of 130,000 for the entire combo package
-    combo_stall_price = decimal.Decimal('130000.00') if combo_stalls else decimal.Decimal('0')
+    # Count unique combos and multiply by 130,000
+    combo_packages = set()
+    for stall in combo_stalls:
+        combo = stall.combos.first()
+        if combo:
+            combo_packages.add(combo.id)
+    combo_package_count = len(combo_packages)
+    combo_stall_price = decimal.Decimal('130000.00') * combo_package_count if combo_packages else decimal.Decimal('0')
     
     # Total price
     total_price = discounted_regular_price + combo_stall_price

@@ -483,22 +483,21 @@
                             {% endif %}
                             
                             {% if combo_stalls %}
-                                <div style="margin-top: 15px;">
-                                    <strong>Combo Packages</strong>
-                                    {% for combo_group in combo_stall_groups %}
-                                    <div style="margin-top: 8px;">
-                                        <strong>{{ combo_group.combo.name }} ({{ combo_group.stalls|length }} stalls)</strong>
-                                        <ul class="stall-list">
-                                            {% for stall in combo_group.stalls %}
-                                            <li>Stall #{{ stall.stall_number }} ({{ stall_sizes|get_item:stall.id }}m²)</li>
-                                            {% endfor %}
-                                        </ul>
-                                        <p>Combo area: {{ combo_group.total_area }}m²</p>
-                                        <p><strong>Price: ₹130,000.00</strong> (Fixed package price)</p>
-                                    </div>
-                                    {% endfor %}
-                                    <p>All combo stalls total area: {{ combo_stalls_total_area }}m²</p>
+                            <div style="margin-top: 15px;">
+                                <strong>Combo Packages</strong>
+                                {% for combo_group in combo_stall_groups %}
+                                <div style="margin-top: 8px;">
+                                    <strong>{{ combo_group.combo.name }} ({{ combo_group.stalls|length }} stalls)</strong>
+                                    <ul class="stall-list">
+                                        {% for stall in combo_group.stalls %}
+                                        <li>Stall #{{ stall.stall_number }} ({{ stall_sizes|get_item:stall.id }}m²)</li>
+                                        {% endfor %}
+                                    </ul>
+                                    <p>Combo area: {{ combo_group.total_area }}m²</p>
                                 </div>
+                                {% endfor %}
+                                <p>All combo stalls total area: {{ combo_stalls_total_area }}m²</p>
+                            </div>
                             {% endif %}
                             
                             <div style="margin-top: 15px; font-weight: 500;">
@@ -533,8 +532,12 @@
                         
                         {% if combo_stalls %}
                         <div class="summary-item">
-                            <span>Combo Package</span>
+                            <span>Combo Package{% if combo_stall_groups|length > 1 %}s{% endif %} ({{ combo_stall_groups|length }})</span>
                             <span>₹{{ combo_stall_price|floatformat:2 }}</span>
+                        </div>
+                        <div class="summary-item">
+                            <span><small>Each combo package: ₹130,000.00</small></span>
+                            <span></span>
                         </div>
                         {% endif %}
                         
