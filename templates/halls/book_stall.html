@@ -465,15 +465,17 @@
                         <p><strong>Hall No:</strong> 3, Old Building, Chennai Trade Center</p>
                     </div>
                     
-                    {% if regular_stalls %}
-                    <div>
-                        <h3>Regular Stalls</h3>
-                        <div class="stall-item">
-                            <div class="stall-details">
-                                <strong>{{ regular_stalls|length }} Regular Stalls</strong>
+                    <!-- Consolidated Stalls Display -->
+                    <div class="stall-item">
+                        <div class="stall-details">
+                            <strong>Selected Stalls</strong>
+                            
+                            {% if regular_stalls %}
+                            <div style="margin-top: 10px;">
+                                <strong>Regular Stalls ({{ regular_stalls|length }})</strong>
                                 <ul class="stall-list">
                                     {% for stall in regular_stalls %}
-                                    <li>Stall #{{ stall.stall_number }} - {{ stall.width }}m x {{ stall.height }}m ({{ stall.area }}m²)</li>
+                                    <li>Stall #{{ stall.stall_number }} (9m²)</li>
                                     {% endfor %}
                                 </ul>
                                 
@@ -482,49 +484,59 @@
                                         {% with stall_area=stall.width|multiply:stall.height %}
                                             {% with total_regular_area=total_regular_area|add:stall_area %}
                                                 {% if forloop.last %}
-                                                    <p>Total area: {{ total_regular_area }}m²</p>
+                                                    <p>Regular stalls total area: {{ total_regular_area }}m²</p>
                                                 {% endif %}
                                             {% endwith %}
                                         {% endwith %}
                                     {% endfor %}
                                 {% endwith %}
                             </div>
-                            <div class="stall-price">₹{{ regular_stall_base_price|floatformat:2 }}</div>
-                        </div>
-                    </div>
-                    {% endif %}
-                    
-                    {% if combo_stalls %}
-                    <div>
-                        <h3>Combo Package{% if combo_stalls|length > 1 %}s{% endif %}</h3>
-                        {% regroup combo_stalls by combos.first as combo_groups %}
-                        {% for combo_group in combo_groups %}
-                        <div class="stall-item">
-                            <div class="stall-details">
-                                <strong>{{ combo_group.grouper.name }}</strong>
-                                <ul class="stall-list">
-                                    {% for stall in combo_group.list %}
-                                    <li>Stall #{{ stall.stall_number }} - {{ stall.width }}m x {{ stall.height }}m ({{ stall.area }}m²)</li>
-                                    {% endfor %}
-                                </ul>
-                                
-                                {% with total_combo_area=0 %}
-                                    {% for stall in combo_group.list %}
-                                        {% with stall_area=stall.width|multiply:stall.height %}
-                                            {% with total_combo_area=total_combo_area|add:stall_area %}
-                                                {% if forloop.last %}
-                                                    <p>Total combo area: {{ total_combo_area }}m²</p>
-                                                {% endif %}
+                            {% endif %}
+                            
+                            {% if combo_stalls %}
+                            <div style="margin-top: 15px;">
+                                <strong>Combo Packages</strong>
+                                {% regroup combo_stalls by combos.first as combo_groups %}
+                                {% for combo_group in combo_groups %}
+                                <div style="margin-top: 8px;">
+                                    <strong>{{ combo_group.grouper.name }} ({{ combo_group.list|length }} stalls)</strong>
+                                    <ul class="stall-list">
+                                        {% for stall in combo_group.list %}
+                                        <li>Stall #{{ stall.stall_number }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                    
+                                    {% with total_combo_area=0 %}
+                                        {% for stall in combo_group.list %}
+                                            {% with stall_area=stall.width|multiply:stall.height %}
+                                                {% with total_combo_area=total_combo_area|add:stall_area %}
+                                                    {% if forloop.last %}
+                                                        <p>Combo area: {{ total_combo_area }}m² (9m² per stall)</p>
+                                                    {% endif %}
+                                                {% endwith %}
                                             {% endwith %}
-                                        {% endwith %}
-                                    {% endfor %}
-                                {% endwith %}
+                                        {% endfor %}
+                                    {% endwith %}
+                                </div>
+                                {% endfor %}
                             </div>
-                            <div class="stall-price">₹{{ combo_group.grouper.price|floatformat:2 }}</div>
+                            {% endif %}
+                            
+                            {% with total_area=0 %}
+                                {% for stall in stalls %}
+                                    {% with stall_area=stall.width|multiply:stall.height %}
+                                        {% with total_area=total_area|add:stall_area %}
+                                            {% if forloop.last %}
+                                                <div style="margin-top: 15px; font-weight: 500;">
+                                                    <p>Overall total area: {{ total_area }}m²</p>
+                                                </div>
+                                            {% endif %}
+                                        {% endwith %}
+                                    {% endwith %}
+                                {% endfor %}
+                            {% endwith %}
                         </div>
-                        {% endfor %}
                     </div>
-                    {% endif %}
                     
                     {% if discount_amount > 0 %}
                     <div class="discount-info">
