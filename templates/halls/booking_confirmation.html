@@ -201,7 +201,7 @@
         .stall-item {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
             background-color: #f5f5f5;
             padding: 15px;
             border-radius: 6px;
@@ -519,7 +519,6 @@
                 <div class="card">
                     <div class="card-header">
                         <h2>Booking Details</h2>
-                        <span class="badge badge-accent">{{ stalls|length }} Stalls</span>
                     </div>
                     
                     <div class="info-row" style="--info-order: 1;">
@@ -581,11 +580,15 @@
                 <div class="card">
                     <div class="card-header">
                         <h2>Stall Information</h2>
-                        <span class="badge badge-accent">{{ stalls|length }} Stalls</span>
+                        <span class="badge badge-accent">{{ stalls|length }} Stall(s)</span>
+                    </div>
+                    
+                    <div>
+                        <p><strong>Hall No:</strong> 3, Old Building, Chennai Trade Center</p>
                     </div>
                     
                     <!-- Updated stall display to match book_stall.html style -->
-                    <div class="stall-item">
+                    <div class="stall-item" style="--animation-order: 1;">
                         <div class="stall-details">
                             <strong>Selected Stalls</strong>
                             
@@ -627,20 +630,12 @@
                     
                     {% if discount_amount > 0 %}
                     <div class="discount-info">
-                        <h3>
-                            Special Discount 
-                            <span class="badge badge-discount">Save ₹{{ discount_amount|floatformat:0 }}</span>
-                        </h3>
-                        <p>You've booked {{ regular_stall_count }} regular stalls which qualifies for a discount of 
-                            {% if regular_stall_count == 2 %}
-                                ₹5,000 (flat discount)
-                            {% else %}
-                                ₹5,000 per stall (₹{{ discount_amount|floatformat:0 }} total)
-                            {% endif %}
-                        </p>
-                        <p>Regular Price: ₹{{ regular_stall_base_price|floatformat:2 }}</p>
-                        <p>After Discount: ₹{{ discounted_regular_price|floatformat:2 }}</p>
-                        <p>You Save: ₹{{ discount_amount|floatformat:2 }}</p>
+                        <h3>Special Discount <span class="badge badge-discount">Save ₹{{ discount_amount|floatformat:0 }}</span></h3>
+                        {% if regular_stall_count == 2 %}
+                            <p>You're eligible for a flat ₹5,000 discount when booking 2 stalls.</p>
+                        {% elif regular_stall_count > 2 %}
+                            <p>You're eligible for our premium discount of ₹5,000 per stall when booking {{ regular_stall_count }} stalls.</p>
+                        {% endif %}
                     </div>
                     {% endif %}
                     
@@ -657,13 +652,15 @@
                         </div>
                         {% endif %}
                         
-                        {% if combo_stall_groups %}
-                        {% for combo_group in combo_stall_groups %}
-                        <div class="summary-item" style="--summary-order: {{ forloop.counter|add:2 }};">
-                            <span>{{ combo_group.combo.name }} Package</span>
-                            <span>₹130,000.00</span>
+                        {% if combo_stalls %}
+                        <div class="summary-item" style="--summary-order: 3;">
+                            <span>Combo Package{% if combo_stall_groups|length > 1 %}s{% endif %} ({{ combo_stall_groups|length }})</span>
+                            <span>₹{{ combo_stall_price|floatformat:2 }}</span>
                         </div>
-                        {% endfor %}
+                        <div class="summary-item" style="--summary-order: 4;">
+                            <span><small>Each combo package: ₹130,000.00</small></span>
+                            <span></span>
+                        </div>
                         {% endif %}
                         
                         <div class="summary-item total">
@@ -671,7 +668,7 @@
                             <span>₹{{ total_price|floatformat:2 }}</span>
                         </div>
                         
-                        <div class="summary-item" style="--summary-order: {{ combo_stall_groups|length|add:3 }};">
+                        <div class="summary-item" style="--summary-order: {% if combo_stalls %}5{% else %}3{% endif %};">
                             <span>Total Area</span>
                             <span>{{ regular_stalls_total_area|add:combo_stalls_total_area }}m²</span>
                         </div>
@@ -680,7 +677,7 @@
             </div>
         </div>
         
-        <!-- Added Return to Home button -->
+        <!-- Action buttons -->
         <div class="action-buttons">
             <a href="{% url 'root' %}" class="btn">Return to Home</a>
         </div>
