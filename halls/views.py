@@ -667,6 +667,7 @@ def calculate_discounted_price(stall_count, total_price):
 def book_stall(request):
     """
     View for booking multiple stalls at once with discount application
+    and dynamic stall size calculation
     """
     from django.shortcuts import render, redirect, get_object_or_404
     from .forms import BookingForm  # Make sure to import the form
@@ -691,7 +692,12 @@ def book_stall(request):
     regular_stalls = []
     combo_stalls = []
     
+    # Calculate stall sizes based on selected_boxes
+    stall_sizes = {}
     for stall in stalls:
+        # Calculate actual size from selected_boxes (assumes each box is 1m²)
+        stall_sizes[stall.id] = len(stall.selected_boxes) if stall.selected_boxes else 0
+        
         # Check if this stall is part of a combo
         if hasattr(stall, 'combos') and stall.combos.exists():
             combo_stalls.append(stall)
@@ -741,10 +747,28 @@ def book_stall(request):
     # Get the hall info from the first stall
     hall = stalls.first().hall if stalls.exists() else None
     
+    # Calculate total area for regular stalls and combo stalls
+    regular_stalls_total_area = sum(stall_sizes.get(stall.id, 0) for stall in regular_stalls)
+    combo_stalls_total_area = sum(stall_sizes.get(stall.id, 0) for stall in combo_stalls)
+    
     # Calculate discount percentage for display purposes
     discount_percentage = 0
     if regular_stall_base_price > 0 and discount_amount > 0:
         discount_percentage = (discount_amount / regular_stall_base_price) * 100
+    
+    # Group combo stalls by their combo for proper display
+    combo_stall_groups = {}
+    for stall in combo_stalls:
+        combo = stall.combos.first()
+        if combo:
+            if combo.id not in combo_stall_groups:
+                combo_stall_groups[combo.id] = {
+                    'combo': combo,
+                    'stalls': [],
+                    'total_area': 0
+                }
+            combo_stall_groups[combo.id]['stalls'].append(stall)
+            combo_stall_groups[combo.id]['total_area'] += stall_sizes.get(stall.id, 0)
     
     return render(request, 'halls/book_stall.html', {
         'form': form,
@@ -759,12 +783,17 @@ def book_stall(request):
         'discount_percentage': discount_percentage,
         'regular_stalls': regular_stalls,
         'combo_stalls': combo_stalls,
-        'stall_ids_string': ','.join(stall_ids)  # Add this to pass to cancellation form
+        'stall_ids_string': ','.join(stall_ids),  # Add this to pass to cancellation form
+        'stall_sizes': stall_sizes,  # Pass stall sizes to template
+        'regular_stalls_total_area': regular_stalls_total_area,
+        'combo_stalls_total_area': combo_stalls_total_area,
+        'combo_stall_groups': combo_stall_groups.values()
     })
 
 def booking_confirmation(request, booking_id):
     """
     View for booking confirmation with updated discount calculations
+    and dynamic stall size calculation
     """
     from django.shortcuts import render, get_object_or_404
     
@@ -777,7 +806,12 @@ def booking_confirmation(request, booking_id):
     regular_stalls = []
     combo_stalls = []
     
+    # Calculate stall sizes based on selected_boxes
+    stall_sizes = {}
     for stall in stalls:
+        # Calculate actual size from selected_boxes (assumes each box is 1m²)
+        stall_sizes[stall.id] = len(stall.selected_boxes) if stall.selected_boxes else 0
+        
         # Check if this stall is part of a combo
         if hasattr(stall, 'combos') and stall.combos.exists():
             combo_stalls.append(stall)
@@ -813,6 +847,24 @@ def booking_confirmation(request, booking_id):
     # Get the hall ID if there are stalls
     hall_id = stalls.first().hall.id if stalls.exists() else 1
     
+    # Calculate total area for regular stalls and combo stalls
+    regular_stalls_total_area = sum(stall_sizes.get(stall.id, 0) for stall in regular_stalls)
+    combo_stalls_total_area = sum(stall_sizes.get(stall.id, 0) for stall in combo_stalls)
+    
+    # Group combo stalls by their combo for proper display
+    combo_stall_groups = {}
+    for stall in combo_stalls:
+        combo = stall.combos.first()
+        if combo:
+            if combo.id not in combo_stall_groups:
+                combo_stall_groups[combo.id] = {
+                    'combo': combo,
+                    'stalls': [],
+                    'total_area': 0
+                }
+            combo_stall_groups[combo.id]['stalls'].append(stall)
+            combo_stall_groups[combo.id]['total_area'] += stall_sizes.get(stall.id, 0)
+    
     return render(request, 'halls/booking_confirmation.html', {
         'booking': booking,
         'stalls': stalls,
@@ -825,10 +877,12 @@ def booking_confirmation(request, booking_id):
         'discounted_regular_price': discounted_regular_price,
         'combo_stall_price': combo_stall_price,
         'discount_amount': discount_amount,
-        'discount_percentage': discount_percentage
+        'discount_percentage': discount_percentage,
+        'stall_sizes': stall_sizes,  # Pass stall sizes to template
+        'regular_stalls_total_area': regular_stalls_total_area,
+        'combo_stalls_total_area': combo_stalls_total_area,
+        'combo_stall_groups': combo_stall_groups.values()
     })
-
-
 
 @require_POST
 def cancel_booking_process(request):

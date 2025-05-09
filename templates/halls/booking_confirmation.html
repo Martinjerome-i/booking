@@ -463,6 +463,15 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.3);
         }
         
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            margin-top: 30px;
+            animation: fadeInUp 0.5s ease-in-out forwards;
+            animation-delay: 1.3s;
+            opacity: 0;
+        }
+        
         /* Responsive styles */
         @media screen and (max-width: 992px) {
             .confirmation-container {
@@ -575,49 +584,46 @@
                         <span class="badge badge-accent">{{ stalls|length }} Stalls</span>
                     </div>
                     
-                    {% if regular_stalls %}
-                    <h3>Regular Stalls</h3>
-                    <div class="stall-item" style="--animation-order: 1;">
+                    <!-- Updated stall display to match book_stall.html style -->
+                    <div class="stall-item">
                         <div class="stall-details">
-                            <strong>{{ regular_stalls|length }} Regular Stalls</strong>
-                            <ul class="stall-list">
-                                {% for stall in regular_stalls %}
-                                <li style="--item-order: {{ forloop.counter }};">
-                                    Stall #{{ stall.stall_number }} - {{ stall.width }}m x {{ stall.height }}m ({{ stall.area }}m²)
-                                </li>
+                            <strong>Selected Stalls</strong>
+                            
+                            {% if regular_stalls %}
+                            <div style="margin-top: 10px;">
+                                <strong>Regular Stalls ({{ regular_stalls|length }})</strong>
+                                <ul class="stall-list">
+                                    {% for stall in regular_stalls %}
+                                    <li style="--item-order: {{ forloop.counter }};">Stall #{{ stall.stall_number }} ({{ stall_sizes|get_item:stall.id }}m²)</li>
+                                    {% endfor %}
+                                </ul>
+                                <p>Regular stalls total area: {{ regular_stalls_total_area }}m²</p>
+                            </div>
+                            {% endif %}
+                            
+                            {% if combo_stalls %}
+                            <div style="margin-top: 15px;">
+                                <strong>Combo Packages</strong>
+                                {% for combo_group in combo_stall_groups %}
+                                <div style="margin-top: 8px;">
+                                    <strong>{{ combo_group.combo.name }} ({{ combo_group.stalls|length }} stalls)</strong>
+                                    <ul class="stall-list">
+                                        {% for stall in combo_group.stalls %}
+                                        <li style="--item-order: {{ forloop.counter|add:regular_stalls|length }};">Stall #{{ stall.stall_number }} ({{ stall_sizes|get_item:stall.id }}m²)</li>
+                                        {% endfor %}
+                                    </ul>
+                                    <p>Combo area: {{ combo_group.total_area }}m²</p>
+                                </div>
                                 {% endfor %}
-                            </ul>
-                            <p>Total area: {{ regular_stalls|length|multiply:9 }}m²</p>
+                                <p>All combo stalls total area: {{ combo_stalls_total_area }}m²</p>
+                            </div>
+                            {% endif %}
+                            
+                            <div style="margin-top: 15px; font-weight: 500;">
+                                <p>Overall total area: {{ regular_stalls_total_area|add:combo_stalls_total_area }}m²</p>
+                            </div>
                         </div>
-                        <div class="stall-price">₹{{ regular_stall_base_price|floatformat:2 }}</div>
                     </div>
-                    {% endif %}
-                    
-                    {% if combo_stalls %}
-                    <h3>Combo Package</h3>
-                    <div class="stall-item" style="--animation-order: 2;">
-                        <div class="stall-details">
-                            <strong>Premium Combo <span class="badge badge-combo">Combo</span></strong>
-                            <ul class="stall-list">
-                                {% for stall in combo_stalls %}
-                                <li style="--item-order: {{ forloop.counter|add:regular_stalls|length }};">
-                                    Stall #{{ stall.stall_number }} - {{ stall.width }}m x {{ stall.height }}m ({{ stall.area }}m²)
-                                </li>
-                                {% endfor %}
-                            </ul>
-                            {% with total_combo_area=0 %}
-                                {% for stall in combo_stalls %}
-                                    {% with stall_area=stall.area %}
-                                        {% with total_combo_area=total_combo_area|add:stall_area %}
-                                        {% endwith %}
-                                    {% endwith %}
-                                {% endfor %}
-                                <p>Total combo area: {{ total_combo_area }}m²</p>
-                            {% endwith %}
-                        </div>
-                        <div class="stall-price">₹{{ combo_stall_price|floatformat:2 }}</div>
-                    </div>
-                    {% endif %}
                     
                     {% if discount_amount > 0 %}
                     <div class="discount-info">
@@ -639,12 +645,10 @@
                     {% endif %}
                     
                     <div style="margin-top: 20px;">
-                        {% if regular_stalls %}
                         <div class="summary-item" style="--summary-order: 1;">
-                            <span>Regular Stalls ({{ regular_stalls|length }})</span>
+                            <span>Regular Stalls ({{ regular_stall_count }})</span>
                             <span>₹{{ regular_stall_base_price|floatformat:2 }}</span>
                         </div>
-                        {% endif %}
                         
                         {% if discount_amount > 0 %}
                         <div class="summary-item" style="--summary-order: 2;">
@@ -667,19 +671,16 @@
                         
                         <div class="summary-item" style="--summary-order: 4;">
                             <span>Total Area</span>
-                            {% with total_area=0 %}
-                                {% for stall in stalls %}
-                                    {% with stall_area=stall.area %}
-                                        {% with total_area=total_area|add:stall_area %}
-                                        {% endwith %}
-                                    {% endwith %}
-                                {% endfor %}
-                                <span>{{ total_area }}m²</span>
-                            {% endwith %}
+                            <span>{{ regular_stalls_total_area|add:combo_stalls_total_area }}m²</span>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
+        
+        <!-- Added Return to Home button -->
+        <div class="action-buttons">
+            <a href="{% url 'root' %}" class="btn">Return to Home</a>
         </div>
         
         <div class="footer">
