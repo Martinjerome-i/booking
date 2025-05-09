@@ -597,10 +597,10 @@
                                 <strong>Regular Stalls ({{ regular_stalls|length }})</strong>
                                 <ul class="stall-list">
                                     {% for stall in regular_stalls %}
-                                    <li style="--item-order: {{ forloop.counter }};">Stall #{{ stall.stall_number }} ({{ stall_sizes|get_item:stall.id }}m²)</li>
+                                    <li style="--item-order: {{ forloop.counter }};">Stall #{{ stall.stall_number }} ({{ stall_sizes|get_item:stall.id }}sq m)</li>
                                     {% endfor %}
                                 </ul>
-                                <p>Regular stalls total area: {{ regular_stalls_total_area }}m²</p>
+                                <p>Regular stalls total area: {{ regular_stalls_total_area }}sq m</p>
                             </div>
                             {% endif %}
                             
@@ -612,18 +612,18 @@
                                     <strong>{{ combo_group.combo.name }} ({{ combo_group.stalls|length }} stalls)</strong>
                                     <ul class="stall-list">
                                         {% for stall in combo_group.stalls %}
-                                        <li style="--item-order: {{ forloop.counter|add:regular_stalls|length }};">Stall #{{ stall.stall_number }} ({{ stall_sizes|get_item:stall.id }}m²)</li>
+                                        <li style="--item-order: {{ forloop.counter|add:regular_stalls|length }};">Stall #{{ stall.stall_number }} ({{ stall_sizes|get_item:stall.id }}sq m)</li>
                                         {% endfor %}
                                     </ul>
-                                    <p>Combo area: {{ combo_group.total_area }}m²</p>
+                                    <p>Combo area: {{ combo_group.total_area }}sq m</p>
                                 </div>
                                 {% endfor %}
-                                <p>All combo stalls total area: {{ combo_stalls_total_area }}m²</p>
+                                <p>All combo stalls total area: {{ combo_stalls_total_area }}sq m</p>
                             </div>
                             {% endif %}
                             
                             <div style="margin-top: 15px; font-weight: 500;">
-                                <p>Overall total area: {{ regular_stalls_total_area|add:combo_stalls_total_area }}m²</p>
+                                <p>Overall total area: {{ regular_stalls_total_area|add:combo_stalls_total_area }}sq m</p>
                             </div>
                         </div>
                     </div>
@@ -670,7 +670,7 @@
                         
                         <div class="summary-item" style="--summary-order: {% if combo_stalls %}5{% else %}3{% endif %};">
                             <span>Total Area</span>
-                            <span>{{ regular_stalls_total_area|add:combo_stalls_total_area }}m²</span>
+                            <span>{{ regular_stalls_total_area|add:combo_stalls_total_area }}sq m</span>
                         </div>
                     </div>
                 </div>
