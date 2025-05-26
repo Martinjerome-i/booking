@@ -1065,9 +1065,9 @@
     <div class="stall-tooltip" id="stallTooltip"></div>
 
     <script>
-        // Updated Booking System JavaScript - International Biryani Festival and Expo
+        // Fixed Booking System JavaScript - International Biryani Festival and Expo
 
-        document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function() {
     // Global variables
     let selectedStalls = new Set();
     let stallData = {};
@@ -1093,23 +1093,40 @@
             return;
         }
 
-        // Determine the scale to fit the display
-        const maxWidth = hallDisplay.clientWidth;
-        const maxHeight = hallDisplay.clientHeight - 100; // Leave some space for margins
+        // Clear any existing content
+        hallDisplay.innerHTML = '';
+        hallDisplay.style.position = 'relative';
+        hallDisplay.style.overflow = 'hidden';
+
+        // Determine the scale to fit the display with proper margins
+        const containerRect = hallDisplay.getBoundingClientRect();
+        const maxWidth = containerRect.width - 40; // 20px margin on each side
+        const maxHeight = containerRect.height - 100; // Space for margins and controls
 
         const scaleX = maxWidth / hallLength;
         const scaleY = maxHeight / hallBreadth;
-        const scale = Math.min(scaleX, scaleY);
+        const scale = Math.min(scaleX, scaleY, 10); // Cap at 10px per unit for readability
+
+        // Center the hall layout
+        const actualWidth = hallLength * scale;
+        const actualHeight = hallBreadth * scale;
+        const offsetX = (hallDisplay.clientWidth - actualWidth) / 2;
+        const offsetY = 60; // Top margin for entry/exit markers
 
         // Draw hall grid (for reference)
-        drawHallGrid(hallDisplay, hallLength, hallBreadth, scale);
+        drawHallGrid(hallDisplay, hallLength, hallBreadth, scale, offsetX, offsetY);
 
         // Add Entry and Exit markers
-        addEntryExitMarkers(hallDisplay, scale);
+        addEntryExitMarkers(hallDisplay, scale, offsetX, offsetY);
 
         // Fetch and render stalls and combos
         fetch(`/halls/${hallId}/data/`)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 // Hide loading indicators
                 if (loadingElement) {
@@ -1117,30 +1134,36 @@
                 }
                 
                 // Store combo data
-                data.combos.forEach(combo => {
-                    comboData[combo.id] = combo;
-                    
-                    // Map stalls to their combos
-                    combo.stall_ids.forEach(stallId => {
-                        if (!stallToComboMap[stallId]) {
-                            stallToComboMap[stallId] = [];
+                if (data.combos && Array.isArray(data.combos)) {
+                    data.combos.forEach(combo => {
+                        comboData[combo.id] = combo;
+                        
+                        // Map stalls to their combos
+                        if (combo.stall_ids && Array.isArray(combo.stall_ids)) {
+                            combo.stall_ids.forEach(stallId => {
+                                if (!stallToComboMap[stallId]) {
+                                    stallToComboMap[stallId] = [];
+                                }
+                                stallToComboMap[stallId].push(combo.id);
+                            });
                         }
-                        stallToComboMap[stallId].push(combo.id);
                     });
-                });
+                }
                 
                 // Process each stall
-                data.stalls.forEach(stall => {
-                    // Store all stall data for reference
-                    stallData[stall.id] = stall;
-                    
-                    // Track occupied stalls
-                    if (stall.status === 'blocked' || stall.status === 'booked') {
-                        occupiedStalls.add(stall.id);
-                    }
-                    
-                    renderStall(stall, hallDisplay, scale);
-                });
+                if (data.stalls && Array.isArray(data.stalls)) {
+                    data.stalls.forEach(stall => {
+                        // Store all stall data for reference
+                        stallData[stall.id] = stall;
+                        
+                        // Track occupied stalls
+                        if (stall.status === 'blocked' || stall.status === 'booked') {
+                            occupiedStalls.add(stall.id);
+                        }
+                        
+                        renderStall(stall, hallDisplay, scale, offsetX, offsetY);
+                    });
+                }
 
                 // Update initial stats
                 updateStats();
@@ -1150,12 +1173,21 @@
                 console.error('Error loading hall data:', error);
                 if (loadingElement) {
                     loadingElement.textContent = 'Error loading stalls. Please try again later.';
+                    loadingElement.style.color = '#ff6b6b';
                 }
             });
     }
 
     // Draw hall grid for reference
-    function drawHallGrid(container, length, breadth, scale) {
+    function drawHallGrid(container, length, breadth, scale, offsetX, offsetY) {
+        const gridContainer = document.createElement('div');
+        gridContainer.style.position = 'absolute';
+        gridContainer.style.left = `${offsetX}px`;
+        gridContainer.style.top = `${offsetY}px`;
+        gridContainer.style.width = `${length * scale}px`;
+        gridContainer.style.height = `${breadth * scale}px`;
+        gridContainer.style.zIndex = '1';
+        
         for (let x = 0; x < length; x++) {
             for (let y = 0; y < breadth; y++) {
                 const gridBox = document.createElement('div');
@@ -1164,28 +1196,34 @@
                 gridBox.style.top = `${y * scale}px`;
                 gridBox.style.width = `${scale}px`;
                 gridBox.style.height = `${scale}px`;
-                gridBox.style.border = '0.1px solid #f0f0f0';
-                gridBox.style.zIndex = '1';
-                container.appendChild(gridBox);
+                gridBox.style.border = '0.5px solid #f0f0f0';
+                gridBox.style.boxSizing = 'border-box';
+                gridContainer.appendChild(gridBox);
             }
         }
+        
+        container.appendChild(gridContainer);
     }
 
-    // Add Entry and Exit markers
-    function addEntryExitMarkers(container, scale) {
+    // Add Entry and Exit markers with proper positioning
+    function addEntryExitMarkers(container, scale, offsetX, offsetY) {
         // Add Entry marker
         const entryMarker = document.createElement('div');
         entryMarker.className = 'entry-exit-marker';
-        const entryX = ((14 + 25) / 2) * scale;
-        const entryY = -50;
+        const entryX = offsetX + ((14 + 25) / 2) * scale;
+        const entryY = offsetY - 50;
+        
         entryMarker.style.position = 'absolute';
-        entryMarker.style.left = `${entryX - 25}px`;
+        entryMarker.style.left = `${entryX - 30}px`;
         entryMarker.style.top = `${entryY}px`;
+        entryMarker.style.width = '60px';
         entryMarker.style.textAlign = 'center';
         entryMarker.style.color = '#451a32';
         entryMarker.style.fontWeight = 'bold';
+        entryMarker.style.fontSize = '12px';
+        entryMarker.style.zIndex = '10';
         entryMarker.innerHTML = `
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" style="margin: 0 auto; display: block;">
                 <path d="M4 15L12 9L20 15" stroke="#451a32" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
             <div>ENTRY</div>
@@ -1195,16 +1233,20 @@
         // Add Exit marker
         const exitMarker = document.createElement('div');
         exitMarker.className = 'entry-exit-marker';
-        const exitX = ((76 + 87) / 2) * scale;
-        const exitY = -50;
+        const exitX = offsetX + ((76 + 87) / 2) * scale;
+        const exitY = offsetY - 50;
+        
         exitMarker.style.position = 'absolute';
-        exitMarker.style.left = `${exitX - 25}px`;
+        exitMarker.style.left = `${exitX - 30}px`;
         exitMarker.style.top = `${exitY}px`;
+        exitMarker.style.width = '60px';
         exitMarker.style.textAlign = 'center';
         exitMarker.style.color = '#451a32';
         exitMarker.style.fontWeight = 'bold';
+        exitMarker.style.fontSize = '12px';
+        exitMarker.style.zIndex = '10';
         exitMarker.innerHTML = `
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" style="margin: 0 auto; display: block;">
                 <path d="M4 9L12 15L20 9" stroke="#451a32" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
             <div>EXIT</div>
@@ -1212,8 +1254,13 @@
         container.appendChild(exitMarker);
     }
 
-    // Render individual stall
-    function renderStall(stall, container, scale) {
+    // Render individual stall with proper positioning
+    function renderStall(stall, container, scale, offsetX, offsetY) {
+        if (!stall.selected_boxes || !Array.isArray(stall.selected_boxes) || stall.selected_boxes.length === 0) {
+            console.warn(`Stall ${stall.id} has no valid selected_boxes`);
+            return;
+        }
+
         const stallBoxes = stall.selected_boxes;
 
         // Group boxes by stall number and find the boundaries
@@ -1257,17 +1304,21 @@
             stallElement.setAttribute('data-combo-ids', stallToComboMap[stall.id].join(','));
         }
         
+        // Position the stall element correctly
         stallElement.style.position = 'absolute';
-        stallElement.style.left = `${minX * scale}px`;
-        stallElement.style.top = `${minY * scale}px`;
+        stallElement.style.left = `${offsetX + (minX * scale)}px`;
+        stallElement.style.top = `${offsetY + (minY * scale)}px`;
         stallElement.style.width = `${(maxX - minX + 1) * scale}px`;
         stallElement.style.height = `${(maxY - minY + 1) * scale}px`;
         stallElement.style.zIndex = '5';
         stallElement.style.border = '1px solid #ddd';
+        stallElement.style.borderRadius = '4px';
         stallElement.style.display = 'flex';
         stallElement.style.alignItems = 'center';
         stallElement.style.justifyContent = 'center';
         stallElement.style.cursor = stall.status === 'available' ? 'pointer' : 'default';
+        stallElement.style.transition = 'all 0.2s ease';
+        stallElement.style.boxSizing = 'border-box';
 
         // Apply inline styles for occupied stalls to ensure visibility
         if (isOccupied) {
@@ -1283,18 +1334,22 @@
             stallElement.style.color = '#ffffff';
         }
 
-        // Add the stall number
+        // Add the stall number with proper sizing
         const stallLabel = document.createElement('div');
         stallLabel.textContent = stall.stall_number;
         stallLabel.className = 'stall-number';
         stallLabel.style.fontWeight = '600';
-        stallLabel.style.fontSize = `${Math.max(10, scale / 4)}px`;
+        stallLabel.style.fontSize = `${Math.max(10, Math.min(14, scale / 3))}px`;
         stallLabel.style.textAlign = 'center';
         stallLabel.style.textShadow = '1px 1px 2px rgba(0,0,0,0.5)';
+        stallLabel.style.userSelect = 'none';
+        stallLabel.style.pointerEvents = 'none';
 
         // Add click event for available stalls only
         if (stall.status === 'available') {
-            stallElement.addEventListener('click', function() {
+            stallElement.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
                 handleStallClick(this);
             });
             
@@ -1331,7 +1386,7 @@
         container.appendChild(stallElement);
     }
 
-    // Handle stall click
+    // Handle stall click with improved logic
     function handleStallClick(stallElement) {
         const stallId = stallElement.getAttribute('data-stall-id');
         const isSelected = stallElement.classList.contains('selected');
@@ -1348,7 +1403,7 @@
                 // Find the first valid combo where all stalls are available
                 for (const comboId of comboIdArray) {
                     const combo = comboData[comboId];
-                    if (!combo) continue;
+                    if (!combo || !combo.stall_ids) continue;
                     
                     // Check if all stalls in this combo are available
                     const allAvailable = combo.stall_ids.every(id => 
@@ -1368,20 +1423,12 @@
                             `.stall[data-stall-id="${id}"]`
                         );
                         if (comboStallElement && !selectedStalls.has(id.toString())) {
-                            comboStallElement.classList.add('selected');
-                            comboStallElement.style.background = 'linear-gradient(135deg, #DC143C, #B22222)';
-                            comboStallElement.style.transform = 'scale(1.02)';
-                            comboStallElement.style.boxShadow = '0 4px 12px rgba(220,20,60,0.4)';
-                            selectedStalls.add(id.toString());
+                            selectStallElement(comboStallElement, id.toString());
                         }
                     });
                 } else {
                     // No valid combo (some stalls unavailable), just select this stall
-                    stallElement.classList.add('selected');
-                    stallElement.style.background = 'linear-gradient(135deg, #DC143C, #B22222)';
-                    stallElement.style.transform = 'scale(1.02)';
-                    stallElement.style.boxShadow = '0 4px 12px rgba(220,20,60,0.4)';
-                    selectedStalls.add(stallId);
+                    selectStallElement(stallElement, stallId);
                 }
             } else {
                 // When deselecting, check if part of a fully selected combo
@@ -1389,7 +1436,7 @@
                 
                 for (const comboId of comboIdArray) {
                     const combo = comboData[comboId];
-                    if (!combo) continue;
+                    if (!combo || !combo.stall_ids) continue;
                     
                     // Check if all stalls in this combo are selected
                     const allSelected = combo.stall_ids.every(id => 
@@ -1409,60 +1456,20 @@
                             `.stall[data-stall-id="${id}"]`
                         );
                         if (comboStallElement) {
-                            comboStallElement.classList.remove('selected');
-                            // Restore original styling
-                            const stall = stallData[id];
-                            if (stall) {
-                                if (stall.stall_type === 'eatery') {
-                                    comboStallElement.style.background = 'linear-gradient(135deg, #228B22, #32CD32)';
-                                } else {
-                                    comboStallElement.style.background = 'linear-gradient(135deg, #4169E1, #1E90FF)';
-                                }
-                                comboStallElement.style.transform = 'scale(1)';
-                                comboStallElement.style.boxShadow = 'none';
-                            }
+                            deselectStallElement(comboStallElement, id.toString());
                         }
-                        selectedStalls.delete(id.toString());
                     });
                 } else {
                     // Just deselect this stall
-                    stallElement.classList.remove('selected');
-                    // Restore original styling
-                    const stall = stallData[stallId];
-                    if (stall) {
-                        if (stall.stall_type === 'eatery') {
-                            stallElement.style.background = 'linear-gradient(135deg, #228B22, #32CD32)';
-                        } else {
-                            stallElement.style.background = 'linear-gradient(135deg, #4169E1, #1E90FF)';
-                        }
-                        stallElement.style.transform = 'scale(1)';
-                        stallElement.style.boxShadow = 'none';
-                    }
-                    selectedStalls.delete(stallId);
+                    deselectStallElement(stallElement, stallId);
                 }
             }
         } else {
             // Regular stall (not part of a combo), toggle selection
             if (isSelected) {
-                stallElement.classList.remove('selected');
-                // Restore original styling
-                const stall = stallData[stallId];
-                if (stall) {
-                    if (stall.stall_type === 'eatery') {
-                        stallElement.style.background = 'linear-gradient(135deg, #228B22, #32CD32)';
-                    } else {
-                        stallElement.style.background = 'linear-gradient(135deg, #4169E1, #1E90FF)';
-                    }
-                    stallElement.style.transform = 'scale(1)';
-                    stallElement.style.boxShadow = 'none';
-                }
-                selectedStalls.delete(stallId);
+                deselectStallElement(stallElement, stallId);
             } else {
-                stallElement.classList.add('selected');
-                stallElement.style.background = 'linear-gradient(135deg, #DC143C, #B22222)';
-                stallElement.style.transform = 'scale(1.02)';
-                stallElement.style.boxShadow = '0 4px 12px rgba(220,20,60,0.4)';
-                selectedStalls.add(stallId);
+                selectStallElement(stallElement, stallId);
             }
         }
         
@@ -1472,18 +1479,44 @@
         updateStats();
     }
 
+    // Helper function to select a stall element
+    function selectStallElement(stallElement, stallId) {
+        stallElement.classList.add('selected');
+        stallElement.style.background = 'linear-gradient(135deg, #DC143C, #B22222)';
+        stallElement.style.transform = 'scale(1.02)';
+        stallElement.style.boxShadow = '0 4px 12px rgba(220,20,60,0.4)';
+        selectedStalls.add(stallId);
+    }
+
+    // Helper function to deselect a stall element
+    function deselectStallElement(stallElement, stallId) {
+        stallElement.classList.remove('selected');
+        
+        // Restore original styling
+        const stall = stallData[stallId];
+        if (stall) {
+            if (stall.stall_type === 'eatery') {
+                stallElement.style.background = 'linear-gradient(135deg, #228B22, #32CD32)';
+            } else {
+                stallElement.style.background = 'linear-gradient(135deg, #4169E1, #1E90FF)';
+            }
+            stallElement.style.transform = 'scale(1)';
+            stallElement.style.boxShadow = 'none';
+        }
+        selectedStalls.delete(stallId);
+    }
+
     // Update selected stalls list in booking panel
     function updateSelectedStallsList() {
         const container = document.getElementById('selectedStallsList');
         const countElement = document.getElementById('selectedStallCount');
         
-        if (!container || !countElement) return;
-        
-        countElement.textContent = selectedStalls.size;
+        if (!container) return;
+        if (countElement) countElement.textContent = selectedStalls.size;
         
         if (selectedStalls.size === 0) {
             container.innerHTML = `
-                <div style="text-align: center; color: rgba(255, 255, 224, 0.6); font-style: italic;">
+                <div style="text-align: center; color: rgba(255, 255, 224, 0.6); font-style: italic; padding: 20px;">
                     No stalls selected. Click on stalls to add them.
                 </div>
             `;
@@ -1504,7 +1537,7 @@
             if (stallToComboMap[stallId]) {
                 for (const comboId of stallToComboMap[stallId]) {
                     const combo = comboData[comboId];
-                    if (!combo) continue;
+                    if (!combo || !combo.stall_ids) continue;
                     
                     // Check if all stalls in this combo are selected
                     const allSelected = combo.stall_ids.every(id => 
@@ -1537,26 +1570,26 @@
         // Add single stalls
         singleStalls.forEach(stall => {
             html += `
-                <div class="selected-stall-item">
+                <div class="selected-stall-item" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; margin-bottom: 8px; background: rgba(255,255,255,0.1); border-radius: 5px;">
                     <div>
                         <strong>Stall ${stall.stall_number}</strong><br>
                         <small>${stall.stall_type} - ₹${parseFloat(stall.price).toLocaleString()}</small>
                     </div>
-                    <button class="stall-remove-btn" onclick="removeStall(${stall.id})" title="Remove stall">×</button>
+                    <button class="stall-remove-btn" onclick="removeStall(${stall.id})" title="Remove stall" style="background: #ff4757; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 16px; line-height: 1;">×</button>
                 </div>
             `;
         });
         
         // Add combo stalls
         Object.values(comboGroups).forEach(group => {
-            const stallNumbers = group.stalls.map(stall => stall.stall_number).join(', ');
+            const stallNumbers = group.stalls.map(stall => stall.stall_number).sort((a, b) => a - b).join(', ');
             html += `
-                <div class="selected-stall-item combo-stall-item">
+                <div class="selected-stall-item combo-stall-item" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; margin-bottom: 8px; background: rgba(255,215,0,0.2); border-radius: 5px; border: 1px solid rgba(255,215,0,0.3);">
                     <div>
                         <strong>Combo: Stalls ${stallNumbers}</strong><br>
                         <small>Package Price - ₹${parseFloat(group.combo.price).toLocaleString()}</small>
                     </div>
-                    <button class="stall-remove-btn" onclick="removeCombo(${group.combo.id})" title="Remove combo">×</button>
+                    <button class="stall-remove-btn" onclick="removeCombo(${group.combo.id})" title="Remove combo" style="background: #ff4757; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 16px; line-height: 1;">×</button>
                 </div>
             `;
         });
@@ -1566,21 +1599,9 @@
 
     // Remove individual stall
     window.removeStall = function(stallId) {
-        selectedStalls.delete(stallId.toString());
         const stallElement = document.querySelector(`.stall[data-stall-id="${stallId}"]`);
         if (stallElement) {
-            stallElement.classList.remove('selected');
-            // Restore original styling
-            const stall = stallData[stallId];
-            if (stall) {
-                if (stall.stall_type === 'eatery') {
-                    stallElement.style.background = 'linear-gradient(135deg, #228B22, #32CD32)';
-                } else {
-                    stallElement.style.background = 'linear-gradient(135deg, #4169E1, #1E90FF)';
-                }
-                stallElement.style.transform = 'scale(1)';
-                stallElement.style.boxShadow = 'none';
-            }
+            deselectStallElement(stallElement, stallId.toString());
         }
         updateSelectedStallsList();
         updatePricing();
@@ -1590,26 +1611,14 @@
     // Remove combo
     window.removeCombo = function(comboId) {
         const combo = comboData[comboId];
-        if (combo) {
+        if (combo && combo.stall_ids) {
             combo.stall_ids.forEach(id => {
                 const comboStallElement = document.querySelector(
                     `.stall[data-stall-id="${id}"]`
                 );
                 if (comboStallElement) {
-                    comboStallElement.classList.remove('selected');
-                    // Restore original styling
-                    const stall = stallData[id];
-                    if (stall) {
-                        if (stall.stall_type === 'eatery') {
-                            comboStallElement.style.background = 'linear-gradient(135deg, #228B22, #32CD32)';
-                        } else {
-                            comboStallElement.style.background = 'linear-gradient(135deg, #4169E1, #1E90FF)';
-                        }
-                        comboStallElement.style.transform = 'scale(1)';
-                        comboStallElement.style.boxShadow = 'none';
-                    }
+                    deselectStallElement(comboStallElement, id.toString());
                 }
-                selectedStalls.delete(id.toString());
             });
         }
         updateSelectedStallsList();
@@ -1632,7 +1641,7 @@
             if (stallToComboMap[stallId]) {
                 for (const comboId of stallToComboMap[stallId]) {
                     const combo = comboData[comboId];
-                    if (!combo) continue;
+                    if (!combo || !combo.stall_ids) continue;
                     
                     const allSelected = combo.stall_ids.every(id => 
                         selectedStalls.has(id.toString())
@@ -1662,12 +1671,11 @@
         let regularStallBasePrice = 0;
         
         singleStalls.forEach(stall => {
-            regularStallBasePrice += parseFloat(stall.price);
+            regularStallBasePrice += parseFloat(stall.price) || 0;
         });
         
         // Calculate discount
         let discountAmount = 0;
-        let discountPercent = 0;
         
         if (regularStallCount === 2) {
             discountAmount = 5000;
@@ -1675,16 +1683,12 @@
             discountAmount = 5000 * regularStallCount;
         }
         
-        if (regularStallBasePrice > 0 && discountAmount > 0) {
-            discountPercent = Math.round((discountAmount / regularStallBasePrice) * 100);
-        }
-        
-        const discountedRegularPrice = regularStallBasePrice - discountAmount;
+        const discountedRegularPrice = Math.max(0, regularStallBasePrice - discountAmount);
         
         // Calculate combo price
         let comboStallPrice = 0;
         Object.values(comboGroups).forEach(group => {
-            comboStallPrice += parseFloat(group.combo.price);
+            comboStallPrice += parseFloat(group.combo.price) || 0;
         });
         
         const setupCost = selectedStalls.size * 1500;
@@ -1692,40 +1696,37 @@
         const securityDeposit = 5000;
         const totalPrice = discountedRegularPrice + comboStallPrice + setupCost + marketingCost + securityDeposit;
         
-        // Update display elements
-        const elements = {
-            basePrice: document.getElementById('basePrice'),
-            setupCost: document.getElementById('setupCost'),
-            stallCount: document.getElementById('stallCount'),
-            totalPrice: document.getElementById('totalPrice'),
-            discountRow: document.getElementById('discountRow'),
-            discountInfo: document.getElementById('discountInfo'),
-            discountPercent: document.getElementById('discountPercent'),
-            discountAmount: document.getElementById('discountAmount'),
-            bookButton: document.getElementById('bookButton')
+        // Update display elements safely
+        const updateElement = (id, value) => {
+            const element = document.getElementById(id);
+            if (element) element.textContent = value;
         };
         
-        if (elements.basePrice) elements.basePrice.textContent = `₹ ${Math.round(regularStallBasePrice + comboStallPrice).toLocaleString()}`;
-        if (elements.setupCost) elements.setupCost.textContent = `₹ ${setupCost.toLocaleString()}`;
-        if (elements.stallCount) elements.stallCount.textContent = selectedStalls.size;
-        if (elements.totalPrice) elements.totalPrice.textContent = `₹ ${Math.round(totalPrice).toLocaleString()}`;
+        updateElement('basePrice', `₹ ${Math.round(regularStallBasePrice + comboStallPrice).toLocaleString()}`);
+        updateElement('setupCost', `₹ ${setupCost.toLocaleString()}`);
+        updateElement('stallCount', selectedStalls.size);
+        updateElement('totalPrice', `₹ ${Math.round(totalPrice).toLocaleString()}`);
         
         // Show/hide discount
-        if (elements.discountRow && elements.discountInfo) {
+        const discountRow = document.getElementById('discountRow');
+        const discountInfo = document.getElementById('discountInfo');
+        
+        if (discountRow && discountInfo) {
             if (discountAmount > 0) {
-                elements.discountRow.style.display = 'flex';
-                elements.discountInfo.style.display = 'block';
-                if (elements.discountPercent) elements.discountPercent.textContent = discountPercent;
-                if (elements.discountAmount) elements.discountAmount.textContent = `₹ ${discountAmount.toLocaleString()}`;
+                discountRow.style.display = 'flex';
+                discountInfo.style.display = 'block';
+                updateElement('discountPercent', Math.round((discountAmount / regularStallBasePrice) * 100) || 0);
+                updateElement('discountAmount', `₹ ${discountAmount.toLocaleString()}`);
             } else {
-                elements.discountRow.style.display = 'none';
-                elements.discountInfo.style.display = 'none';
+                discountRow.style.display = 'none';
+                discountInfo.style.display = 'none';
             }
         }
         
         // Enable/disable book button
-        if (elements.bookButton) {
-            elements.bookButton.disabled = selectedStalls.size === 0;
+        const bookButton = document.getElementById('bookButton');
+        if (bookButton) {
+            bookButton.disabled = selectedStalls.size === 0;
         }
     }
 
@@ -1735,13 +1736,13 @@
         const availableCount = totalStalls - occupiedStalls.size;
         const selectedCount = selectedStalls.size;
         
-        const elements = {
-            availableCount: document.getElementById('availableCount'),
-            selectedCount: document.getElementById('selectedCount')
+        const updateElement = (id, value) => {
+            const element = document.getElementById(id);
+            if (element) element.textContent = value;
         };
         
-        if (elements.availableCount) elements.availableCount.textContent = availableCount - selectedCount;
-        if (elements.selectedCount) elements.selectedCount.textContent = selectedCount;
+        updateElement('availableCount', Math.max(0, availableCount - selectedCount));
+        updateElement('selectedCount', selectedCount);
     }
 
     // Show tooltip for available stalls
@@ -1756,12 +1757,25 @@
             Status: Available
         `;
         
-        tooltip.style.left = event.pageX + 10 + 'px';
-        tooltip.style.top = event.pageY - 10 + 'px';
+        // Position tooltip carefully to avoid going off screen
+        const rect = tooltip.getBoundingClientRect();
+        let left = event.pageX + 10;
+        let top = event.pageY - 10;
+        
+        if (left + 200 > window.innerWidth) {
+            left = event.pageX - 210;
+        }
+        if (top - 60 < 0) {
+            top = event.pageY + 20;
+        }
+        
+        tooltip.style.left = left + 'px';
+        tooltip.style.top = top + 'px';
         tooltip.style.opacity = '1';
+        tooltip.style.visibility = 'visible';
     }
 
-    // Show tooltip for occupied stalls
+  // Show tooltip for occupied stalls
     function showOccupiedTooltip(event, stall) {
         const tooltip = document.getElementById('stallTooltip');
         if (!tooltip) return;
@@ -1905,6 +1919,7 @@
             // Initialize the application
             initializeApp();
         });
-    </script>
+ 
+</script>
 </body>
 </html>
