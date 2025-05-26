@@ -14,7 +14,6 @@
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             /* background: linear-gradient(135deg, #FF6B35 0%, #F7931E 50%, #FFD23F 100%); */
-            background: linear-gradient(135deg, #6e000a 0%, #c30000 50%, #000000 100%);
             min-height: 100vh;
             color: white;
             position: relative;
@@ -237,12 +236,10 @@
         }
 
         .expo-floor {
-            background: rgba(139, 0, 0, 0.3);
+            background: #c11e2d;
             backdrop-filter: blur(15px);
             padding: 30px;
-            border-radius: 20px;
-            border: 2px solid rgba(255, 215, 0, 0.2);
-            box-shadow: 0 8px 32px rgba(139, 0, 0, 0.4);
+            border: none;
             overflow-x: auto;
         }
 
@@ -408,7 +405,7 @@
             position: sticky;
             top: 20px;
             height: fit-content;
-            max-height: 90vh;
+            /* max-height: 90vh; */
             overflow-y: auto;
         }
 
@@ -1065,7 +1062,7 @@
     <div class="stall-tooltip" id="stallTooltip"></div>
 
     <script>
-        // Fixed Booking System JavaScript - International Biryani Festival and Expo
+// Enhanced Booking System JavaScript - International Biryani Festival and Expo
 
 document.addEventListener('DOMContentLoaded', function() {
     // Global variables
@@ -1096,28 +1093,37 @@ document.addEventListener('DOMContentLoaded', function() {
         // Clear any existing content
         hallDisplay.innerHTML = '';
         hallDisplay.style.position = 'relative';
-        hallDisplay.style.overflow = 'hidden';
+        hallDisplay.style.overflow = 'auto';
+        hallDisplay.style.minHeight = '800px';
 
-        // Determine the scale to fit the display with proper margins
-        const containerRect = hallDisplay.getBoundingClientRect();
-        const maxWidth = containerRect.width - 40; // 20px margin on each side
-        const maxHeight = containerRect.height - 100; // Space for margins and controls
-
-        const scaleX = maxWidth / hallLength;
-        const scaleY = maxHeight / hallBreadth;
-        const scale = Math.min(scaleX, scaleY, 10); // Cap at 10px per unit for readability
+        // Set fixed width for better display - enhanced to 1200px
+        const containerWidth = 1200;
+        const containerHeight = 800;
+        
+        // Calculate scale for better visibility
+        const scaleX = containerWidth / hallLength;
+        const scaleY = (containerHeight - 120) / hallBreadth; // Reserve space for entry/exit
+        const scale = Math.min(scaleX, scaleY, 15); // Increased max scale for better visibility
 
         // Center the hall layout
         const actualWidth = hallLength * scale;
         const actualHeight = hallBreadth * scale;
-        const offsetX = (hallDisplay.clientWidth - actualWidth) / 2;
-        const offsetY = 60; // Top margin for entry/exit markers
+        const offsetX = (containerWidth - actualWidth) / 2;
+        const offsetY = 60; // Top margin for better spacing
+
+        // Set container dimensions
+        hallDisplay.style.width = `${containerWidth}px`;
+        hallDisplay.style.height = `${containerHeight}px`;
+        hallDisplay.style.margin = '0 auto';
+        // hallDisplay.style.border = '2px solid #ddd';
+        hallDisplay.style.borderRadius = '8px';
+        // hallDisplay.style.backgroundColor = '#f8f9fa';
 
         // Draw hall grid (for reference)
         drawHallGrid(hallDisplay, hallLength, hallBreadth, scale, offsetX, offsetY);
 
-        // Add Entry and Exit markers
-        addEntryExitMarkers(hallDisplay, scale, offsetX, offsetY);
+        // Add Entry and Exit markers at the bottom
+        addEntryExitMarkers(hallDisplay, hallLength, hallBreadth, scale, offsetX, offsetY);
 
         // Fetch and render stalls and combos
         fetch(`/halls/${hallId}/data/`)
@@ -1196,7 +1202,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 gridBox.style.top = `${y * scale}px`;
                 gridBox.style.width = `${scale}px`;
                 gridBox.style.height = `${scale}px`;
-                gridBox.style.border = '0.5px solid #f0f0f0';
+                gridBox.style.border = '0.5px solid #e0e0e0';
                 gridBox.style.boxSizing = 'border-box';
                 gridContainer.appendChild(gridBox);
             }
@@ -1205,28 +1211,30 @@ document.addEventListener('DOMContentLoaded', function() {
         container.appendChild(gridContainer);
     }
 
-    // Add Entry and Exit markers with proper positioning
-    function addEntryExitMarkers(container, scale, offsetX, offsetY) {
+    // Add Entry and Exit markers at the bottom
+    function addEntryExitMarkers(container, hallLength, hallBreadth, scale, offsetX, offsetY) {
+        const hallHeight = hallBreadth * scale; // Fixed: was using undefined 'breadth'
+        const markerY = offsetY + hallHeight + 20; // Position below the hall
+        
         // Add Entry marker
         const entryMarker = document.createElement('div');
         entryMarker.className = 'entry-exit-marker';
         const entryX = offsetX + ((14 + 25) / 2) * scale;
-        const entryY = offsetY - 50;
         
         entryMarker.style.position = 'absolute';
-        entryMarker.style.left = `${entryX - 30}px`;
-        entryMarker.style.top = `${entryY}px`;
-        entryMarker.style.width = '60px';
+        entryMarker.style.left = `${entryX - 40}px`;
+        entryMarker.style.top = `${markerY}px`;
+        entryMarker.style.width = '80px';
         entryMarker.style.textAlign = 'center';
-        entryMarker.style.color = '#451a32';
+        entryMarker.style.color = '#fff';
         entryMarker.style.fontWeight = 'bold';
-        entryMarker.style.fontSize = '12px';
+        entryMarker.style.fontSize = '14px';
         entryMarker.style.zIndex = '10';
         entryMarker.innerHTML = `
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" style="margin: 0 auto; display: block;">
-                <path d="M4 15L12 9L20 15" stroke="#451a32" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <svg width="40" height="30" viewBox="0 0 24 24" fill="none" style="margin: 0 auto; display: block;">
+                <path d="M4 15L12 9L20 15" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            <div>ENTRY</div>
+            <div style="margin-top: 5px;">ENTRY</div>
         `;
         container.appendChild(entryMarker);
 
@@ -1234,27 +1242,26 @@ document.addEventListener('DOMContentLoaded', function() {
         const exitMarker = document.createElement('div');
         exitMarker.className = 'entry-exit-marker';
         const exitX = offsetX + ((76 + 87) / 2) * scale;
-        const exitY = offsetY - 50;
         
         exitMarker.style.position = 'absolute';
-        exitMarker.style.left = `${exitX - 30}px`;
-        exitMarker.style.top = `${exitY}px`;
-        exitMarker.style.width = '60px';
+        exitMarker.style.left = `${exitX - 40}px`;
+        exitMarker.style.top = `${markerY}px`;
+        exitMarker.style.width = '80px';
         exitMarker.style.textAlign = 'center';
-        exitMarker.style.color = '#451a32';
+        exitMarker.style.color = '#fff';
         exitMarker.style.fontWeight = 'bold';
-        exitMarker.style.fontSize = '12px';
+        exitMarker.style.fontSize = '14px';
         exitMarker.style.zIndex = '10';
         exitMarker.innerHTML = `
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" style="margin: 0 auto; display: block;">
-                <path d="M4 9L12 15L20 9" stroke="#451a32" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <svg width="40" height="30" viewBox="0 0 24 24" fill="none" style="margin: 0 auto; display: block;">
+                <path d="M4 9L12 15L20 9" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            <div>EXIT</div>
+            <div style="margin-top: 5px;">EXIT</div>
         `;
         container.appendChild(exitMarker);
     }
 
-    // Render individual stall with proper positioning
+    // Render individual stall with improved styling
     function renderStall(stall, container, scale, offsetX, offsetY) {
         if (!stall.selected_boxes || !Array.isArray(stall.selected_boxes) || stall.selected_boxes.length === 0) {
             console.warn(`Stall ${stall.id} has no valid selected_boxes`);
@@ -1304,46 +1311,55 @@ document.addEventListener('DOMContentLoaded', function() {
             stallElement.setAttribute('data-combo-ids', stallToComboMap[stall.id].join(','));
         }
         
-        // Position the stall element correctly
+        // Position the stall element correctly with enhanced sizing
+        const stallWidth = (maxX - minX + 1) * scale;
+        const stallHeight = (maxY - minY + 1) * scale;
+        
         stallElement.style.position = 'absolute';
         stallElement.style.left = `${offsetX + (minX * scale)}px`;
         stallElement.style.top = `${offsetY + (minY * scale)}px`;
-        stallElement.style.width = `${(maxX - minX + 1) * scale}px`;
-        stallElement.style.height = `${(maxY - minY + 1) * scale}px`;
+        stallElement.style.width = `${stallWidth}px`;
+        stallElement.style.height = `${stallHeight}px`;
         stallElement.style.zIndex = '5';
-        stallElement.style.border = '1px solid #ddd';
-        stallElement.style.borderRadius = '4px';
+        stallElement.style.border = '2px solid #ddd';
+        stallElement.style.borderRadius = '6px';
         stallElement.style.display = 'flex';
         stallElement.style.alignItems = 'center';
         stallElement.style.justifyContent = 'center';
         stallElement.style.cursor = stall.status === 'available' ? 'pointer' : 'default';
-        stallElement.style.transition = 'all 0.2s ease';
+        stallElement.style.transition = 'all 0.3s ease';
         stallElement.style.boxSizing = 'border-box';
+        stallElement.style.minWidth = '40px';
+        stallElement.style.minHeight = '40px';
 
-        // Apply inline styles for occupied stalls to ensure visibility
+        // Apply inline styles for different stall states
         if (isOccupied) {
             stallElement.style.background = 'linear-gradient(135deg, #696969, #2F2F2F)';
             stallElement.style.color = '#ffffff';
             stallElement.style.cursor = 'not-allowed';
             stallElement.style.opacity = '0.8';
+            stallElement.style.borderColor = '#555';
         } else if (stall.stall_type === 'eatery') {
             stallElement.style.background = 'linear-gradient(135deg, #228B22, #32CD32)';
             stallElement.style.color = '#ffffff';
+            stallElement.style.borderColor = '#1a6b1a';
         } else if (stall.stall_type === 'non-eatery') {
             stallElement.style.background = 'linear-gradient(135deg, #4169E1, #1E90FF)';
             stallElement.style.color = '#ffffff';
+            stallElement.style.borderColor = '#2c4fb3';
         }
 
-        // Add the stall number with proper sizing
+        // Add the stall number with enhanced styling
         const stallLabel = document.createElement('div');
         stallLabel.textContent = stall.stall_number;
         stallLabel.className = 'stall-number';
-        stallLabel.style.fontWeight = '600';
-        stallLabel.style.fontSize = `${Math.max(10, Math.min(14, scale / 3))}px`;
+        stallLabel.style.fontWeight = '700';
+        stallLabel.style.fontSize = `${Math.max(12, Math.min(18, scale / 2.5))}px`;
         stallLabel.style.textAlign = 'center';
-        stallLabel.style.textShadow = '1px 1px 2px rgba(0,0,0,0.5)';
+        stallLabel.style.textShadow = '1px 1px 3px rgba(0,0,0,0.7)';
         stallLabel.style.userSelect = 'none';
         stallLabel.style.pointerEvents = 'none';
+        stallLabel.style.letterSpacing = '0.5px';
 
         // Add click event for available stalls only
         if (stall.status === 'available') {
@@ -1353,11 +1369,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 handleStallClick(this);
             });
             
-            // Add hover effects for available stalls
+            // Add enhanced hover effects for available stalls
             stallElement.addEventListener('mouseenter', function(e) {
                 if (!this.classList.contains('selected')) {
-                    this.style.transform = 'scale(1.05)';
-                    this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.3)';
+                    this.style.transform = 'scale(1.08)';
+                    this.style.boxShadow = '0 6px 15px rgba(0,0,0,0.4)';
+                    this.style.zIndex = '8';
                 }
                 showTooltip(e, stall);
             });
@@ -1366,6 +1383,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!this.classList.contains('selected')) {
                     this.style.transform = 'scale(1)';
                     this.style.boxShadow = 'none';
+                    this.style.zIndex = '5';
                 }
                 hideTooltip();
             });
@@ -1373,11 +1391,13 @@ document.addEventListener('DOMContentLoaded', function() {
             // Add hover for occupied stalls
             stallElement.addEventListener('mouseenter', function(e) {
                 this.style.opacity = '1';
+                this.style.transform = 'scale(1.02)';
                 showOccupiedTooltip(e, stall);
             });
             
             stallElement.addEventListener('mouseleave', function() {
                 this.style.opacity = '0.8';
+                this.style.transform = 'scale(1)';
                 hideTooltip();
             });
         }
@@ -1479,12 +1499,33 @@ document.addEventListener('DOMContentLoaded', function() {
         updateStats();
     }
 
-    // Helper function to select a stall element
+    // Helper function to select a stall element with enhanced red styling
     function selectStallElement(stallElement, stallId) {
         stallElement.classList.add('selected');
+        // Enhanced red color for selected stalls
         stallElement.style.background = 'linear-gradient(135deg, #DC143C, #B22222)';
-        stallElement.style.transform = 'scale(1.02)';
-        stallElement.style.boxShadow = '0 4px 12px rgba(220,20,60,0.4)';
+        stallElement.style.borderColor = '#8B0000';
+        stallElement.style.transform = 'scale(1.05)';
+        stallElement.style.boxShadow = '0 6px 20px rgba(220,20,60,0.6)';
+        stallElement.style.zIndex = '7';
+        
+        // Add pulsing animation for better visibility
+        stallElement.style.animation = 'pulse-red 1.5s infinite';
+        
+        // Add the pulse animation keyframes if not already added
+        if (!document.querySelector('#pulse-red-style')) {
+            const style = document.createElement('style');
+            style.id = 'pulse-red-style';
+            style.textContent = `
+                @keyframes pulse-red {
+                    0% { box-shadow: 0 6px 20px rgba(220,20,60,0.6); }
+                    50% { box-shadow: 0 8px 25px rgba(220,20,60,0.8); }
+                    100% { box-shadow: 0 6px 20px rgba(220,20,60,0.6); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
         selectedStalls.add(stallId);
     }
 
@@ -1492,16 +1533,22 @@ document.addEventListener('DOMContentLoaded', function() {
     function deselectStallElement(stallElement, stallId) {
         stallElement.classList.remove('selected');
         
+        // Remove animation
+        stallElement.style.animation = 'none';
+        
         // Restore original styling
         const stall = stallData[stallId];
         if (stall) {
             if (stall.stall_type === 'eatery') {
                 stallElement.style.background = 'linear-gradient(135deg, #228B22, #32CD32)';
+                stallElement.style.borderColor = '#1a6b1a';
             } else {
                 stallElement.style.background = 'linear-gradient(135deg, #4169E1, #1E90FF)';
+                stallElement.style.borderColor = '#2c4fb3';
             }
             stallElement.style.transform = 'scale(1)';
             stallElement.style.boxShadow = 'none';
+            stallElement.style.zIndex = '5';
         }
         selectedStalls.delete(stallId);
     }
@@ -1564,18 +1611,18 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        // Build HTML for selected stalls
+        // Build HTML for selected stalls with enhanced styling
         let html = '';
         
         // Add single stalls
         singleStalls.forEach(stall => {
             html += `
-                <div class="selected-stall-item" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; margin-bottom: 8px; background: rgba(255,255,255,0.1); border-radius: 5px;">
-                    <div>
-                        <strong>Stall ${stall.stall_number}</strong><br>
-                        <small>${stall.stall_type} - ₹${parseFloat(stall.price).toLocaleString()}</small>
+                <div class="selected-stall-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; margin-bottom: 10px; background: rgba(220, 20, 60, 0.15); border: 1px solid rgba(220, 20, 60, 0.3); border-radius: 8px; transition: all 0.3s ease;">
+                    <div style="color: #fff;">
+                        <strong style="color: #DC143C; font-size: 16px;">Stall ${stall.stall_number}</strong><br>
+                        <small style="color: rgba(255,255,255,0.8);">${stall.stall_type} - ₹${parseFloat(stall.price).toLocaleString()}</small>
                     </div>
-                    <button class="stall-remove-btn" onclick="removeStall(${stall.id})" title="Remove stall" style="background: #ff4757; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 16px; line-height: 1;">×</button>
+                    <button class="stall-remove-btn" onclick="removeStall(${stall.id})" title="Remove stall" style="background: #ff4757; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 18px; font-weight: bold; line-height: 1; transition: all 0.2s ease;">×</button>
                 </div>
             `;
         });
@@ -1584,17 +1631,29 @@ document.addEventListener('DOMContentLoaded', function() {
         Object.values(comboGroups).forEach(group => {
             const stallNumbers = group.stalls.map(stall => stall.stall_number).sort((a, b) => a - b).join(', ');
             html += `
-                <div class="selected-stall-item combo-stall-item" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; margin-bottom: 8px; background: rgba(255,215,0,0.2); border-radius: 5px; border: 1px solid rgba(255,215,0,0.3);">
+                <div class="selected-stall-item combo-stall-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; margin-bottom: 10px; background: rgba(255,215,0,0.2); border: 1px solid rgba(255,215,0,0.4); border-radius: 8px; transition: all 0.3s ease;">
                     <div>
-                        <strong>Combo: Stalls ${stallNumbers}</strong><br>
-                        <small>Package Price - ₹${parseFloat(group.combo.price).toLocaleString()}</small>
+                        <strong style="color: #FFD700; font-size: 16px;">Combo: Stalls ${stallNumbers}</strong><br>
+                        <small style="color: rgba(255,255,255,0.8);">Package Price - ₹${parseFloat(group.combo.price).toLocaleString()}</small>
                     </div>
-                    <button class="stall-remove-btn" onclick="removeCombo(${group.combo.id})" title="Remove combo" style="background: #ff4757; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 16px; line-height: 1;">×</button>
+                    <button class="stall-remove-btn" onclick="removeCombo(${group.combo.id})" title="Remove combo" style="background: #ff4757; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 18px; font-weight: bold; line-height: 1; transition: all 0.2s ease;">×</button>
                 </div>
             `;
         });
         
         container.innerHTML = html;
+        
+        // Add hover effects to remove buttons
+        container.querySelectorAll('.stall-remove-btn').forEach(btn => {
+            btn.addEventListener('mouseenter', function() {
+                this.style.background = '#ff3742';
+                this.style.transform = 'scale(1.1)';
+            });
+            btn.addEventListener('mouseleave', function() {
+                this.style.background = '#ff4757';
+                this.style.transform = 'scale(1)';
+            });
+        });
     }
 
     // Remove individual stall
