@@ -937,10 +937,10 @@
 
                 <!-- Stall Sections -->
                 <div class="stall-sections" id="stallSections" 
-                     style="width: 100%; height: 560px;" 
-                     data-hall-id="1"
-                     data-length="100"
-                     data-breadth="44">
+                     style="width: 100%; height: 700px;" 
+                    data-hall-id="{{ hall.id }}"
+                    data-length="{{ hall.length }}"
+                    data-breadth="{{ hall.breadth }}">
                     <div id="loading" class="loading">
                         <img src="/static/ibfe_logo_1.png" alt="IBFE Logo" class="loading-logo">
                     </div>
@@ -1164,7 +1164,7 @@
                 gridBox.style.top = `${y * scale}px`;
                 gridBox.style.width = `${scale}px`;
                 gridBox.style.height = `${scale}px`;
-                // gridBox.style.border = '0.1px solid #f0f0f0';
+                gridBox.style.border = '0.1px solid #f0f0f0';
                 gridBox.style.zIndex = '1';
                 container.appendChild(gridBox);
             }
