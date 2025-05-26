@@ -319,7 +319,10 @@
             display: grid;
             grid-template-columns: repeat(5, 1fr);
             gap: 20px;
-            min-width: 1200px;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px 0;
         }
 
         .stall-section {
@@ -340,7 +343,7 @@
         .stall-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
+            gap: 4px;
         }
 
         .stall {
@@ -910,20 +913,6 @@
                         <option value="non-eatery">Non-Eatery Only</option>
                         <option value="available">Available Only</option>
                     </select>
-                    <!-- <select class="filter-select" id="sectionFilter">
-                        <option value="all">All Sections</option>
-                        <option value="section1">Section 1-53</option>
-                        <option value="section2">Section 54-107</option>
-                        <option value="section3">Section 108-161</option>
-                        <option value="section4">Section 162-215</option>
-                        <option value="section5">Section 216-268</option>
-                    </select>
-                    <select class="filter-select" id="priceFilter">
-                        <option value="all">All Prices</option>
-                        <option value="budget">Budget (₹10k-₹12k)</option>
-                        <option value="standard">Standard (₹12k-₹15k)</option>
-                        <option value="premium">Premium (₹15k+)</option>
-                    </select> -->
                 </div>
 
                 <!-- Legend -->
@@ -947,16 +936,16 @@
                 </div>
 
                 <!-- Stall Sections -->
-                <div class="hall-display" id="hall-display"
-                style="width: 100%; height: 700px;"
-                data-hall-id="{{ hall.id }}"
-                data-length="{{ hall.length }}"
-                data-breadth="{{ hall.breadth }}">
-                <div id="loading" class="loading">
-                    <img src="/static/ibfe_logo_1.png" alt="IBFE Logo" class="loading-logo">
-                </div>                
-                <!-- Stalls will be drawn here using JavaScript -->
-            </div>
+                <div class="stall-sections" id="stallSections" 
+                     style="width: 100%; height: 560px;" 
+                     data-hall-id="1"
+                     data-length="100"
+                     data-breadth="44">
+                    <div id="loading" class="loading">
+                        <img src="/static/ibfe_logo_1.png" alt="IBFE Logo" class="loading-logo">
+                    </div>
+                    <!-- Stalls will be drawn here using JavaScript -->
+                </div>
             </div>
 
             <!-- Enhanced Booking Panel -->
@@ -1076,605 +1065,56 @@
     <div class="stall-tooltip" id="stallTooltip"></div>
 
     <script>
-        // Global variables
-        let selectedStalls = new Set();
-        let stallData = {};
-        let occupiedStalls = new Set();
-        let occupiedStallsInfo = {}; // Store occupied stall details
+        // Updated Booking System JavaScript - International Biryani Festival and Expo
 
-        // Initialize the application
-        function initializeApp() {
-            generateStallData();
-            generateOccupiedStalls();
-            renderStallSections();
-            updateStats();
-            setupEventListeners();
+        document.addEventListener('DOMContentLoaded', function() {
+    // Global variables
+    let selectedStalls = new Set();
+    let stallData = {};
+    let comboData = {};
+    let stallToComboMap = {}; // Maps stall IDs to their combos
+    let occupiedStalls = new Set();
+
+    // Initialize the application
+    function initializeApp() {
+        const hallDisplay = document.getElementById('stallSections');
+        if (!hallDisplay) {
+            console.error('Hall display element not found');
+            return;
         }
 
-        // Generate stall data with random properties
-        function generateStallData() {
-            for (let i = 1; i <= 268; i++) {
-                const isEatery = Math.random() > 0.4; // 60% eatery, 40% non-eatery
-                const basePrice = isEatery ? 
-                    Math.floor(Math.random() * 8000) + 12000 : // Eatery: 12k-20k
-                    Math.floor(Math.random() * 5000) + 10000;  // Non-eatery: 10k-15k
-                
-                stallData[i] = {
-                    id: i,
-                    type: isEatery ? 'eatery' : 'non-eatery',
-                    price: basePrice,
-                    size: isEatery ? '4m x 4m' : '3m x 3m',
-                    location: getLocationRating(i),
-                    amenities: isEatery ? 
-                        ['Kitchen Setup', 'Gas Connection', 'Drainage'] :
-                        ['Display Area', 'Storage Space', 'Lighting']
-                };
-            }
-        }
-
-        // Generate some occupied stalls with business details
-        function generateOccupiedStalls() {
-            const occupiedCount = 18; // 18 out of 268 are occupied
-            const businessNames = [
-                'A2B Restaurant', 'McDonald\'s', 'KFC', 'Pizza Hut', 'Domino\'s Pizza',
-                'Subway', 'Starbucks Coffee', 'Burger King', 'Taco Bell', 'Dunkin\' Donuts',
-                'Fashion Hub', 'Tech Zone', 'Book Paradise', 'Sports Corner', 'Jewelry Palace',
-                'Mobile World', 'Footwear Express', 'Electronics Mart'
-            ];
-            
-            const businessTypes = [
-                'Fast Food', 'Restaurant', 'Coffee Shop', 'Fashion Store', 'Electronics',
-                'Bookstore', 'Sports Store', 'Jewelry', 'Mobile Store', 'Footwear'
-            ];
-            
-            const contactNumbers = [
-                '+91 98765 43210', '+91 87654 32109', '+91 76543 21098', '+91 65432 10987',
-                '+91 54321 09876', '+91 43210 98765', '+91 32109 87654', '+91 21098 76543',
-                '+91 10987 65432', '+91 09876 54321', '+91 98765 43211', '+91 87654 32110',
-                '+91 76543 21099', '+91 65432 10988', '+91 54321 09877', '+91 43210 98766',
-                '+91 32109 87655', '+91 21098 76544'
-            ];
-            
-            let businessIndex = 0;
-            while (occupiedStalls.size < occupiedCount) {
-                const stallId = Math.floor(Math.random() * 268) + 1;
-                if (!occupiedStalls.has(stallId)) {
-                    occupiedStalls.add(stallId);
-                    
-                    // Add business details for this occupied stall
-                    occupiedStallsInfo[stallId] = {
-                        businessName: businessNames[businessIndex],
-                        businessType: businessTypes[businessIndex % businessTypes.length],
-                        contactNumber: contactNumbers[businessIndex],
-                        ownerName: `Owner ${businessIndex + 1}`,
-                        leaseStart: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toLocaleDateString('en-IN'),
-                        leaseEnd: new Date(2025, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toLocaleDateString('en-IN'),
-                        monthlyRent: `₹${(Math.floor(Math.random() * 50000) + 25000).toLocaleString()}`
-                    };
-                    
-                    businessIndex++;
-                }
-            }
-        }
-
-        // Get location rating based on stall position
-        function getLocationRating(stallId) {
-            // Corner and center stalls get premium rating
-            if (stallId <= 20 || stallId >= 249 || 
-                (stallId >= 124 && stallId <= 144)) {
-                return 'Premium';
-            }
-            // Edge stalls get standard rating
-            if (stallId <= 54 || stallId >= 215) {
-                return 'Standard';
-            }
-            return 'Economy';
-        }
-
-        // Render all stall sections
-        function renderStallSections() {
-            const container = document.getElementById('stallSections');
-            container.innerHTML = '';
-
-            for (let section = 1; section <= 5; section++) {
-                const sectionDiv = document.createElement('div');
-                sectionDiv.className = 'stall-section';
-                
-                const startStall = (section - 1) * 53 + 1;
-                const endStall = Math.min(section * 53, 268);
-                
-                sectionDiv.innerHTML = `
-                    <div class="section-title">Section ${section}<br>(Stalls ${startStall}-${endStall})</div>
-                    <div class="stall-grid" id="section${section}Grid"></div>
-                `;
-                
-                container.appendChild(sectionDiv);
-                renderStallGrid(section, startStall, endStall);
-            }
-        }
-
-        // Render individual stall grid for a section
-        function renderStallGrid(section, startStall, endStall) {
-            const grid = document.getElementById(`section${section}Grid`);
-            grid.innerHTML = '';
-
-            for (let i = startStall; i <= endStall; i++) {
-                const stall = document.createElement('div');
-                stall.className = `stall ${stallData[i].type}`;
-                stall.id = `stall-${i}`;
-                stall.textContent = i;
-                
-                if (occupiedStalls.has(i)) {
-                    stall.classList.add('occupied');
-                    stall.onmouseenter = (e) => showOccupiedTooltip(e, i);
-                    stall.onmouseleave = hideTooltip;
-                } else {
-                    stall.onclick = () => toggleStallSelection(i);
-                    stall.onmouseenter = (e) => showTooltip(e, i);
-                    stall.onmouseleave = hideTooltip;
-                }
-                
-                grid.appendChild(stall);
-            }
-        }
-
-        // Toggle stall selection
-        function toggleStallSelection(stallId) {
-            if (occupiedStalls.has(stallId)) return;
-
-            const stallElement = document.getElementById(`stall-${stallId}`);
-            
-            if (selectedStalls.has(stallId)) {
-                selectedStalls.delete(stallId);
-                stallElement.classList.remove('selected');
-            } else {
-                selectedStalls.add(stallId);
-                stallElement.classList.add('selected');
-            }
-            
-            updateSelectedStallsList();
-            updatePricing();
-            updateStats();
-        }
-
-        // Update selected stalls list in booking panel
-        function updateSelectedStallsList() {
-            const container = document.getElementById('selectedStallsList');
-            const countElement = document.getElementById('selectedStallCount');
-            
-            countElement.textContent = selectedStalls.size;
-            
-            if (selectedStalls.size === 0) {
-                container.innerHTML = `
-                    <div style="text-align: center; color: rgba(255, 255, 224, 0.6); font-style: italic;">
-                        No stalls selected. Click on stalls to add them.
-                    </div>
-                `;
-                return;
-            }
-            
-            const stallsList = Array.from(selectedStalls).sort((a, b) => a - b);
-            container.innerHTML = stallsList.map(stallId => `
-                <div class="selected-stall-item">
-                    <div>
-                        <strong>Stall ${stallId}</strong><br>
-                        <small>${stallData[stallId].type} - ₹${stallData[stallId].price.toLocaleString()}</small>
-                    </div>
-                    <button class="stall-remove-btn" onclick="removeStall(${stallId})" title="Remove stall">×</button>
-                </div>
-            `).join('');
-        }
-
-        // Remove individual stall
-        function removeStall(stallId) {
-            selectedStalls.delete(stallId);
-            document.getElementById(`stall-${stallId}`).classList.remove('selected');
-            updateSelectedStallsList();
-            updatePricing();
-            updateStats();
-        }
-
-        // Update pricing calculations
-        function updatePricing() {
-            const basePrice = Array.from(selectedStalls).reduce((sum, stallId) => 
-                sum + stallData[stallId].price, 0);
-            
-            const setupCost = selectedStalls.size * 1500; // ₹1500 per stall
-            const marketingCost = 2500;
-            const securityDeposit = 5000;
-            
-            // Calculate bulk discount
-            let discountPercent = 0;
-            let discountAmount = 0;
-            
-            if (selectedStalls.size >= 10) {
-                discountPercent = 15;
-            } else if (selectedStalls.size >= 5) {
-                discountPercent = 10;
-            } else if (selectedStalls.size >= 3) {
-                discountPercent = 5;
-            }
-            
-            if (discountPercent > 0) {
-                discountAmount = Math.floor((basePrice + setupCost) * discountPercent / 100);
-            }
-            
-            const totalPrice = basePrice + setupCost + marketingCost + securityDeposit - discountAmount;
-            
-            // Update display
-            document.getElementById('basePrice').textContent = `₹ ${basePrice.toLocaleString()}`;
-            document.getElementById('setupCost').textContent = `₹ ${setupCost.toLocaleString()}`;
-            document.getElementById('stallCount').textContent = selectedStalls.size;
-            document.getElementById('totalPrice').textContent = `₹ ${totalPrice.toLocaleString()}`;
-            
-            // Show/hide discount
-            const discountRow = document.getElementById('discountRow');
-            const discountInfo = document.getElementById('discountInfo');
-            
-            if (discountPercent > 0) {
-                discountRow.style.display = 'flex';
-                discountInfo.style.display = 'block';
-                document.getElementById('discountPercent').textContent = discountPercent;
-                document.getElementById('discountAmount').textContent = `₹ ${discountAmount.toLocaleString()}`;
-            } else {
-                discountRow.style.display = 'none';
-                discountInfo.style.display = 'none';
-            }
-            
-            // Enable/disable book button
-            const bookButton = document.getElementById('bookButton');
-            bookButton.disabled = selectedStalls.size === 0;
-        }
-
-        // Update statistics
-        function updateStats() {
-            const availableCount = 268 - occupiedStalls.size;
-            const selectedCount = selectedStalls.size;
-            
-            document.getElementById('availableCount').textContent = availableCount - selectedCount;
-            document.getElementById('selectedCount').textContent = selectedCount;
-        }
-
-        // Show tooltip for available stalls
-        function showTooltip(event, stallId) {
-            const tooltip = document.getElementById('stallTooltip');
-            const stall = stallData[stallId];
-            
-            tooltip.innerHTML = `
-                <strong>Stall ${stallId}</strong><br>
-                Type: ${stall.type}<br>
-                Size: ${stall.size}<br>
-                Price: ₹${stall.price.toLocaleString()}<br>
-                Location: ${stall.location}<br>
-                Status: Available
-            `;
-            
-            tooltip.style.left = event.pageX + 10 + 'px';
-            tooltip.style.top = event.pageY - 10 + 'px';
-            tooltip.style.opacity = '1';
-        }
-
-        // Show detailed tooltip for occupied stalls
-        function showOccupiedTooltip(event, stallId) {
-            const tooltip = document.getElementById('stallTooltip');
-            const stall = stallData[stallId];
-            const businessInfo = occupiedStallsInfo[stallId];
-            
-            tooltip.innerHTML = `
-                <div style="border-bottom: 1px solid #ddd; padding-bottom: 8px; margin-bottom: 8px;">
-                    <strong style="color: #FFD700;">Stall ${stallId} - OCCUPIED</strong>
-                </div>
-                <div style="margin-bottom: 8px;">
-                    <strong style="color: #1976d2;">${businessInfo.businessName}</strong><br>
-                    <small style="color: #fff;">Business Type: ${businessInfo.businessType}</small>
-                </div>
-                <div style="font-size: 12px; line-height: 1.4;">
-                    <strong>Owner:</strong> ${businessInfo.ownerName}<br>
-                    <strong>Contact:</strong> ${businessInfo.contactNumber}<br>
-                    <strong>Monthly Rent:</strong> ${businessInfo.monthlyRent}<br>
-                    <strong>Lease Period:</strong><br>
-                    ${businessInfo.leaseStart} to ${businessInfo.leaseEnd}
-                </div>
-                <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #ddd; font-size: 11px; color: #fff;">
-                    Stall Details: ${stall.type} | ${stall.size} | ${stall.location} Location
-                </div>
-            `;
-            
-            tooltip.style.left = event.pageX + 10 + 'px';
-            tooltip.style.top = event.pageY - 10 + 'px';
-            tooltip.style.opacity = '1';
-            tooltip.style.minWidth = '280px';
-            tooltip.style.maxWidth = '320px';
-        }
-
-        // Hide tooltip
-        function hideTooltip() {
-            const tooltip = document.getElementById('stallTooltip');
-            tooltip.style.opacity = '0';
-            tooltip.style.minWidth = 'auto';
-            tooltip.style.maxWidth = 'none';
-        }
-
-        // Control functions
-        function clearAllSelections() {
-            selectedStalls.forEach(stallId => {
-                document.getElementById(`stall-${stallId}`).classList.remove('selected');
-            });
-            selectedStalls.clear();
-            updateSelectedStallsList();
-            updatePricing();
-            updateStats();
-        }
-
-        function selectRandomStalls(count) {
-            clearAllSelections();
-            const availableStalls = [];
-            for (let i = 1; i <= 268; i++) {
-                if (!occupiedStalls.has(i)) {
-                    availableStalls.push(i);
-                }
-            }
-            
-            for (let i = 0; i < Math.min(count, availableStalls.length); i++) {
-                const randomIndex = Math.floor(Math.random() * availableStalls.length);
-                const stallId = availableStalls.splice(randomIndex, 1)[0];
-                toggleStallSelection(stallId);
-            }
-        }
-
-        function selectBestStalls() {
-            clearAllSelections();
-            const premiumStalls = [];
-            for (let i = 1; i <= 268; i++) {
-                if (!occupiedStalls.has(i) && stallData[i].location === 'Premium') {
-                    premiumStalls.push(i);
-                }
-            }
-            
-            premiumStalls.slice(0, 5).forEach(stallId => {
-                toggleStallSelection(stallId);
-            });
-        }
-
-        function selectBySection() {
-            const sectionNum = Math.floor(Math.random() * 5) + 1;
-            const startStall = (sectionNum - 1) * 53 + 1;
-            const endStall = Math.min(sectionNum * 53, 268);
-            
-            clearAllSelections();
-            
-            let selected = 0;
-            for (let i = startStall; i <= endStall && selected < 3; i++) {
-                if (!occupiedStalls.has(i)) {
-                    toggleStallSelection(i);
-                    selected++;
-                }
-            }
-        }
-
-        function quickSelectConsecutive(count) {
-            clearAllSelections();
-            
-            for (let start = 1; start <= 268 - count + 1; start++) {
-                let canSelect = true;
-                for (let i = start; i < start + count; i++) {
-                    if (occupiedStalls.has(i)) {
-                        canSelect = false;
-                        break;
-                    }
-                }
-                
-                if (canSelect) {
-                    for (let i = start; i < start + count; i++) {
-                        toggleStallSelection(i);
-                    }
-                    break;
-                }
-            }
-        }
-
-        function quickSelectCornerStalls() {
-            clearAllSelections();
-            const cornerStalls = [1, 20, 54, 73, 107, 126, 161, 180, 215, 234, 268];
-            
-            cornerStalls.forEach(stallId => {
-                if (!occupiedStalls.has(stallId)) {
-                    toggleStallSelection(stallId);
-                }
-            });
-        }
-
-        function quickSelectCenterStalls() {
-            clearAllSelections();
-            const centerStalls = [134, 135, 140, 141, 142];
-            
-            centerStalls.forEach(stallId => {
-                if (!occupiedStalls.has(stallId)) {
-                    toggleStallSelection(stallId);
-                }
-            });
-        }
-
-        // Booking process
-        function proceedToBook() {
-            const businessName = document.getElementById('businessName').value;
-            const contactPerson = document.getElementById('contactPerson').value;
-            const phoneNumber = document.getElementById('phoneNumber').value;
-            const emailAddress = document.getElementById('emailAddress').value;
-            
-            if (!businessName || !contactPerson || !phoneNumber || !emailAddress) {
-                alert('Please fill in all required fields before booking.');
-                return;
-            }
-            
-            if (selectedStalls.size === 0) {
-                alert('Please select at least one stall to proceed with booking.');
-                return;
-            }
-            
-            showBookingConfirmation();
-        }
-
-        function showBookingConfirmation() {
-            const stallsList = Array.from(selectedStalls).sort((a, b) => a - b).join(', ');
-            const businessName = document.getElementById('businessName').value;
-            const totalPrice = document.getElementById('totalPrice').textContent;
-            
-            document.getElementById('bookingDetails').innerHTML = `
-                <strong>Booking Confirmation</strong><br><br>
-                <strong>Business:</strong> ${businessName}<br>
-                <strong>Stalls Selected:</strong> ${stallsList}<br>
-                <strong>Total Stalls:</strong> ${selectedStalls.size}<br>
-                <strong>Total Amount:</strong> ${totalPrice}<br><br>
-                Your booking reference number is <strong>BE2024-${Date.now().toString().slice(-6)}</strong>
-            `;
-            
-            document.getElementById('successModal').classList.add('show');
-        }
-
-        function closeModal() {
-            document.getElementById('successModal').classList.remove('show');
-        }
-
-        // Setup event listeners
-        function setupEventListeners() {
-            // Filter event listeners
-            document.getElementById('typeFilter').addEventListener('change', applyFilters);
-            document.getElementById('sectionFilter').addEventListener('change', applyFilters);
-            document.getElementById('priceFilter').addEventListener('change', applyFilters);
-        }
-
-        // Apply filters
-        function applyFilters() {
-            const typeFilter = document.getElementById('typeFilter').value;
-            const sectionFilter = document.getElementById('sectionFilter').value;
-            const priceFilter = document.getElementById('priceFilter').value;
-            
-            for (let i = 1; i <= 268; i++) {
-                const stallElement = document.getElementById(`stall-${i}`);
-                const stall = stallData[i];
-                let show = true;
-                
-                // Type filter
-                if (typeFilter !== 'all') {
-                    if (typeFilter === 'available' && occupiedStalls.has(i)) show = false;
-                    if (typeFilter === 'occupied' && !occupiedStalls.has(i)) show = false;
-                    if (typeFilter === 'eatery' && stall.type !== 'eatery') show = false;
-                    if (typeFilter === 'non-eatery' && stall.type !== 'non-eatery') show = false;
-                }
-                
-                // Section filter
-                if (sectionFilter !== 'all') {
-                    const sectionNum = parseInt(sectionFilter.replace('section', ''));
-                    const startStall = (sectionNum - 1) * 53 + 1;
-                    const endStall = Math.min(sectionNum * 53, 268);
-                    if (i < startStall || i > endStall) show = false;
-                }
-                
-                // Price filter
-                if (priceFilter !== 'all') {
-                    if (priceFilter === 'budget' && stall.price >= 12000) show = false;
-                    if (priceFilter === 'standard' && (stall.price < 12000 || stall.price >= 15000)) show = false;
-                    if (priceFilter === 'premium' && stall.price < 15000) show = false;
-                }
-                
-                stallElement.style.opacity = show ? '1' : '0.3';
-                stallElement.style.pointerEvents = show ? 'auto' : 'none';
-            }
-        }
-
-        // Initialize app when page loads
-        document.addEventListener('DOMContentLoaded', initializeApp);
-
-        // Hall Display JavaScript - International Biryani Festival and Expo
-
-    document.addEventListener('DOMContentLoaded', function() {
-        // Prefetch hall data
-        const hallDisplay = document.getElementById('hall-display');
         const hallId = hallDisplay.dataset.hallId;
-        
-        // Start loading data as soon as possible
-        fetch(`/halls/${hallId}/data/`);
-        
-        // Load hall data and render stalls
         const hallLength = parseInt(hallDisplay.dataset.length);
         const hallBreadth = parseInt(hallDisplay.dataset.breadth);
-        const stallInfo = document.getElementById('stall-info');
-        const selectedStallsList = document.getElementById('selected-stalls-list');
-        const selectedStallsCount = document.getElementById('selected-stalls-count');
-        const totalPriceElement = document.getElementById('total-price');
-        const bookNowBtn = document.getElementById('book-now-btn');
         const loadingElement = document.getElementById('loading');
 
-        let selectedStalls = [];
-        let stallData = {};
-        let comboData = {};
-        let stallToComboMap = {}; // Maps stall IDs to their combos
+        if (!hallId || !hallLength || !hallBreadth) {
+            console.error('Hall data attributes missing');
+            return;
+        }
 
         // Determine the scale to fit the display
         const maxWidth = hallDisplay.clientWidth;
-        const maxHeight = hallDisplay.clientHeight;
+        const maxHeight = hallDisplay.clientHeight - 100; // Leave some space for margins
 
         const scaleX = maxWidth / hallLength;
         const scaleY = maxHeight / hallBreadth;
         const scale = Math.min(scaleX, scaleY);
 
-        // Set the actual dimensions
-        const actualWidth = hallLength * scale;
-        const actualHeight = hallBreadth * scale;
-
         // Draw hall grid (for reference)
-        for (let x = 0; x < hallLength; x++) {
-            for (let y = 0; y < hallBreadth; y++) {
-                const gridBox = document.createElement('div');
-                gridBox.style.position = 'absolute';
-                gridBox.style.left = `${x * scale}px`;
-                gridBox.style.top = `${y * scale}px`;
-                gridBox.style.width = `${scale}px`;
-                gridBox.style.height = `${scale}px`;
-                gridBox.style.border = '0.1px solid #f0f0f0';
-                hallDisplay.appendChild(gridBox);
-            }
-        }
+        drawHallGrid(hallDisplay, hallLength, hallBreadth, scale);
 
-        // Add Entry marker (outside coordinates 14,1 to 25,1)
-        const entryMarker = document.createElement('div');
-        entryMarker.className = 'entry-exit-marker';
-        // Position above the specified coordinates
-        const entryX = ((14 + 25) / 2) * scale; // Center between 14 and 25
-        const entryY = 650; // Above row 1
-        entryMarker.style.left = `${entryX - 25}px`; // Center the marker
-        entryMarker.style.top = `${entryY - 40}px`;
-        entryMarker.innerHTML = `              
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
-                <path d="M4 15L12 9L20 15" stroke="#451a32" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <span class="entry-exit-label" style="top: 35px;">ENTRY</span>
-        `;
-        hallDisplay.appendChild(entryMarker);
-
-        // Add Exit marker (outside coordinates 76,1 to 87,1)
-        const exitMarker = document.createElement('div');
-        exitMarker.className = 'entry-exit-marker';
-        // Position above the specified coordinates
-        const exitX = ((76 + 87) / 2) * scale; // Center between 76 and 87
-        const exitY = 650; // Above row 1
-        exitMarker.style.left = `${exitX - 25}px`; // Center the marker
-        exitMarker.style.top = `${exitY - 40}px`;
-        exitMarker.innerHTML = `
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
-                <path d="M4 9L12 15L20 9" stroke="#451a32" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <span class="entry-exit-label" style="top: 35px;">EXIT</span>
-        `;
-        hallDisplay.appendChild(exitMarker);
+        // Add Entry and Exit markers
+        addEntryExitMarkers(hallDisplay, scale);
 
         // Fetch and render stalls and combos
         fetch(`/halls/${hallId}/data/`)
             .then(response => response.json())
             .then(data => {
                 // Hide loading indicators
-                loadingElement.style.display = 'none';
+                if (loadingElement) {
+                    loadingElement.style.display = 'none';
+                }
                 
                 // Store combo data
                 data.combos.forEach(combo => {
@@ -1694,368 +1134,777 @@
                     // Store all stall data for reference
                     stallData[stall.id] = stall;
                     
-                    const stallBoxes = stall.selected_boxes;
-
-                    // Group boxes by stall number and find the boundaries
-                    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-
-                    stallBoxes.forEach(box => {
-                        minX = Math.min(minX, box.x);
-                        minY = Math.min(minY, box.y);
-                        maxX = Math.max(maxX, box.x);
-                        maxY = Math.max(maxY, box.y);
-                    });
-
-                    // Create a single stall element
-                    const stallElement = document.createElement('div');
-                    
-                    // Handle blocked stalls as booked stalls for display purposes
-                    const displayStatus = stall.status === 'blocked' ? 'booked' : stall.status;
-                    
-                    // Add stall type class for styling
-                    stallElement.className = `stall ${displayStatus} ${stall.stall_type}`;
-                    
-                    stallElement.setAttribute('data-stall-id', stall.id);
-                    stallElement.setAttribute('data-stall-number', stall.stall_number);
-                    stallElement.setAttribute('data-stall-status', stall.status);
-                    stallElement.setAttribute('data-stall-price', stall.price);
-                    stallElement.setAttribute('data-stall-type', stall.stall_type);
-                    
-                    // If the stall is part of a combo, add the combo class
-                    if (stallToComboMap[stall.id]) {
-                        stallElement.classList.add('combo');
-                        // Store combo IDs as data attribute
-                        stallElement.setAttribute('data-combo-ids', stallToComboMap[stall.id].join(','));
+                    // Track occupied stalls
+                    if (stall.status === 'blocked' || stall.status === 'booked') {
+                        occupiedStalls.add(stall.id);
                     }
                     
-                    stallElement.style.position = 'absolute';
-                    stallElement.style.left = `${minX * scale}px`;
-                    stallElement.style.top = `${minY * scale}px`;
-                    stallElement.style.width = `${(maxX - minX + 1) * scale}px`;
-                    stallElement.style.height = `${(maxY - minY + 1) * scale}px`;
-                    stallElement.style.zIndex = '5'; // Ensure stalls appear above grid lines
-
-                    // Add the stall number with font-weight 300
-                    const stallLabel = document.createElement('div');
-                    stallLabel.textContent = stall.stall_number;
-                    stallLabel.className = 'stall-number';
-                    stallLabel.style.position = 'absolute';
-                    stallLabel.style.top = '50%';
-                    stallLabel.style.left = '50%';
-                    stallLabel.style.transform = 'translate(-50%, -50%)';
-                    stallLabel.style.fontWeight = '300';
-                    stallLabel.style.fontSize = `${Math.max(14, scale / 3)}px`;
-                    stallLabel.style.textAlign = 'center';
-
-                    // Add click event for available stalls only
-                    if(stall.status === 'available') {
-                        stallElement.addEventListener('click', function() {
-                            const stallId = this.getAttribute('data-stall-id');
-                            const isSelected = this.classList.contains('selected');
-                            const comboIds = this.getAttribute('data-combo-ids');
-                            
-                            if (comboIds) {
-                                // This stall is part of a combo
-                                const comboIdArray = comboIds.split(',');
-                                
-                                if (!isSelected) {
-                                    // When selecting a stall that's part of a combo, auto-select all combo stalls
-                                    let selectedCombo = null;
-                                    
-                                    // Find the first valid combo where all stalls are available
-                                    for (const comboId of comboIdArray) {
-                                        const combo = comboData[comboId];
-                                        if (!combo) continue;
-                                        
-                                        // Check if all stalls in this combo are available
-                                        const allAvailable = combo.stall_ids.every(id => 
-                                            stallData[id] && stallData[id].status === 'available'
-                                        );
-                                        
-                                        if (allAvailable) {
-                                            selectedCombo = combo;
-                                            break;
-                                        }
-                                    }
-                                    
-                                    if (selectedCombo) {
-                                        // Select all stalls in this combo automatically
-                                        selectedCombo.stall_ids.forEach(id => {
-                                            const comboStallElement = document.querySelector(
-                                                `.stall[data-stall-id="${id}"]`
-                                            );
-                                            if (comboStallElement && !selectedStalls.includes(id.toString())) {
-                                                comboStallElement.classList.add('selected');
-                                                selectedStalls.push(id.toString());
-                                            }
-                                        });
-                                    } else {
-                                        // No valid combo (some stalls unavailable), just select this stall
-                                        this.classList.add('selected');
-                                        selectedStalls.push(stallId);
-                                    }
-                                } else {
-                                    // When deselecting, check if part of a fully selected combo
-                                    let comboToDeselect = null;
-                                    
-                                    for (const comboId of comboIdArray) {
-                                        const combo = comboData[comboId];
-                                        if (!combo) continue;
-                                        
-                                        // Check if all stalls in this combo are selected
-                                        const allSelected = combo.stall_ids.every(id => 
-                                            selectedStalls.includes(id.toString())
-                                        );
-                                        
-                                        if (allSelected) {
-                                            comboToDeselect = combo;
-                                            break;
-                                        }
-                                    }
-                                    
-                                    if (comboToDeselect) {
-                                        // Deselect all stalls in this combo
-                                        comboToDeselect.stall_ids.forEach(id => {
-                                            const comboStallElement = document.querySelector(
-                                                `.stall[data-stall-id="${id}"]`
-                                            );
-                                            if (comboStallElement) {
-                                                comboStallElement.classList.remove('selected');
-                                            }
-                                            selectedStalls = selectedStalls.filter(sid => sid !== id.toString());
-                                        });
-                                    } else {
-                                        // Just deselect this stall
-                                        this.classList.remove('selected');
-                                        selectedStalls = selectedStalls.filter(id => id !== stallId);
-                                    }
-                                }
-                            } else {
-                                // Regular stall (not part of a combo), toggle selection
-                                if (isSelected) {
-                                    this.classList.remove('selected');
-                                    selectedStalls = selectedStalls.filter(id => id !== stallId);
-                                } else {
-                                    this.classList.add('selected');
-                                    selectedStalls.push(stallId);
-                                }
-                            }
-                            
-                            // Update selected stalls UI
-                            updateSelectedStallsUI();
-                        });
-                    }
-
-                    stallElement.appendChild(stallLabel);
-                    hallDisplay.appendChild(stallElement);
+                    renderStall(stall, hallDisplay, scale);
                 });
+
+                // Update initial stats
+                updateStats();
+                setupEventListeners();
             })
             .catch(error => {
                 console.error('Error loading hall data:', error);
-                loadingElement.textContent = 'Error loading stalls. Please try again later.';
+                if (loadingElement) {
+                    loadingElement.textContent = 'Error loading stalls. Please try again later.';
+                }
             });
+    }
 
-        // Function to update the selected stalls UI
-        function updateSelectedStallsUI() {
-            // Clear the list
-            selectedStallsList.innerHTML = '';
-            
-            // Update counter
-            selectedStallsCount.textContent = `${selectedStalls.length} stalls selected`;
-            
-            if (selectedStalls.length === 0) {
-                stallInfo.style.display = 'none';
-                bookNowBtn.disabled = true;
-                return;
+    // Draw hall grid for reference
+    function drawHallGrid(container, length, breadth, scale) {
+        for (let x = 0; x < length; x++) {
+            for (let y = 0; y < breadth; y++) {
+                const gridBox = document.createElement('div');
+                gridBox.style.position = 'absolute';
+                gridBox.style.left = `${x * scale}px`;
+                gridBox.style.top = `${y * scale}px`;
+                gridBox.style.width = `${scale}px`;
+                gridBox.style.height = `${scale}px`;
+                // gridBox.style.border = '0.1px solid #f0f0f0';
+                gridBox.style.zIndex = '1';
+                container.appendChild(gridBox);
             }
+        }
+    }
+
+    // Add Entry and Exit markers
+    function addEntryExitMarkers(container, scale) {
+        // Add Entry marker
+        const entryMarker = document.createElement('div');
+        entryMarker.className = 'entry-exit-marker';
+        const entryX = ((14 + 25) / 2) * scale;
+        const entryY = -50;
+        entryMarker.style.position = 'absolute';
+        entryMarker.style.left = `${entryX - 25}px`;
+        entryMarker.style.top = `${entryY}px`;
+        entryMarker.style.textAlign = 'center';
+        entryMarker.style.color = '#451a32';
+        entryMarker.style.fontWeight = 'bold';
+        entryMarker.innerHTML = `
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+                <path d="M4 15L12 9L20 15" stroke="#451a32" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <div>ENTRY</div>
+        `;
+        container.appendChild(entryMarker);
+
+        // Add Exit marker
+        const exitMarker = document.createElement('div');
+        exitMarker.className = 'entry-exit-marker';
+        const exitX = ((76 + 87) / 2) * scale;
+        const exitY = -50;
+        exitMarker.style.position = 'absolute';
+        exitMarker.style.left = `${exitX - 25}px`;
+        exitMarker.style.top = `${exitY}px`;
+        exitMarker.style.textAlign = 'center';
+        exitMarker.style.color = '#451a32';
+        exitMarker.style.fontWeight = 'bold';
+        exitMarker.innerHTML = `
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+                <path d="M4 9L12 15L20 9" stroke="#451a32" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <div>EXIT</div>
+        `;
+        container.appendChild(exitMarker);
+    }
+
+    // Render individual stall
+    function renderStall(stall, container, scale) {
+        const stallBoxes = stall.selected_boxes;
+
+        // Group boxes by stall number and find the boundaries
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+        stallBoxes.forEach(box => {
+            minX = Math.min(minX, box.x);
+            minY = Math.min(minY, box.y);
+            maxX = Math.max(maxX, box.x);
+            maxY = Math.max(maxY, box.y);
+        });
+
+        // Create a single stall element
+        const stallElement = document.createElement('div');
+        
+        // Determine the correct CSS classes based on status
+        let statusClass = '';
+        let isOccupied = false;
+        
+        if (stall.status === 'blocked' || stall.status === 'booked') {
+            statusClass = 'occupied';
+            isOccupied = true;
+        } else if (stall.status === 'available') {
+            statusClass = 'available';
+        } else {
+            statusClass = stall.status; // fallback to original status
+        }
+        
+        // Add stall type class for styling and status class
+        stallElement.className = `stall ${statusClass} ${stall.stall_type}`;
+        
+        stallElement.setAttribute('data-stall-id', stall.id);
+        stallElement.setAttribute('data-stall-number', stall.stall_number);
+        stallElement.setAttribute('data-stall-status', stall.status);
+        stallElement.setAttribute('data-stall-price', stall.price);
+        stallElement.setAttribute('data-stall-type', stall.stall_type);
+        
+        // If the stall is part of a combo, add the combo class
+        if (stallToComboMap[stall.id]) {
+            stallElement.classList.add('combo');
+            stallElement.setAttribute('data-combo-ids', stallToComboMap[stall.id].join(','));
+        }
+        
+        stallElement.style.position = 'absolute';
+        stallElement.style.left = `${minX * scale}px`;
+        stallElement.style.top = `${minY * scale}px`;
+        stallElement.style.width = `${(maxX - minX + 1) * scale}px`;
+        stallElement.style.height = `${(maxY - minY + 1) * scale}px`;
+        stallElement.style.zIndex = '5';
+        stallElement.style.border = '1px solid #ddd';
+        stallElement.style.display = 'flex';
+        stallElement.style.alignItems = 'center';
+        stallElement.style.justifyContent = 'center';
+        stallElement.style.cursor = stall.status === 'available' ? 'pointer' : 'default';
+
+        // Apply inline styles for occupied stalls to ensure visibility
+        if (isOccupied) {
+            stallElement.style.background = 'linear-gradient(135deg, #696969, #2F2F2F)';
+            stallElement.style.color = '#ffffff';
+            stallElement.style.cursor = 'not-allowed';
+            stallElement.style.opacity = '0.8';
+        } else if (stall.stall_type === 'eatery') {
+            stallElement.style.background = 'linear-gradient(135deg, #228B22, #32CD32)';
+            stallElement.style.color = '#ffffff';
+        } else if (stall.stall_type === 'non-eatery') {
+            stallElement.style.background = 'linear-gradient(135deg, #4169E1, #1E90FF)';
+            stallElement.style.color = '#ffffff';
+        }
+
+        // Add the stall number
+        const stallLabel = document.createElement('div');
+        stallLabel.textContent = stall.stall_number;
+        stallLabel.className = 'stall-number';
+        stallLabel.style.fontWeight = '600';
+        stallLabel.style.fontSize = `${Math.max(10, scale / 4)}px`;
+        stallLabel.style.textAlign = 'center';
+        stallLabel.style.textShadow = '1px 1px 2px rgba(0,0,0,0.5)';
+
+        // Add click event for available stalls only
+        if (stall.status === 'available') {
+            stallElement.addEventListener('click', function() {
+                handleStallClick(this);
+            });
             
-            // Show the stall info section
-            stallInfo.style.display = 'block';
-            bookNowBtn.disabled = false;
+            // Add hover effects for available stalls
+            stallElement.addEventListener('mouseenter', function(e) {
+                if (!this.classList.contains('selected')) {
+                    this.style.transform = 'scale(1.05)';
+                    this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.3)';
+                }
+                showTooltip(e, stall);
+            });
             
-            // Group selected stalls by combo
-            const comboGroups = {};
-            const singleStalls = [];
+            stallElement.addEventListener('mouseleave', function() {
+                if (!this.classList.contains('selected')) {
+                    this.style.transform = 'scale(1)';
+                    this.style.boxShadow = 'none';
+                }
+                hideTooltip();
+            });
+        } else {
+            // Add hover for occupied stalls
+            stallElement.addEventListener('mouseenter', function(e) {
+                this.style.opacity = '1';
+                showOccupiedTooltip(e, stall);
+            });
             
-            selectedStalls.forEach(stallId => {
-                const stall = stallData[stallId];
-                if (!stall) return;
+            stallElement.addEventListener('mouseleave', function() {
+                this.style.opacity = '0.8';
+                hideTooltip();
+            });
+        }
+
+        stallElement.appendChild(stallLabel);
+        container.appendChild(stallElement);
+    }
+
+    // Handle stall click
+    function handleStallClick(stallElement) {
+        const stallId = stallElement.getAttribute('data-stall-id');
+        const isSelected = stallElement.classList.contains('selected');
+        const comboIds = stallElement.getAttribute('data-combo-ids');
+        
+        if (comboIds) {
+            // This stall is part of a combo
+            const comboIdArray = comboIds.split(',');
+            
+            if (!isSelected) {
+                // When selecting a stall that's part of a combo, auto-select all combo stalls
+                let selectedCombo = null;
                 
-                // Check if this stall is part of a combo where all other stalls are also selected
-                let partOfSelectedCombo = false;
-                
-                if (stallToComboMap[stallId]) {
-                    for (const comboId of stallToComboMap[stallId]) {
-                        const combo = comboData[comboId];
-                        if (!combo) continue;
-                        
-                        // Check if all stalls in this combo are selected
-                        const allSelected = combo.stall_ids.every(id => 
-                            selectedStalls.includes(id.toString())
-                        );
-                        
-                        if (allSelected) {
-                            // Add to combo group
-                            if (!comboGroups[comboId]) {
-                                comboGroups[comboId] = {
-                                    combo: combo,
-                                    stalls: []
-                                };
-                            }
-                            comboGroups[comboId].stalls.push(stall);
-                            partOfSelectedCombo = true;
-                            break;
-                        }
+                // Find the first valid combo where all stalls are available
+                for (const comboId of comboIdArray) {
+                    const combo = comboData[comboId];
+                    if (!combo) continue;
+                    
+                    // Check if all stalls in this combo are available
+                    const allAvailable = combo.stall_ids.every(id => 
+                        stallData[id] && stallData[id].status === 'available'
+                    );
+                    
+                    if (allAvailable) {
+                        selectedCombo = combo;
+                        break;
                     }
                 }
                 
-                if (!partOfSelectedCombo) {
-                    // Add to single stalls
-                    singleStalls.push(stall);
+                if (selectedCombo) {
+                    // Select all stalls in this combo automatically
+                    selectedCombo.stall_ids.forEach(id => {
+                        const comboStallElement = document.querySelector(
+                            `.stall[data-stall-id="${id}"]`
+                        );
+                        if (comboStallElement && !selectedStalls.has(id.toString())) {
+                            comboStallElement.classList.add('selected');
+                            comboStallElement.style.background = 'linear-gradient(135deg, #DC143C, #B22222)';
+                            comboStallElement.style.transform = 'scale(1.02)';
+                            comboStallElement.style.boxShadow = '0 4px 12px rgba(220,20,60,0.4)';
+                            selectedStalls.add(id.toString());
+                        }
+                    });
+                } else {
+                    // No valid combo (some stalls unavailable), just select this stall
+                    stallElement.classList.add('selected');
+                    stallElement.style.background = 'linear-gradient(135deg, #DC143C, #B22222)';
+                    stallElement.style.transform = 'scale(1.02)';
+                    stallElement.style.boxShadow = '0 4px 12px rgba(220,20,60,0.4)';
+                    selectedStalls.add(stallId);
                 }
-            });
+            } else {
+                // When deselecting, check if part of a fully selected combo
+                let comboToDeselect = null;
+                
+                for (const comboId of comboIdArray) {
+                    const combo = comboData[comboId];
+                    if (!combo) continue;
+                    
+                    // Check if all stalls in this combo are selected
+                    const allSelected = combo.stall_ids.every(id => 
+                        selectedStalls.has(id.toString())
+                    );
+                    
+                    if (allSelected) {
+                        comboToDeselect = combo;
+                        break;
+                    }
+                }
+                
+                if (comboToDeselect) {
+                    // Deselect all stalls in this combo
+                    comboToDeselect.stall_ids.forEach(id => {
+                        const comboStallElement = document.querySelector(
+                            `.stall[data-stall-id="${id}"]`
+                        );
+                        if (comboStallElement) {
+                            comboStallElement.classList.remove('selected');
+                            // Restore original styling
+                            const stall = stallData[id];
+                            if (stall) {
+                                if (stall.stall_type === 'eatery') {
+                                    comboStallElement.style.background = 'linear-gradient(135deg, #228B22, #32CD32)';
+                                } else {
+                                    comboStallElement.style.background = 'linear-gradient(135deg, #4169E1, #1E90FF)';
+                                }
+                                comboStallElement.style.transform = 'scale(1)';
+                                comboStallElement.style.boxShadow = 'none';
+                            }
+                        }
+                        selectedStalls.delete(id.toString());
+                    });
+                } else {
+                    // Just deselect this stall
+                    stallElement.classList.remove('selected');
+                    // Restore original styling
+                    const stall = stallData[stallId];
+                    if (stall) {
+                        if (stall.stall_type === 'eatery') {
+                            stallElement.style.background = 'linear-gradient(135deg, #228B22, #32CD32)';
+                        } else {
+                            stallElement.style.background = 'linear-gradient(135deg, #4169E1, #1E90FF)';
+                        }
+                        stallElement.style.transform = 'scale(1)';
+                        stallElement.style.boxShadow = 'none';
+                    }
+                    selectedStalls.delete(stallId);
+                }
+            }
+        } else {
+            // Regular stall (not part of a combo), toggle selection
+            if (isSelected) {
+                stallElement.classList.remove('selected');
+                // Restore original styling
+                const stall = stallData[stallId];
+                if (stall) {
+                    if (stall.stall_type === 'eatery') {
+                        stallElement.style.background = 'linear-gradient(135deg, #228B22, #32CD32)';
+                    } else {
+                        stallElement.style.background = 'linear-gradient(135deg, #4169E1, #1E90FF)';
+                    }
+                    stallElement.style.transform = 'scale(1)';
+                    stallElement.style.boxShadow = 'none';
+                }
+                selectedStalls.delete(stallId);
+            } else {
+                stallElement.classList.add('selected');
+                stallElement.style.background = 'linear-gradient(135deg, #DC143C, #B22222)';
+                stallElement.style.transform = 'scale(1.02)';
+                stallElement.style.boxShadow = '0 4px 12px rgba(220,20,60,0.4)';
+                selectedStalls.add(stallId);
+            }
+        }
+        
+        // Update UI
+        updateSelectedStallsList();
+        updatePricing();
+        updateStats();
+    }
+
+    // Update selected stalls list in booking panel
+    function updateSelectedStallsList() {
+        const container = document.getElementById('selectedStallsList');
+        const countElement = document.getElementById('selectedStallCount');
+        
+        if (!container || !countElement) return;
+        
+        countElement.textContent = selectedStalls.size;
+        
+        if (selectedStalls.size === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; color: rgba(255, 255, 224, 0.6); font-style: italic;">
+                    No stalls selected. Click on stalls to add them.
+                </div>
+            `;
+            return;
+        }
+        
+        // Group selected stalls by combo
+        const comboGroups = {};
+        const singleStalls = [];
+        
+        selectedStalls.forEach(stallId => {
+            const stall = stallData[stallId];
+            if (!stall) return;
             
-            // Regular stall count for discount calculation
-            const regularStallCount = singleStalls.length;
+            // Check if this stall is part of a combo where all other stalls are also selected
+            let partOfSelectedCombo = false;
             
-            // Calculate base price for regular stalls
-            let regularStallBasePrice = 0;
-            singleStalls.forEach(stall => {
-                regularStallBasePrice += parseFloat(stall.price);
-            });
-            
-            // Calculate discount based on new requirements
-            let discountAmount = 0;
-            let discountedRegularPrice = regularStallBasePrice;
-            let discountPerStall = 0;
-            
-            if (regularStallCount === 1) {
-                // No discount
-                discountAmount = 0;
-            } else if (regularStallCount === 2) {
-                // Flat ₹5,000 discount
-                discountAmount = 5000;
-                discountPerStall = 2500; // For display purposes only
-            } else if (regularStallCount >= 3) {
-                // ₹5,000 discount per stall
-                discountAmount = 5000 * regularStallCount;
-                discountPerStall = 5000;
+            if (stallToComboMap[stallId]) {
+                for (const comboId of stallToComboMap[stallId]) {
+                    const combo = comboData[comboId];
+                    if (!combo) continue;
+                    
+                    // Check if all stalls in this combo are selected
+                    const allSelected = combo.stall_ids.every(id => 
+                        selectedStalls.has(id.toString())
+                    );
+                    
+                    if (allSelected) {
+                        // Add to combo group
+                        if (!comboGroups[comboId]) {
+                            comboGroups[comboId] = {
+                                combo: combo,
+                                stalls: []
+                            };
+                        }
+                        comboGroups[comboId].stalls.push(stall);
+                        partOfSelectedCombo = true;
+                        break;
+                    }
+                }
             }
             
-            // Apply discount
-            discountedRegularPrice = regularStallBasePrice - discountAmount;
-            
-            // Calculate combo stall price (no discount)
-            let comboStallPrice = 0;
-            Object.values(comboGroups).forEach(group => {
-                comboStallPrice += parseFloat(group.combo.price);
+            if (!partOfSelectedCombo) {
+                singleStalls.push(stall);
+            }
+        });
+        
+        // Build HTML for selected stalls
+        let html = '';
+        
+        // Add single stalls
+        singleStalls.forEach(stall => {
+            html += `
+                <div class="selected-stall-item">
+                    <div>
+                        <strong>Stall ${stall.stall_number}</strong><br>
+                        <small>${stall.stall_type} - ₹${parseFloat(stall.price).toLocaleString()}</small>
+                    </div>
+                    <button class="stall-remove-btn" onclick="removeStall(${stall.id})" title="Remove stall">×</button>
+                </div>
+            `;
+        });
+        
+        // Add combo stalls
+        Object.values(comboGroups).forEach(group => {
+            const stallNumbers = group.stalls.map(stall => stall.stall_number).join(', ');
+            html += `
+                <div class="selected-stall-item combo-stall-item">
+                    <div>
+                        <strong>Combo: Stalls ${stallNumbers}</strong><br>
+                        <small>Package Price - ₹${parseFloat(group.combo.price).toLocaleString()}</small>
+                    </div>
+                    <button class="stall-remove-btn" onclick="removeCombo(${group.combo.id})" title="Remove combo">×</button>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+    }
+
+    // Remove individual stall
+    window.removeStall = function(stallId) {
+        selectedStalls.delete(stallId.toString());
+        const stallElement = document.querySelector(`.stall[data-stall-id="${stallId}"]`);
+        if (stallElement) {
+            stallElement.classList.remove('selected');
+            // Restore original styling
+            const stall = stallData[stallId];
+            if (stall) {
+                if (stall.stall_type === 'eatery') {
+                    stallElement.style.background = 'linear-gradient(135deg, #228B22, #32CD32)';
+                } else {
+                    stallElement.style.background = 'linear-gradient(135deg, #4169E1, #1E90FF)';
+                }
+                stallElement.style.transform = 'scale(1)';
+                stallElement.style.boxShadow = 'none';
+            }
+        }
+        updateSelectedStallsList();
+        updatePricing();
+        updateStats();
+    };
+
+    // Remove combo
+    window.removeCombo = function(comboId) {
+        const combo = comboData[comboId];
+        if (combo) {
+            combo.stall_ids.forEach(id => {
+                const comboStallElement = document.querySelector(
+                    `.stall[data-stall-id="${id}"]`
+                );
+                if (comboStallElement) {
+                    comboStallElement.classList.remove('selected');
+                    // Restore original styling
+                    const stall = stallData[id];
+                    if (stall) {
+                        if (stall.stall_type === 'eatery') {
+                            comboStallElement.style.background = 'linear-gradient(135deg, #228B22, #32CD32)';
+                        } else {
+                            comboStallElement.style.background = 'linear-gradient(135deg, #4169E1, #1E90FF)';
+                        }
+                        comboStallElement.style.transform = 'scale(1)';
+                        comboStallElement.style.boxShadow = 'none';
+                    }
+                }
+                selectedStalls.delete(id.toString());
             });
+        }
+        updateSelectedStallsList();
+        updatePricing();
+        updateStats();
+    };
+
+    // Update pricing calculations
+    function updatePricing() {
+        // Group selected stalls by combo
+        const comboGroups = {};
+        const singleStalls = [];
+        
+        selectedStalls.forEach(stallId => {
+            const stall = stallData[stallId];
+            if (!stall) return;
             
-            // Total price
-            const totalPrice = discountedRegularPrice + comboStallPrice;
+            let partOfSelectedCombo = false;
             
-            // Calculate discount percentage for display purposes
-            let discountPercentage = 0;
-            if (regularStallBasePrice > 0 && discountAmount > 0) {
-                discountPercentage = (discountAmount / regularStallBasePrice) * 100;
-                discountPercentage = discountPercentage.toFixed(2); // Format to 2 decimal places
+            if (stallToComboMap[stallId]) {
+                for (const comboId of stallToComboMap[stallId]) {
+                    const combo = comboData[comboId];
+                    if (!combo) continue;
+                    
+                    const allSelected = combo.stall_ids.every(id => 
+                        selectedStalls.has(id.toString())
+                    );
+                    
+                    if (allSelected) {
+                        if (!comboGroups[comboId]) {
+                            comboGroups[comboId] = {
+                                combo: combo,
+                                stalls: []
+                            };
+                        }
+                        comboGroups[comboId].stalls.push(stall);
+                        partOfSelectedCombo = true;
+                        break;
+                    }
+                }
             }
             
-            // Add each stall to the UI
-            // First add regular stalls
-            singleStalls.forEach(stall => {
-                const stallItem = document.createElement('div');
-                stallItem.className = 'selected-stall-item';
+            if (!partOfSelectedCombo) {
+                singleStalls.push(stall);
+            }
+        });
+        
+        // Calculate pricing
+        const regularStallCount = singleStalls.length;
+        let regularStallBasePrice = 0;
+        
+        singleStalls.forEach(stall => {
+            regularStallBasePrice += parseFloat(stall.price);
+        });
+        
+        // Calculate discount
+        let discountAmount = 0;
+        let discountPercent = 0;
+        
+        if (regularStallCount === 2) {
+            discountAmount = 5000;
+        } else if (regularStallCount >= 3) {
+            discountAmount = 5000 * regularStallCount;
+        }
+        
+        if (regularStallBasePrice > 0 && discountAmount > 0) {
+            discountPercent = Math.round((discountAmount / regularStallBasePrice) * 100);
+        }
+        
+        const discountedRegularPrice = regularStallBasePrice - discountAmount;
+        
+        // Calculate combo price
+        let comboStallPrice = 0;
+        Object.values(comboGroups).forEach(group => {
+            comboStallPrice += parseFloat(group.combo.price);
+        });
+        
+        const setupCost = selectedStalls.size * 1500;
+        const marketingCost = 2500;
+        const securityDeposit = 5000;
+        const totalPrice = discountedRegularPrice + comboStallPrice + setupCost + marketingCost + securityDeposit;
+        
+        // Update display elements
+        const elements = {
+            basePrice: document.getElementById('basePrice'),
+            setupCost: document.getElementById('setupCost'),
+            stallCount: document.getElementById('stallCount'),
+            totalPrice: document.getElementById('totalPrice'),
+            discountRow: document.getElementById('discountRow'),
+            discountInfo: document.getElementById('discountInfo'),
+            discountPercent: document.getElementById('discountPercent'),
+            discountAmount: document.getElementById('discountAmount'),
+            bookButton: document.getElementById('bookButton')
+        };
+        
+        if (elements.basePrice) elements.basePrice.textContent = `₹ ${Math.round(regularStallBasePrice + comboStallPrice).toLocaleString()}`;
+        if (elements.setupCost) elements.setupCost.textContent = `₹ ${setupCost.toLocaleString()}`;
+        if (elements.stallCount) elements.stallCount.textContent = selectedStalls.size;
+        if (elements.totalPrice) elements.totalPrice.textContent = `₹ ${Math.round(totalPrice).toLocaleString()}`;
+        
+        // Show/hide discount
+        if (elements.discountRow && elements.discountInfo) {
+            if (discountAmount > 0) {
+                elements.discountRow.style.display = 'flex';
+                elements.discountInfo.style.display = 'block';
+                if (elements.discountPercent) elements.discountPercent.textContent = discountPercent;
+                if (elements.discountAmount) elements.discountAmount.textContent = `₹ ${discountAmount.toLocaleString()}`;
+            } else {
+                elements.discountRow.style.display = 'none';
+                elements.discountInfo.style.display = 'none';
+            }
+        }
+        
+        // Enable/disable book button
+        if (elements.bookButton) {
+            elements.bookButton.disabled = selectedStalls.size === 0;
+        }
+    }
+
+    // Update statistics
+    function updateStats() {
+        const totalStalls = Object.keys(stallData).length;
+        const availableCount = totalStalls - occupiedStalls.size;
+        const selectedCount = selectedStalls.size;
+        
+        const elements = {
+            availableCount: document.getElementById('availableCount'),
+            selectedCount: document.getElementById('selectedCount')
+        };
+        
+        if (elements.availableCount) elements.availableCount.textContent = availableCount - selectedCount;
+        if (elements.selectedCount) elements.selectedCount.textContent = selectedCount;
+    }
+
+    // Show tooltip for available stalls
+    function showTooltip(event, stall) {
+        const tooltip = document.getElementById('stallTooltip');
+        if (!tooltip) return;
+        
+        tooltip.innerHTML = `
+            <strong>Stall ${stall.stall_number}</strong><br>
+            Type: ${stall.stall_type}<br>
+            Price: ₹${parseFloat(stall.price).toLocaleString()}<br>
+            Status: Available
+        `;
+        
+        tooltip.style.left = event.pageX + 10 + 'px';
+        tooltip.style.top = event.pageY - 10 + 'px';
+        tooltip.style.opacity = '1';
+    }
+
+    // Show tooltip for occupied stalls
+    function showOccupiedTooltip(event, stall) {
+        const tooltip = document.getElementById('stallTooltip');
+        if (!tooltip) return;
+        
+        const statusText = stall.status === 'blocked' ? 'BLOCKED' : 'BOOKED';
+        
+        tooltip.innerHTML = `
+            <strong>Stall ${stall.stall_number} - ${statusText}</strong><br>
+            Type: ${stall.stall_type}<br>
+            Price: ₹${parseFloat(stall.price).toLocaleString()}<br>
+            Status: Not Available
+        `;
+        
+        tooltip.style.left = event.pageX + 10 + 'px';
+        tooltip.style.top = event.pageY - 10 + 'px';
+        tooltip.style.opacity = '1';
+    }
+
+            // Hide tooltip
+            function hideTooltip() {
+                const tooltip = document.getElementById('stallTooltip');
+                if (tooltip) {
+                    tooltip.style.opacity = '0';
+                }
+            }
+
+            // Quick select functions
+            window.quickSelectConsecutive = function(count) {
+                clearAllSelections();
                 
-                stallItem.innerHTML = `
-                    Stall #${stall.stall_number} 
-                    <span class="remove-stall" data-stall-id="${stall.id}">×</span>
-                `;
+                const availableStalls = Object.values(stallData).filter(stall => 
+                    stall.status === 'available'
+                ).sort((a, b) => a.stall_number - b.stall_number);
                 
-                selectedStallsList.appendChild(stallItem);
-                
-                // Add click event to remove button
-                stallItem.querySelector('.remove-stall').addEventListener('click', function() {
-                    const stallId = this.getAttribute('data-stall-id');
+                for (let i = 0; i <= availableStalls.length - count; i++) {
+                    let consecutive = true;
+                    for (let j = 1; j < count; j++) {
+                        if (availableStalls[i + j].stall_number !== availableStalls[i].stall_number + j) {
+                            consecutive = false;
+                            break;
+                        }
+                    }
+                    
+                    if (consecutive) {
+                        for (let j = 0; j < count; j++) {
+                            const stallElement = document.querySelector(
+                                `.stall[data-stall-id="${availableStalls[i + j].id}"]`
+                            );
+                            if (stallElement) {
+                                stallElement.click();
+                            }
+                        }
+                        break;
+                    }
+                }
+            };
+
+            // Clear all selections
+            window.clearAllSelections = function() {
+                selectedStalls.forEach(stallId => {
                     const stallElement = document.querySelector(`.stall[data-stall-id="${stallId}"]`);
                     if (stallElement) {
                         stallElement.classList.remove('selected');
                     }
-                    selectedStalls = selectedStalls.filter(id => id !== stallId);
-                    updateSelectedStallsUI();
                 });
-            });
-            
-            // Then add combo stalls - CONSOLIDATED VERSION
-            Object.values(comboGroups).forEach(group => {
-                const comboItem = document.createElement('div');
-                comboItem.className = 'selected-stall-item combo-stall-item';
+                selectedStalls.clear();
+                updateSelectedStallsList();
+                updatePricing();
+                updateStats();
+            };
+
+            // Apply filters
+            function applyFilters() {
+                const typeFilter = document.getElementById('typeFilter');
+                if (!typeFilter) return;
                 
-                // Create a comma-separated list of stall numbers
-                const stallNumbers = group.stalls.map(stall => stall.stall_number).join(', ');
+                const filterValue = typeFilter.value;
                 
-                comboItem.innerHTML = `
-                    <span>Combo Package: Stalls #${stallNumbers}</span> <span class="remove-stall" data-combo-id="${group.combo.id}">×</span>
-                `;
-                selectedStallsList.appendChild(comboItem);
-                
-                // Add click event to remove button that removes the whole combo
-                comboItem.querySelector('.remove-stall').addEventListener('click', function() {
-                    const comboId = this.getAttribute('data-combo-id');
-                    const combo = comboData[comboId];
+                Object.values(stallData).forEach(stall => {
+                    const stallElement = document.querySelector(`.stall[data-stall-id="${stall.id}"]`);
+                    if (!stallElement) return;
                     
-                    if (combo) {
-                        // Deselect all stalls in this combo
-                        combo.stall_ids.forEach(id => {
-                            const comboStallElement = document.querySelector(
-                                `.stall[data-stall-id="${id}"]`
-                            );
-                            if (comboStallElement) {
-                                comboStallElement.classList.remove('selected');
-                            }
-                            selectedStalls = selectedStalls.filter(sid => sid !== id.toString());
-                        });
+                    let show = true;
+                    
+                    if (filterValue === 'eatery' && stall.stall_type !== 'eatery') {
+                        show = false;
+                    } else if (filterValue === 'non-eatery' && stall.stall_type !== 'non-eatery') {
+                        show = false;
+                    } else if (filterValue === 'available' && stall.status !== 'available') {
+                        show = false;
                     }
                     
-                    updateSelectedStallsUI();
+                    stallElement.style.opacity = show ? '1' : '0.3';
+                    stallElement.style.pointerEvents = show ? 'auto' : 'none';
                 });
-            });
-            
-            // Update price information
-            let priceInfo = '';
-            
-            if (regularStallCount > 0) {
-                priceInfo += `Regular Stalls: ₹${Math.round(regularStallBasePrice)}`;
-                
-                if (discountAmount > 0) {
-                    if (regularStallCount === 2) {
-                        priceInfo += ` <span style="color: #e91e63;">(Flat ₹${discountAmount} discount)</span><br>`;
-                    } else {
-                        priceInfo += ` <span style="color: #e91e63;">(₹${discountPerStall} × ${regularStallCount} stalls = -₹${discountAmount})</span><br>`;
-                    }
-                    priceInfo += `Discounted Price: ₹${Math.round(discountedRegularPrice)}<br>`;
-                } else {
-                    priceInfo += `<br>`;
+            }
+
+            // Setup event listeners
+            function setupEventListeners() {
+                const typeFilter = document.getElementById('typeFilter');
+                if (typeFilter) {
+                    typeFilter.addEventListener('change', applyFilters);
                 }
             }
-            
-            if (Object.keys(comboGroups).length > 0) {
-                priceInfo += `Combo Stalls: ₹${Math.round(comboStallPrice)}<br>`;
-            }
-            
-            priceInfo += `<strong>Total: ₹${Math.round(totalPrice)}</strong>`;
-            
-            totalPriceElement.innerHTML = priceInfo;
-            
-            // Update the book now button with the correct stall IDs
-            bookNowBtn.onclick = function() {
-                if (selectedStalls.length > 0) {
-                    // Redirect to booking form with selected stall IDs
-                    window.location.href = `/stalls/book/?stall_ids=${selectedStalls.join(',')}`;
+
+            // Booking process
+            window.proceedToBook = function() {
+                const businessName = document.getElementById('businessName');
+                const contactPerson = document.getElementById('contactPerson');
+                const phoneNumber = document.getElementById('phoneNumber');
+                const emailAddress = document.getElementById('emailAddress');
+                
+                if (!businessName || !contactPerson || !phoneNumber || !emailAddress) {
+                    alert('Please fill in all required fields before booking.');
+                    return;
+                }
+                
+                if (!businessName.value || !contactPerson.value || !phoneNumber.value || !emailAddress.value) {
+                    alert('Please fill in all required fields before booking.');
+                    return;
+                }
+                
+                if (selectedStalls.size === 0) {
+                    alert('Please select at least one stall to proceed with booking.');
+                    return;
+                }
+                
+                // Redirect to booking form with selected stall IDs
+                const stallIds = Array.from(selectedStalls).join(',');
+                window.location.href = `/stalls/book/?stall_ids=${stallIds}`;
+            };
+
+            // Close modal
+            window.closeModal = function() {
+                const modal = document.getElementById('successModal');
+                if (modal) {
+                    modal.classList.remove('show');
                 }
             };
-        }
-    });
+
+            // Initialize the application
+            initializeApp();
+        });
     </script>
 </body>
 </html>
