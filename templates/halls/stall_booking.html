@@ -1109,13 +1109,17 @@ document.addEventListener('DOMContentLoaded', function() {
         // hallDisplay.style.border = '2px solid #ddd';
         hallDisplay.style.borderRadius = '8px';
         // hallDisplay.style.backgroundColor = '#f8f9fa';
-         hallDisplay.style.backgroundImage = 'url("static/assets/img/layout-01.png")';
+        hallDisplay.style.backgroundImage = 'url("../../static/assets/img/layout-01.png")';
+        hallDisplay.style.backgroundSize = 'cover';
+        hallDisplay.style.backgroundPosition = 'center center';
+        hallDisplay.style.backgroundRepeat = 'no-repeat';
+        hallDisplay.style.backgroundAttachment = 'local';
+
+        // Optional: Add overlay for better stall visibility
+        hallDisplay.style.position = 'relative';
 
         // Draw hall grid (for reference)
         drawHallGrid(hallDisplay, hallLength, hallBreadth, scale, offsetX, offsetY);
-
-        // Add Entry and Exit markers at the bottom
-        addEntryExitMarkers(hallDisplay, hallLength, hallBreadth, scale, offsetX, offsetY);
 
         // Fetch and render stalls and combos
         fetch(`/halls/${hallId}/data/`)
@@ -1202,57 +1206,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         container.appendChild(gridContainer);
     }
-
-    // Add Entry and Exit markers at the bottom
-    function addEntryExitMarkers(container, hallLength, hallBreadth, scale, offsetX, offsetY) {
-        const hallHeight = hallBreadth * scale; // Fixed: was using undefined 'breadth'
-        const markerY = offsetY + hallHeight + 20; // Position below the hall
-        
-        // Add Entry marker
-        const entryMarker = document.createElement('div');
-        entryMarker.className = 'entry-exit-marker';
-        const entryX = offsetX + ((14 + 25) / 2) * scale;
-        
-        entryMarker.style.position = 'absolute';
-        entryMarker.style.left = `${entryX - 40}px`;
-        entryMarker.style.top = `${markerY}px`;
-        entryMarker.style.width = '80px';
-        entryMarker.style.textAlign = 'center';
-        entryMarker.style.color = '#fff';
-        entryMarker.style.fontWeight = 'bold';
-        entryMarker.style.fontSize = '14px';
-        entryMarker.style.zIndex = '10';
-        entryMarker.innerHTML = `
-            <svg width="40" height="30" viewBox="0 0 24 24" fill="none" style="margin: 0 auto; display: block;">
-                <path d="M4 15L12 9L20 15" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <div style="margin-top: 5px;">ENTRY</div>
-        `;
-        container.appendChild(entryMarker);
-
-        // Add Exit marker
-        const exitMarker = document.createElement('div');
-        exitMarker.className = 'entry-exit-marker';
-        const exitX = offsetX + ((76 + 87) / 2) * scale;
-        
-        exitMarker.style.position = 'absolute';
-        exitMarker.style.left = `${exitX - 40}px`;
-        exitMarker.style.top = `${markerY}px`;
-        exitMarker.style.width = '80px';
-        exitMarker.style.textAlign = 'center';
-        exitMarker.style.color = '#fff';
-        exitMarker.style.fontWeight = 'bold';
-        exitMarker.style.fontSize = '14px';
-        exitMarker.style.zIndex = '10';
-        exitMarker.innerHTML = `
-            <svg width="40" height="30" viewBox="0 0 24 24" fill="none" style="margin: 0 auto; display: block;">
-                <path d="M4 9L12 15L20 9" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <div style="margin-top: 5px;">EXIT</div>
-        `;
-        container.appendChild(exitMarker);
-    }
-
+    
     // Render individual stall with improved styling
     function renderStall(stall, container, scale, offsetX, offsetY) {
         if (!stall.selected_boxes || !Array.isArray(stall.selected_boxes) || stall.selected_boxes.length === 0) {
@@ -1974,10 +1928,4 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 </body>
 </html>
-just clean, uniform square boxes. Let me create an improved version of your code:add shutter top bottom and door continue green line end of exit understand give cosde
-
-I'll create a cleaner version of your stall display system with uniform square boxes, proper shutters, doors, and improved entry/exit routing.
-
-
-Drafting artifact...
  
