@@ -42,17 +42,13 @@
         }
 
         .header {
-            background: rgba(139, 0, 0, 0.4);
+            background: #fff;
             backdrop-filter: blur(15px);
-            background-image: url('https://i.postimg.cc/2jhttynJ/briyani-expo.jpg');
+            /* background-image: url('https://i.postimg.cc/2jhttynJ/briyani-expo.jpg');
             background-size: cover;
             background-position: center;
-            background-repeat: no-repeat;
+            background-repeat: no-repeat; */
             padding: 25px;
-            border-radius: 20px;
-            margin-bottom: 30px;
-            border: 2px solid rgba(255, 215, 0, 0.3);
-            box-shadow: 0 8px 32px rgba(139, 0, 0, 0.4);
             text-align: center;
             position: relative;
             overflow: hidden;
@@ -231,8 +227,7 @@
         .main-layout {
             display: grid;
             grid-template-columns: 1fr 450px;
-            gap: 30px;
-            align-items: start;
+            /* align-items: start; */
         }
 
         .expo-floor {
@@ -348,7 +343,7 @@
             border-radius: 6px;
             cursor: pointer;
             transition: all 0.3s;
-            border: 2px solid transparent;
+            /* border: 2px solid transparent; */
             display: flex;
             align-items: center;
             justify-content: center;
@@ -782,7 +777,6 @@
         @media (max-width: 1400px) {
             .main-layout {
                 grid-template-columns: 1fr;
-                gap: 20px;
             }
             
             .booking-panel {
@@ -1058,7 +1052,6 @@
 
     <!-- Tooltip for stall information -->
     <div class="stall-tooltip" id="stallTooltip"></div>
-
     <script>
 // Enhanced Booking System JavaScript - International Biryani Festival and Expo
 
@@ -1116,6 +1109,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // hallDisplay.style.border = '2px solid #ddd';
         hallDisplay.style.borderRadius = '8px';
         // hallDisplay.style.backgroundColor = '#f8f9fa';
+         hallDisplay.style.backgroundImage = 'url("static/assets/img/layout-01.png")';
 
         // Draw hall grid (for reference)
         drawHallGrid(hallDisplay, hallLength, hallBreadth, scale, offsetX, offsetY);
@@ -1200,7 +1194,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 gridBox.style.top = `${y * scale}px`;
                 gridBox.style.width = `${scale}px`;
                 gridBox.style.height = `${scale}px`;
-                gridBox.style.border = '0.5px solid #e0e0e0';
+                // gridBox.style.border = '0.5px solid #e0e0e0';
                 gridBox.style.boxSizing = 'border-box';
                 gridContainer.appendChild(gridBox);
             }
@@ -1319,7 +1313,7 @@ document.addEventListener('DOMContentLoaded', function() {
         stallElement.style.width = `${stallWidth}px`;
         stallElement.style.height = `${stallHeight}px`;
         stallElement.style.zIndex = '5';
-        stallElement.style.border = '2px solid #ddd';
+        stallElement.style.border = '1px solid #ddd';
         stallElement.style.borderRadius = '6px';
         stallElement.style.display = 'flex';
         stallElement.style.alignItems = 'center';
@@ -1980,3 +1974,10 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 </body>
 </html>
+just clean, uniform square boxes. Let me create an improved version of your code:add shutter top bottom and door continue green line end of exit understand give cosde
+
+I'll create a cleaner version of your stall display system with uniform square boxes, proper shutters, doors, and improved entry/exit routing.
+
+
+Drafting artifact...
+ 
