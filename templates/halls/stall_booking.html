@@ -884,26 +884,6 @@
                     <br><strong>Multi-Selection Mode:</strong> Click multiple stalls to add to your booking
                 </div>
 
-                
-
-                <!-- Quick Select Buttons -->
-                <div class="quick-select-buttons">
-                    <button class="quick-select-btn" onclick="quickSelectConsecutive(3)">3 Consecutive</button>
-                    <button class="quick-select-btn" onclick="quickSelectConsecutive(5)">5 Consecutive</button>
-                    <button class="quick-select-btn" onclick="quickSelectCornerStalls()">Corner Stalls</button>
-                    <button class="quick-select-btn" onclick="quickSelectCenterStalls()">Center Stalls</button>
-                </div>
-
-                <!-- Search and Filter Options -->
-                <div class="search-filter">
-                    <select class="filter-select" id="typeFilter">
-                        <option value="all">All Stalls</option>
-                        <option value="eatery">Eatery Only</option>
-                        <option value="non-eatery">Non-Eatery Only</option>
-                        <option value="available">Available Only</option>
-                    </select>
-                </div>
-
                 <!-- Legend -->
                 <div class="stall-legend">
                     <div class="legend-item">
@@ -1064,62 +1044,90 @@ document.addEventListener('DOMContentLoaded', function() {
     let occupiedStalls = new Set();
 
     // Initialize the application
-    function initializeApp() {
-        const hallDisplay = document.getElementById('stallSections');
-        if (!hallDisplay) {
-            console.error('Hall display element not found');
-            return;
-        }
+    
+function initializeApp() {
+    const hallDisplay = document.getElementById('stallSections');
+    if (!hallDisplay) {
+        console.error('Hall display element not found');
+        return;
+    }
 
-        const hallId = hallDisplay.dataset.hallId;
-        const hallLength = parseInt(hallDisplay.dataset.length);
-        const hallBreadth = parseInt(hallDisplay.dataset.breadth);
-        const loadingElement = document.getElementById('loading');
+    const hallId = hallDisplay.dataset.hallId;
+    const hallLength = parseInt(hallDisplay.dataset.length);
+    const hallBreadth = parseInt(hallDisplay.dataset.breadth);
+    const loadingElement = document.getElementById('loading');
 
-        if (!hallId || !hallLength || !hallBreadth) {
-            console.error('Hall data attributes missing');
-            return;
-        }
+    if (!hallId || !hallLength || !hallBreadth) {
+        console.error('Hall data attributes missing');
+        return;
+    }
 
-        // Clear any existing content
-        hallDisplay.innerHTML = '';
-        hallDisplay.style.position = 'relative';
-        hallDisplay.style.overflow = 'auto';
-        hallDisplay.style.minHeight = '800px';
+    // Clear any existing content
+    hallDisplay.innerHTML = '';
+    hallDisplay.style.position = 'relative';
+    hallDisplay.style.overflow = 'auto';
+    hallDisplay.style.minHeight = '800px';
 
-        // Set fixed width for better display - enhanced to 1200px
-        const containerWidth = 1200;
-        const containerHeight = 800;
-        
-        // Calculate scale for better visibility
-        const scaleX = containerWidth / hallLength;
-        const scaleY = (containerHeight - 120) / hallBreadth; // Reserve space for entry/exit
-        const scale = Math.min(scaleX, scaleY, 15); // Increased max scale for better visibility
+    // Set fixed width for better display - enhanced to 1200px
+    const containerWidth = 1200;
+    const containerHeight = 600;
+    
+    // Calculate scale for better visibility
+    const scaleX = containerWidth / hallLength;
+    const scaleY = (containerHeight - 120) / hallBreadth; // Reserve space for entry/exit
+    const scale = Math.min(scaleX, scaleY, 15); // Increased max scale for better visibility
 
-        // Center the hall layout
-        const actualWidth = hallLength * scale;
-        const actualHeight = hallBreadth * scale;
-        const offsetX = (containerWidth - actualWidth) / 2;
-        const offsetY = 60; // Top margin for better spacing
+    // Center the hall layout
+    const actualWidth = hallLength * scale;
+    const actualHeight = hallBreadth * scale;
+    const offsetX = (containerWidth - actualWidth) / 2;
+    const offsetY = 60; // Top margin for better spacing
 
-        // Set container dimensions
-        hallDisplay.style.width = `${containerWidth}px`;
-        hallDisplay.style.height = `${containerHeight}px`;
-        hallDisplay.style.margin = '0 auto';
-        // hallDisplay.style.border = '2px solid #ddd';
-        hallDisplay.style.borderRadius = '8px';
-        // hallDisplay.style.backgroundColor = '#f8f9fa';
-        hallDisplay.style.backgroundImage = 'url("../../static/assets/img/layout-01.png")';
-        hallDisplay.style.backgroundSize = 'cover';
-        hallDisplay.style.backgroundPosition = 'center center';
-        hallDisplay.style.backgroundRepeat = 'no-repeat';
-        hallDisplay.style.backgroundAttachment = 'local';
+    // Set container dimensions and basic styles first
+    hallDisplay.style.width = `${containerWidth}px`;
+    hallDisplay.style.height = `${containerHeight}px`;
+    hallDisplay.style.margin = '0 auto';
+    hallDisplay.style.borderRadius = '8px';
+    hallDisplay.style.position = 'relative';
 
-        // Optional: Add overlay for better stall visibility
-        hallDisplay.style.position = 'relative';
+    // Function to set background image with proper loading
+    function setBackgroundImage() {
+        const testImage = new Image();
+        testImage.onload = function() {
+            // Image loaded successfully, now set background
+            hallDisplay.style.backgroundImage = 'url("/static/assets/img/layout.png")';
+            hallDisplay.style.backgroundSize = 'cover';
+            hallDisplay.style.backgroundPosition = 'center center';
+            hallDisplay.style.backgroundRepeat = 'no-repeat';
+            hallDisplay.style.backgroundAttachment = 'local';
+            
+            // Optional: Add a semi-transparent overlay for better stall visibility
+            const backgroundOverlay = document.createElement('div');
+            backgroundOverlay.style.position = 'absolute';
+            backgroundOverlay.style.top = '0';
+            backgroundOverlay.style.left = '0';
+            backgroundOverlay.style.width = '100%';
+            backgroundOverlay.style.height = '75%';
+            backgroundOverlay.style.backgroundColor = 'rgba(0, 0, 0, 0.1)';
+            backgroundOverlay.style.zIndex = '1';
+            backgroundOverlay.style.pointerEvents = 'none';
+            hallDisplay.appendChild(backgroundOverlay);
+            
+            console.log('Background image loaded and applied successfully');
+        };
+        testImage.onerror = function() {
+            // Fallback if image fails to load
+            console.warn('Background image failed to load, using fallback color');
+            hallDisplay.style.backgroundColor = '#f8f9fa';
+        };
+        testImage.src = '/static/assets/img/layout.png';
+    }
 
-        // Draw hall grid (for reference)
-        drawHallGrid(hallDisplay, hallLength, hallBreadth, scale, offsetX, offsetY);
+    // Set the background image
+    setBackgroundImage();
+
+    // Draw hall grid (for reference)
+    drawHallGrid(hallDisplay, hallLength, hallBreadth, scale, offsetX, offsetY);
 
         // Fetch and render stalls and combos
         fetch(`/halls/${hallId}/data/`)
