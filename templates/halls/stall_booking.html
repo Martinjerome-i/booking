@@ -305,23 +305,6 @@
             border: 2px solid rgba(255, 215, 0, 0.4);
         }
 
-        .stall-sections {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 20px;
-            width: 100%;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px 0;
-        }
-
-        .stall-section {
-            background: rgba(139, 0, 0, 0.15);
-            border-radius: 12px;
-            padding: 15px;
-            border: 2px solid rgba(255, 215, 0, 0.2);
-        }
-
         .section-title {
             text-align: center;
             font-weight: bold;
@@ -355,23 +338,13 @@
             min-height: 30px !important;  
         }
 
-        .stall.eatery {
-            background: linear-gradient(135deg, #228B22, #32CD32);
-            color: white;
-        }
-
-        .stall.non-eatery {
-            background: linear-gradient(135deg, #0b2470, #102131);
-            color: white;
-        }
-
         .stall.selected {
             background: linear-gradient(135deg, #DC143C, #B22222) !important;
             transform: scale(1.1);
             box-shadow: 0 0 20px rgba(220, 20, 60, 0.8);
             z-index: 10;
             animation: pulse 2s infinite;
-            border: 2px solid #FFD700 !important;
+            border: 1px solid #FFD700 !important;
         }
 
         .stall.occupied {
@@ -589,7 +562,7 @@
             border: 2px solid #FFD700;
             border-radius: 15px;
             color: white;
-            font-size: 18px;
+            font-size: 14px;
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s;
@@ -777,6 +750,7 @@
         
         ::-webkit-scrollbar {
         width: 5px;
+        height: 5px;
         }
 
         /* Track */
@@ -787,13 +761,13 @@
         
         /* Handle */
         ::-webkit-scrollbar-thumb {
-        background: red; 
+        background: #c11e2d; 
         border-radius: 10px;
         }
 
         /* Handle on hover */
         ::-webkit-scrollbar-thumb:hover {
-        background: #b30000; 
+        background: #fc8a00; 
         }
 
         @media (max-width: 1400px) {
@@ -909,11 +883,11 @@
                 <!-- Legend -->
                 <div class="stall-legend">
                     <div class="legend-item">
-                        <div class="legend-color" style="background: linear-gradient(135deg, #228B22, #32CD32);"></div>
+                        <div class="legend-color" style="background: linear-gradient(135deg, #064e06, #32CD32);"></div>
                         <span>Eatery Stalls</span>
                     </div>
                     <div class="legend-item">
-                        <div class="legend-color" style="background: linear-gradient(135deg, #4169E1, #1E90FF);"></div>
+                        <div class="legend-color" style="background: linear-gradient(135deg, #253155, #1E90FF);"></div>
                         <span>Non-Eatery Stalls</span>
                     </div>
                     <div class="legend-item">
@@ -1316,11 +1290,11 @@ function initializeApp() {
             stallElement.style.opacity = '0.8';
             stallElement.style.borderColor = '#555';
         } else if (stall.stall_type === 'eatery') {
-            stallElement.style.background = 'linear-gradient(135deg, #228B22, #32CD32)';
+            stallElement.style.background = 'linear-gradient(135deg, #064e06, #32CD32)';
             stallElement.style.color = '#ffffff';
             stallElement.style.borderColor = '#1a6b1a';
         } else if (stall.stall_type === 'non-eatery') {
-            stallElement.style.background = 'linear-gradient(135deg, #4169E1, #1E90FF)';
+            stallElement.style.background = 'linear-gradient(135deg, #253155, #1E90FF)';
             stallElement.style.color = '#ffffff';
             stallElement.style.borderColor = '#2c4fb3';
         }
@@ -1516,10 +1490,10 @@ function initializeApp() {
         const stall = stallData[stallId];
         if (stall) {
             if (stall.stall_type === 'eatery') {
-                stallElement.style.background = 'linear-gradient(135deg, #228B22, #32CD32)';
+                stallElement.style.background = 'linear-gradient(135deg, #064e06, #32CD32)';
                 stallElement.style.borderColor = '#1a6b1a';
             } else {
-                stallElement.style.background = 'linear-gradient(135deg, #4169E1, #1E90FF)';
+                stallElement.style.background = 'linear-gradient(135deg, #253155, #1E90FF)';
                 stallElement.style.borderColor = '#2c4fb3';
             }
             stallElement.style.transform = 'scale(1)';
