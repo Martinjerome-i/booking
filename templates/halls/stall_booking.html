@@ -380,10 +380,10 @@
         .selected-stalls-list {
             background: rgba(139, 0, 0, 0.2);
             padding: 20px;
-            border-radius: 15px;
+            border-radius: 10px;
             margin-bottom: 20px;
             border: 2px solid rgba(255, 215, 0, 0.2);
-            max-height: 200px;
+            max-height: 300px;
             overflow-y: auto;
         }
 
@@ -961,7 +961,7 @@
                         <span id="basePrice">₹ 0</span>   
                     </div>
                     <div id="discountRow" class="price-row" style="display: none; color: #c11e2d;">
-                        <span>Bulk Discount (<span id="discountPercent">0</span>%):</span>
+                        <span>Bulk Discount:</span>
                         <span id="discountAmount">- ₹ 0</span>
                     </div>
                     <div class="bulk-discount" id="discountInfo" style="display: none;">
@@ -1469,7 +1469,7 @@ function initializeApp() {
         selectedStalls.delete(stallId);
     }
 
-    // Update selected stalls list in booking panel
+    // Update selected stalls list in booking panel - MODIFIED VERSION
     function updateSelectedStallsList() {
         const container = document.getElementById('selectedStallsList');
         const countElement = document.getElementById('selectedStallCount');
@@ -1527,23 +1527,48 @@ function initializeApp() {
             }
         });
         
+        // Group single stalls by type - NEW LOGIC
+        const eateryStalls = singleStalls.filter(stall => stall.stall_type === 'eatery');
+        const nonEateryStalls = singleStalls.filter(stall => stall.stall_type === 'non-eatery');
+        
         // Build HTML for selected stalls with enhanced styling
         let html = '';
         
-        // Add single stalls
-        singleStalls.forEach(stall => {
+        // Add grouped eatery stalls - MODIFIED
+        if (eateryStalls.length > 0) {
+            const eateryStallNumbers = eateryStalls.map(stall => stall.stall_number).sort((a, b) => a - b).join(', ');
+            const eateryTotalPrice = eateryStalls.reduce((sum, stall) => sum + parseFloat(stall.price), 0);
+            const eateryStallIds = eateryStalls.map(stall => stall.id).join(',');
+            
             html += `
                 <div class="selected-stall-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; margin-bottom: 10px; background: rgba(220, 20, 60, 0.15); border: 1px solid rgba(220, 20, 60, 0.3); border-radius: 8px; transition: all 0.3s ease;">
                     <div style="color: #fff;">
-                        <strong style="color: #DC143C; font-size: 16px;">Stall ${stall.stall_number}</strong><br>
-                        <small style="color: rgba(255,255,255,0.8);">${stall.stall_type} - ₹${parseFloat(stall.price).toLocaleString()}</small>
+                        <strong style="color: #DC143C; font-size: 16px;">Eatery Stalls (${eateryStalls.length}): ${eateryStallNumbers}</strong><br>
+                        <small style="color: rgba(255,255,255,0.8);">${eateryStalls.length} × ₹${parseFloat(eateryStalls[0].price).toLocaleString()} = ₹${eateryTotalPrice.toLocaleString()}</small>
                     </div>
-                    <button class="stall-remove-btn" onclick="removeStall(${stall.id})" title="Remove stall" style="background: #ff4757; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 18px; font-weight: bold; line-height: 1; transition: all 0.2s ease;">×</button>
+                    <button class="stall-remove-btn" onclick="removeStallGroup('${eateryStallIds}')" title="Remove all eatery stalls" style="background: #ff4757; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 18px; font-weight: bold; line-height: 1; transition: all 0.2s ease;">×</button>
                 </div>
             `;
-        });
+        }
         
-        // Add combo stalls
+        // Add grouped non-eatery stalls - MODIFIED
+        if (nonEateryStalls.length > 0) {
+            const nonEateryStallNumbers = nonEateryStalls.map(stall => stall.stall_number).sort((a, b) => a - b).join(', ');
+            const nonEateryTotalPrice = nonEateryStalls.reduce((sum, stall) => sum + parseFloat(stall.price), 0);
+            const nonEateryStallIds = nonEateryStalls.map(stall => stall.id).join(',');
+            
+            html += `
+                <div class="selected-stall-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; margin-bottom: 10px; background: rgba(220, 20, 60, 0.15); border: 1px solid rgba(220, 20, 60, 0.3); border-radius: 8px; transition: all 0.3s ease;">
+                    <div style="color: #fff;">
+                        <strong style="color: #DC143C; font-size: 16px;">Non-Eatery Stalls (${nonEateryStalls.length}): ${nonEateryStallNumbers}</strong><br>
+                        <small style="color: rgba(255,255,255,0.8);">${nonEateryStalls.length} × ₹${parseFloat(nonEateryStalls[0].price).toLocaleString()} = ₹${nonEateryTotalPrice.toLocaleString()}</small>
+                    </div>
+                    <button class="stall-remove-btn" onclick="removeStallGroup('${nonEateryStallIds}')" title="Remove all non-eatery stalls" style="background: #ff4757; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 18px; font-weight: bold; line-height: 1; transition: all 0.2s ease;">×</button>
+                </div>
+            `;
+        }
+        
+        // Add combo stalls - UNCHANGED
         Object.values(comboGroups).forEach(group => {
             const stallNumbers = group.stalls.map(stall => stall.stall_number).sort((a, b) => a - b).join(', ');
             html += `
@@ -1572,12 +1597,15 @@ function initializeApp() {
         });
     }
 
-    // Remove individual stall
-    window.removeStall = function(stallId) {
-        const stallElement = document.querySelector(`.stall[data-stall-id="${stallId}"]`);
-        if (stallElement) {
-            deselectStallElement(stallElement, stallId.toString());
-        }
+    // NEW FUNCTION: Remove stall group by type
+    window.removeStallGroup = function(stallIds) {
+        const stallIdArray = stallIds.split(',');
+        stallIdArray.forEach(stallId => {
+            const stallElement = document.querySelector(`.stall[data-stall-id="${stallId}"]`);
+            if (stallElement) {
+                deselectStallElement(stallElement, stallId);
+            }
+        });
         updateSelectedStallsList();
         updatePricing();
         updateStats();
@@ -1601,7 +1629,7 @@ function initializeApp() {
         updateStats();
     };
 
-    // Update pricing calculations
+    // Update pricing calculations - SIMPLIFIED VERSION
     function updatePricing() {
         // Group selected stalls by combo
         const comboGroups = {};
@@ -1641,7 +1669,7 @@ function initializeApp() {
             }
         });
         
-        // Calculate pricing
+        // Calculate pricing - SIMPLIFIED
         const regularStallCount = singleStalls.length;
         let regularStallBasePrice = 0;
         
@@ -1666,10 +1694,8 @@ function initializeApp() {
             comboStallPrice += parseFloat(group.combo.price) || 0;
         });
         
-        const setupCost = selectedStalls.size * 1500;
-        const marketingCost = 2500;
-        const securityDeposit = 5000;
-        const totalPrice = discountedRegularPrice + comboStallPrice + setupCost + marketingCost + securityDeposit;
+        // SIMPLIFIED: Only base price + combo price - discount = total
+        const totalPrice = discountedRegularPrice + comboStallPrice;
         
         // Update display elements safely
         const updateElement = (id, value) => {
@@ -1678,8 +1704,6 @@ function initializeApp() {
         };
         
         updateElement('basePrice', `₹ ${Math.round(regularStallBasePrice + comboStallPrice).toLocaleString()}`);
-        updateElement('setupCost', `₹ ${setupCost.toLocaleString()}`);
-        updateElement('stallCount', selectedStalls.size);
         updateElement('totalPrice', `₹ ${Math.round(totalPrice).toLocaleString()}`);
         
         // Show/hide discount
