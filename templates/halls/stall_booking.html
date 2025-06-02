@@ -12,8 +12,7 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            /* background: linear-gradient(135deg, #FF6B35 0%, #F7931E 50%, #FFD23F 100%); */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, ;
             min-height: 100vh;
             color: white;
             position: relative;
@@ -246,7 +245,7 @@
 
         .floor-info {
             text-align: center;
-            margin-bottom: 25px;
+            margin: 25px;
             background: rgba(139, 0, 0, 0.2);
             padding: 15px;
             border-radius: 12px;
@@ -295,14 +294,12 @@
             padding: 10px 15px;
             border-radius: 10px;
             font-size: 14px;
-            border: 1px solid rgba(255, 215, 0, 0.2);
         }
 
         .legend-color {
             width: 20px;
             height: 20px;
             border-radius: 4px;
-            border: 2px solid rgba(255, 215, 0, 0.4);
         }
 
         .section-title {
@@ -339,24 +336,17 @@
         }
 
         .stall.selected {
-            background: linear-gradient(135deg, #DC143C, #B22222) !important;
+            background: linear-gradient(135deg, #f80233, #b40c0cbe) !important;
             transform: scale(1.1);
-            box-shadow: 0 0 20px rgba(220, 20, 60, 0.8);
             z-index: 10;
             animation: pulse 2s infinite;
             border: 1px solid #FFD700 !important;
         }
 
         .stall.occupied {
-            background: linear-gradient(135deg, #696969, #2F2F2F) !important;
+            background: linear-gradient(135deg, #252525, #acabab) !important;
             cursor: not-allowed;
             opacity: 0.5;
-        }
-
-        .stall:hover:not(.occupied) {
-            transform: scale(1.05);
-            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.5);
-            border: 2px solid rgba(255, 215, 0, 0.6);
         }
 
         @keyframes pulse {
@@ -370,9 +360,6 @@
             padding: 30px;
             border: none;
             position: sticky;
-            top: 20px;
-            height: fit-content;
-            /* max-height: 90vh; */
             overflow-y: auto;
         }
 
@@ -512,14 +499,13 @@
         }
 
         .bulk-discount {
-            background: rgba(34, 139, 34, 0.3);
+            background: rgba(236, 33, 33, 0.3);
             padding: 10px;
             border-radius: 8px;
             margin: 10px 0;
-            border: 1px solid rgba(255, 215, 0, 0.3);
             text-align: center;
             font-size: 13px;
-            color: #98FB98;
+            color: #c11e2d;
         }
 
         
@@ -527,6 +513,7 @@
             display: flex;
             gap: 10px;
             margin-bottom: 25px;
+            padding-top: 25px;
             flex-wrap: wrap;
             justify-content: center;
         }
@@ -589,6 +576,7 @@
         .booking-features {
             background: rgba(139, 0, 0, 0.2);
             padding: 20px;
+            margin: 20px;
             border-radius: 15px;
             font-size: 13px;
             line-height: 1.6;
@@ -895,14 +883,14 @@
                         <span>Selected</span>
                     </div>
                     <div class="legend-item">
-                        <div class="legend-color" style="background: linear-gradient(135deg, #696969, #2F2F2F);"></div>
+                        <div class="legend-color" style="background: linear-gradient(135deg, #252525, #acabab);"></div>
                         <span>Occupied</span>
                     </div>
                 </div>
 
                 <!-- Stall Sections -->
                 <div class="stall-sections" id="stallSections" 
-                     style="width: 100%; height: 700px;" 
+                     style="width: 100%; height: 500px;" 
                     data-hall-id="{{ hall.id }}"
                     data-length="{{ hall.length }}"
                     data-breadth="{{ hall.breadth }}">
@@ -910,6 +898,21 @@
                         <img src="/static/ibfe_logo_1.png" alt="IBFE Logo" class="loading-logo">
                     </div>
                     <!-- Stalls will be drawn here using JavaScript -->
+                </div>
+
+                <!-- Booking Features -->
+                <div class="booking-features">
+                    <div class="features-title">🎪 Expo Features Included</div>
+                    <ul class="features-list">
+                        <li>Premium location with high foot traffic</li>
+                        <li>24/7 security and surveillance</li>
+                        <li>Electricity and water connections</li>
+                        <li>Free marketing in event promotions</li>
+                        <li>Dedicated customer support</li>
+                        <li>Parking facilities for vendors</li>
+                        <li>Waste management services</li>
+                        <li>Wi-Fi connectivity throughout</li>
+                    </ul>
                 </div>
             </div>
 
@@ -948,16 +951,6 @@
                         <label class="form-label">Email Address *</label>
                         <input type="email" class="form-control" id="emailAddress" placeholder="your@email.com" required>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Business Type</label>
-                        <select class="form-control" id="businessType">
-                            <option value="restaurant">Restaurant/Eatery</option>
-                            <option value="retail">Retail Shop</option>
-                            <option value="service">Service Provider</option>
-                            <option value="exhibition">Exhibition Stall</option>
-                            <option value="other">Other</option>
-                        </select>
-                    </div>
                 </div>
 
                 <!-- Enhanced Price Breakdown -->
@@ -965,30 +958,18 @@
                     <div class="price-title">💰 Price Breakdown</div>
                     <div class="price-row">
                         <span>Base Stalls Price:</span>
-                        <span id="basePrice">₹ 0</span>
+                        <span id="basePrice">₹ 0</span>   
                     </div>
-                    <div class="price-row">
-                        <span>Setup & Services (<span id="stallCount">0</span> stalls):</span>
-                        <span id="setupCost">₹ 0</span>
-                    </div>
-                    <div class="price-row">
-                        <span>Marketing & Promotion:</span>
-                        <span id="marketingCost">₹ 2,500</span>
-                    </div>
-                    <div class="price-row">
-                        <span>Security Deposit:</span>
-                        <span id="securityDeposit">₹ 5,000</span>
-                    </div>
-                    <div id="discountRow" class="price-row" style="display: none; color: #32CD32;">
+                    <div id="discountRow" class="price-row" style="display: none; color: #c11e2d;">
                         <span>Bulk Discount (<span id="discountPercent">0</span>%):</span>
                         <span id="discountAmount">- ₹ 0</span>
                     </div>
                     <div class="bulk-discount" id="discountInfo" style="display: none;">
-                        🎉 Great! You're getting a bulk booking discount!
+                        🎉 Great! You're getting a booking discount!
                     </div>
                     <div class="price-total price-row">
                         <span>Total Amount:</span>
-                        <span id="totalPrice">₹ 7,500</span>
+                        <span id="totalPrice">₹ 0</span>
                     </div>
                 </div>
 
@@ -996,21 +977,6 @@
                 <button class="book-button" id="bookButton" onclick="proceedToBook()" disabled>
                     📝 Book Selected Stalls
                 </button>
-
-                <!-- Booking Features -->
-                <div class="booking-features">
-                    <div class="features-title">🎪 Expo Features Included</div>
-                    <ul class="features-list">
-                        <li>Premium location with high foot traffic</li>
-                        <li>24/7 security and surveillance</li>
-                        <li>Electricity and water connections</li>
-                        <li>Free marketing in event promotions</li>
-                        <li>Dedicated customer support</li>
-                        <li>Parking facilities for vendors</li>
-                        <li>Waste management services</li>
-                        <li>Wi-Fi connectivity throughout</li>
-                    </ul>
-                </div>
             </div>
         </div>
     </div>
@@ -1062,11 +1028,11 @@ function initializeApp() {
     hallDisplay.innerHTML = '';
     hallDisplay.style.position = 'relative';
     hallDisplay.style.overflow = 'auto';
-    hallDisplay.style.minHeight = '800px';
+    hallDisplay.style.minHeight = '600px';
 
     // Set fixed width for better display - enhanced to 1200px
     const containerWidth = 1200;
-    const containerHeight = 600;
+    const containerHeight = 603;
     
     // Calculate scale for better visibility
     const scaleX = containerWidth / hallLength;
@@ -1091,7 +1057,7 @@ function initializeApp() {
         const testImage = new Image();
         testImage.onload = function() {
             // Image loaded successfully, now set background
-            hallDisplay.style.backgroundImage = 'url("/static/assets/img/layout-01.png")';
+            hallDisplay.style.backgroundImage = 'url("/static/assets/img/layout-02.png")';
             hallDisplay.style.backgroundSize = 'cover';
             hallDisplay.style.backgroundPosition = 'center center';
             hallDisplay.style.backgroundRepeat = 'no-repeat';
@@ -1103,7 +1069,7 @@ function initializeApp() {
             backgroundOverlay.style.top = '0';
             backgroundOverlay.style.left = '0';
             backgroundOverlay.style.width = '100%';
-            backgroundOverlay.style.height = '75%';
+            backgroundOverlay.style.height = '100%';
             backgroundOverlay.style.backgroundColor = 'rgba(0, 0, 0, 0.1)';
             backgroundOverlay.style.zIndex = '1';
             backgroundOverlay.style.pointerEvents = 'none';
@@ -1116,7 +1082,7 @@ function initializeApp() {
             console.warn('Background image failed to load, using fallback color');
             hallDisplay.style.backgroundColor = '#f8f9fa';
         };
-        testImage.src = '/static/assets/img/layout-01.png';
+        testImage.src = '/static/assets/img/layout-02.png';
     }
 
     // Set the background image
