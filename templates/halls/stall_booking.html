@@ -1048,400 +1048,646 @@
 
     <!-- Tooltip for stall information -->
     <div class="stall-tooltip" id="stallTooltip"></div>
+
+    
+    <div class="modal" id="stallInfoModal" style="display: none;">
+        <div class="modal-content" style="max-width: 500px; background: #2c3e50; color: white; border-radius: 12px;">
+            <div class="modal-header" style="padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                <h3 id="modalStallTitle" style="margin: 0; color: #ecf0f1;">Stall Information</h3>
+                <button class="modal-close" onclick="closeStallModal()" style="background: none; border: none; color: #bdc3c7; font-size: 24px; cursor: pointer; float: right; margin-top: -30px;">×</button>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                <div id="modalStallContent">
+                    <!-- Content will be dynamically inserted -->
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 15px 20px; border-top: 1px solid rgba(255,255,255,0.1); text-align: right;">
+                <button onclick="closeStallModal()" style="background: #34495e; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">Close</button>
+            </div>
+        </div>
+    </div>
     <script>
 // Enhanced Booking System JavaScript - International Biryani Festival and Expo
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Global variables
-    let selectedStalls = new Set();
-    let stallData = {};
-    let comboData = {};
-    let stallToComboMap = {}; // Maps stall IDs to their combos
-    let occupiedStalls = new Set();
+        document.addEventListener('DOMContentLoaded', function() {
+            // Global variables
+            let selectedStalls = new Set();
+            let stallData = {};
+            let comboData = {};
+            let stallToComboMap = {}; // Maps stall IDs to their combos
+            let occupiedStalls = new Set();
 
-    // Initialize the application
-    
-function initializeApp() {
-    const hallDisplay = document.getElementById('stallSections');
-    if (!hallDisplay) {
-        console.error('Hall display element not found');
-        return;
-    }
-
-    const hallId = hallDisplay.dataset.hallId;
-    const hallLength = parseInt(hallDisplay.dataset.length);
-    const hallBreadth = parseInt(hallDisplay.dataset.breadth);
-    const loadingElement = document.getElementById('loading');
-
-    if (!hallId || !hallLength || !hallBreadth) {
-        console.error('Hall data attributes missing');
-        return;
-    }
-
-    // Clear any existing content
-    hallDisplay.innerHTML = '';
-    hallDisplay.style.position = 'relative';
-    hallDisplay.style.overflow = 'auto';
-    hallDisplay.style.minHeight = '600px';
-
-    // Set fixed width for better display - enhanced to 1200px
-    const containerWidth = window.innerWidth >= 1600 ? 1200 : 1130;
-    const containerHeight = 603;
-    
-    // Calculate scale for better visibility
-    const scaleX = containerWidth / hallLength;
-    const scaleY = (containerHeight - 120) / hallBreadth; // Reserve space for entry/exit
-    const scale = Math.min(scaleX, scaleY, 15); // Increased max scale for better visibility
-
-    // Center the hall layout
-    const actualWidth = hallLength * scale;
-    const actualHeight = hallBreadth * scale;
-    const offsetX = (containerWidth - actualWidth) / 2;
-    const offsetY = 60; // Top margin for better spacing
-
-    // Set container dimensions and basic styles first
-    hallDisplay.style.width = `${containerWidth}px`;
-    hallDisplay.style.height = `${containerHeight}px`;
-    hallDisplay.style.margin = '0 auto';
-    hallDisplay.style.borderRadius = '8px';
-    hallDisplay.style.position = 'relative';
-
-    // Function to set background image with proper loading
-    function setBackgroundImage() {
-        const testImage = new Image();
-        testImage.onload = function() {
-            // Image loaded successfully, now set background
-            hallDisplay.style.backgroundImage = 'url("/static/assets/img/layout-03.png")';
-            hallDisplay.style.backgroundSize = 'cover';
-            hallDisplay.style.backgroundPosition = 'center center';
-            hallDisplay.style.backgroundRepeat = 'no-repeat';
-            hallDisplay.style.backgroundAttachment = 'local';
+            // Initialize the application
             
-            // Optional: Add a semi-transparent overlay for better stall visibility
-            const backgroundOverlay = document.createElement('div');    
-            backgroundOverlay.style.position = 'absolute';
-            backgroundOverlay.style.top = '0';
-            backgroundOverlay.style.left = '0';
-            backgroundOverlay.style.width = '100%';
-            backgroundOverlay.style.height = '100%';
-            backgroundOverlay.style.backgroundColor = 'rgba(0, 0, 0, 0.1)';
-            backgroundOverlay.style.zIndex = '1';
-            backgroundOverlay.style.pointerEvents = 'none';
-            hallDisplay.appendChild(backgroundOverlay);
-            
-            console.log('Background image loaded and applied successfully');
-        };
-        testImage.onerror = function() {
-            // Fallback if image fails to load
-            console.warn('Background image failed to load, using fallback color');
-            hallDisplay.style.backgroundColor = '#f8f9fa';
-        };
-        testImage.src = '/static/assets/img/layout-03.png';
-    }
-
-    // Set the background image
-    setBackgroundImage();
-
-    // Draw hall grid (for reference)
-    drawHallGrid(hallDisplay, hallLength, hallBreadth, scale, offsetX, offsetY);
-
-        // Fetch and render stalls and combos
-        fetch(`/halls/${hallId}/data/`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+            function initializeApp() {
+                const hallDisplay = document.getElementById('stallSections');
+                if (!hallDisplay) {
+                    console.error('Hall display element not found');
+                    return;
                 }
-                return response.json();
-            })
-            .then(data => {
-                // Hide loading indicators
-                if (loadingElement) {
-                    loadingElement.style.display = 'none';
+
+                const hallId = hallDisplay.dataset.hallId;
+                const hallLength = parseInt(hallDisplay.dataset.length);
+                const hallBreadth = parseInt(hallDisplay.dataset.breadth);
+                const loadingElement = document.getElementById('loading');
+
+                if (!hallId || !hallLength || !hallBreadth) {
+                    console.error('Hall data attributes missing');
+                    return;
                 }
+
+                // Clear any existing content
+                hallDisplay.innerHTML = '';
+                hallDisplay.style.position = 'relative';
+                hallDisplay.style.overflow = 'auto';
+                hallDisplay.style.minHeight = '600px';
+
+                // Set fixed width for better display - enhanced to 1200px
+                const containerWidth = window.innerWidth >= 1600 ? 1200 : 1130;
+                const containerHeight = 603;
                 
-                // Store combo data
-                if (data.combos && Array.isArray(data.combos)) {
-                    data.combos.forEach(combo => {
-                        comboData[combo.id] = combo;
+                // Calculate scale for better visibility
+                const scaleX = containerWidth / hallLength;
+                const scaleY = (containerHeight - 120) / hallBreadth; // Reserve space for entry/exit
+                const scale = Math.min(scaleX, scaleY, 15); // Increased max scale for better visibility
+
+                // Center the hall layout
+                const actualWidth = hallLength * scale;
+                const actualHeight = hallBreadth * scale;
+                const offsetX = (containerWidth - actualWidth) / 2;
+                const offsetY = 60; // Top margin for better spacing
+
+                // Set container dimensions and basic styles first
+                hallDisplay.style.width = `${containerWidth}px`;
+                hallDisplay.style.height = `${containerHeight}px`;
+                hallDisplay.style.margin = '0 auto';
+                hallDisplay.style.borderRadius = '8px';
+                hallDisplay.style.position = 'relative';
+
+                // Function to set background image with proper loading
+                function setBackgroundImage() {
+                    const testImage = new Image();
+                    testImage.onload = function() {
+                        // Image loaded successfully, now set background
+                        hallDisplay.style.backgroundImage = 'url("/static/assets/img/layout-03.png")';
+                        hallDisplay.style.backgroundSize = 'cover';
+                        hallDisplay.style.backgroundPosition = 'center center';
+                        hallDisplay.style.backgroundRepeat = 'no-repeat';
+                        hallDisplay.style.backgroundAttachment = 'local';
                         
-                        // Map stalls to their combos
-                        if (combo.stall_ids && Array.isArray(combo.stall_ids)) {
-                            combo.stall_ids.forEach(stallId => {
-                                if (!stallToComboMap[stallId]) {
-                                    stallToComboMap[stallId] = [];
-                                }
-                                stallToComboMap[stallId].push(combo.id);
-                            });
-                        }
-                    });
+                        // Optional: Add a semi-transparent overlay for better stall visibility
+                        const backgroundOverlay = document.createElement('div');    
+                        backgroundOverlay.style.position = 'absolute';
+                        backgroundOverlay.style.top = '0';
+                        backgroundOverlay.style.left = '0';
+                        backgroundOverlay.style.width = '100%';
+                        backgroundOverlay.style.height = '100%';
+                        backgroundOverlay.style.backgroundColor = 'rgba(0, 0, 0, 0.1)';
+                        backgroundOverlay.style.zIndex = '1';
+                        backgroundOverlay.style.pointerEvents = 'none';
+                        hallDisplay.appendChild(backgroundOverlay);
+                        
+                        console.log('Background image loaded and applied successfully');
+                    };
+                    testImage.onerror = function() {
+                        // Fallback if image fails to load
+                        console.warn('Background image failed to load, using fallback color');
+                        hallDisplay.style.backgroundColor = '#f8f9fa';
+                    };
+                    testImage.src = '/static/assets/img/layout-03.png';
                 }
+
+                // Set the background image
+                setBackgroundImage();
+
+                // Draw hall grid (for reference)
+                drawHallGrid(hallDisplay, hallLength, hallBreadth, scale, offsetX, offsetY);
+
+                    // Fetch and render stalls and combos
+                    fetch(`/halls/${hallId}/data/`)
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            // Hide loading indicators
+                            if (loadingElement) {
+                                loadingElement.style.display = 'none';
+                            }
+                            
+                            // Store combo data
+                            if (data.combos && Array.isArray(data.combos)) {
+                                data.combos.forEach(combo => {
+                                    comboData[combo.id] = combo;
+                                    
+                                    // Map stalls to their combos
+                                    if (combo.stall_ids && Array.isArray(combo.stall_ids)) {
+                                        combo.stall_ids.forEach(stallId => {
+                                            if (!stallToComboMap[stallId]) {
+                                                stallToComboMap[stallId] = [];
+                                            }
+                                            stallToComboMap[stallId].push(combo.id);
+                                        });
+                                    }
+                                });
+                            }
+                            
+                            // Process each stall
+                            if (data.stalls && Array.isArray(data.stalls)) {
+                                data.stalls.forEach(stall => {
+                                    // Store all stall data for reference
+                                    stallData[stall.id] = stall;
+                                    
+                                    // Track occupied stalls
+                                    if (stall.status === 'blocked' || stall.status === 'booked') {
+                                        occupiedStalls.add(stall.id);
+                                    }
+                                    
+                                    renderStall(stall, hallDisplay, scale, offsetX, offsetY);
+                                });
+                            }
+
+                            // Update initial stats
+                            updateStats();
+                            setupEventListeners();
+                        })
+                        .catch(error => {
+                            console.error('Error loading hall data:', error);
+                            if (loadingElement) {
+                                loadingElement.textContent = 'Error loading stalls. Please try again later.';
+                                loadingElement.style.color = '#ff6b6b';
+                            }
+                        });
+                }
+
+            // Draw hall grid for reference
+            function drawHallGrid(container, length, breadth, scale, offsetX, offsetY) {
+                const gridContainer = document.createElement('div');
+                gridContainer.style.position = 'absolute';
+                gridContainer.style.left = `${offsetX}px`;
+                gridContainer.style.top = `${offsetY}px`;
+                gridContainer.style.width = `${length * scale}px`;
+                gridContainer.style.height = `${breadth * scale}px`;
+                gridContainer.style.zIndex = '1';
                 
-                // Process each stall
-                if (data.stalls && Array.isArray(data.stalls)) {
-                    data.stalls.forEach(stall => {
-                        // Store all stall data for reference
-                        stallData[stall.id] = stall;
-                        
-                        // Track occupied stalls
-                        if (stall.status === 'blocked' || stall.status === 'booked') {
-                            occupiedStalls.add(stall.id);
-                        }
-                        
-                        renderStall(stall, hallDisplay, scale, offsetX, offsetY);
-                    });
-                }
-
-                // Update initial stats
-                updateStats();
-                setupEventListeners();
-            })
-            .catch(error => {
-                console.error('Error loading hall data:', error);
-                if (loadingElement) {
-                    loadingElement.textContent = 'Error loading stalls. Please try again later.';
-                    loadingElement.style.color = '#ff6b6b';
-                }
-            });
-    }
-
-    // Draw hall grid for reference
-    function drawHallGrid(container, length, breadth, scale, offsetX, offsetY) {
-        const gridContainer = document.createElement('div');
-        gridContainer.style.position = 'absolute';
-        gridContainer.style.left = `${offsetX}px`;
-        gridContainer.style.top = `${offsetY}px`;
-        gridContainer.style.width = `${length * scale}px`;
-        gridContainer.style.height = `${breadth * scale}px`;
-        gridContainer.style.zIndex = '1';
-        
-        for (let x = 0; x < length; x++) {
-            for (let y = 0; y < breadth; y++) {
-                const gridBox = document.createElement('div');
-                gridBox.style.position = 'absolute';
-                gridBox.style.left = `${x * scale}px`;
-                gridBox.style.top = `${y * scale}px`;
-                gridBox.style.width = `${scale}px`;
-                gridBox.style.height = `${scale}px`;
-                // gridBox.style.border = '0.5px solid #e0e0e0';
-                gridBox.style.boxSizing = 'border-box';
-                gridContainer.appendChild(gridBox);
-            }
-        }
-        
-        container.appendChild(gridContainer);
-    }
-    
-    // Render individual stall with improved styling
-    function renderStall(stall, container, scale, offsetX, offsetY) {
-        if (!stall.selected_boxes || !Array.isArray(stall.selected_boxes) || stall.selected_boxes.length === 0) {
-            console.warn(`Stall ${stall.id} has no valid selected_boxes`);
-            return;
-        }
-
-        const stallBoxes = stall.selected_boxes;
-
-        // Group boxes by stall number and find the boundaries
-        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-
-        stallBoxes.forEach(box => {
-            minX = Math.min(minX, box.x);
-            minY = Math.min(minY, box.y);
-            maxX = Math.max(maxX, box.x);
-            maxY = Math.max(maxY, box.y);
-        });
-
-        // Create a single stall element
-        const stallElement = document.createElement('div');
-        
-        // Determine the correct CSS classes based on status
-        let statusClass = '';
-        let isOccupied = false;
-        
-        if (stall.status === 'blocked' || stall.status === 'booked') {
-            statusClass = 'occupied';
-            isOccupied = true;
-        } else if (stall.status === 'available') {
-            statusClass = 'available';
-        } else {
-            statusClass = stall.status; // fallback to original status
-        }
-        
-        // Add stall type class for styling and status class
-        stallElement.className = `stall ${statusClass} ${stall.stall_type}`;
-        
-        stallElement.setAttribute('data-stall-id', stall.id);
-        stallElement.setAttribute('data-stall-number', stall.stall_number);
-        stallElement.setAttribute('data-stall-status', stall.status);
-        stallElement.setAttribute('data-stall-price', stall.price);
-        stallElement.setAttribute('data-stall-type', stall.stall_type);
-        
-        // If the stall is part of a combo, add the combo class
-        if (stallToComboMap[stall.id]) {
-            stallElement.classList.add('combo');
-            stallElement.setAttribute('data-combo-ids', stallToComboMap[stall.id].join(','));
-        }
-        
-        // Position the stall element correctly with enhanced sizing
-        const stallWidth = (maxX - minX + 1) * scale;
-        const stallHeight = (maxY - minY + 1) * scale;
-        
-        stallElement.style.position = 'absolute';
-        stallElement.style.left = `${offsetX + (minX * scale)}px`;
-        stallElement.style.top = `${offsetY + (minY * scale)}px`;
-        stallElement.style.width = `${stallWidth}px`;
-        stallElement.style.height = `${stallHeight}px`;
-        stallElement.style.zIndex = '5';
-        stallElement.style.border = '1px solid #ddd';
-        stallElement.style.borderRadius = '6px';
-        stallElement.style.display = 'flex';
-        stallElement.style.alignItems = 'center';
-        stallElement.style.justifyContent = 'center';
-        stallElement.style.cursor = stall.status === 'available' ? 'pointer' : 'default';
-        stallElement.style.transition = 'all 0.3s ease';
-        stallElement.style.boxSizing = 'border-box';
-        stallElement.style.minWidth = '40px';
-        stallElement.style.minHeight = '40px';
-
-        // Apply inline styles for different stall states
-        if (isOccupied) {
-            stallElement.style.background = 'linear-gradient(135deg, #696969, #2F2F2F)';
-            stallElement.style.color = '#ffffff';
-            stallElement.style.cursor = 'not-allowed';
-            stallElement.style.opacity = '0.8';
-            stallElement.style.borderColor = '#555';
-        } else if (stall.stall_type === 'eatery') {
-            stallElement.style.background = 'linear-gradient(135deg, #064e06, #32CD32)';
-            stallElement.style.color = '#ffffff';
-            stallElement.style.borderColor = '#1a6b1a';
-        } else if (stall.stall_type === 'non-eatery') {
-            stallElement.style.background = 'linear-gradient(135deg, #253155, #1E90FF)';
-            stallElement.style.color = '#ffffff';
-            stallElement.style.borderColor = '#2c4fb3';
-        }
-
-        // Add the stall number with enhanced styling
-        const stallLabel = document.createElement('div');
-        stallLabel.textContent = stall.stall_number;
-        stallLabel.className = 'stall-number';
-        stallLabel.style.fontWeight = '700';
-        stallLabel.style.fontSize = `${Math.max(12, Math.min(18, scale / 2.5))}px`;
-        stallLabel.style.textAlign = 'center';
-        stallLabel.style.textShadow = '1px 1px 3px rgba(0,0,0,0.7)';
-        stallLabel.style.userSelect = 'none';
-        stallLabel.style.pointerEvents = 'none';
-        stallLabel.style.letterSpacing = '0.5px';
-
-        // Add click event for available stalls only
-        if (stall.status === 'available') {
-            stallElement.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                handleStallClick(this);
-            });
-            
-            // Add enhanced hover effects for available stalls
-            stallElement.addEventListener('mouseenter', function(e) {
-                if (!this.classList.contains('selected')) {
-                    this.style.transform = 'scale(1.08)';
-                    this.style.boxShadow = '0 6px 15px rgba(0,0,0,0.4)';
-                    this.style.zIndex = '8';
-                }
-                showTooltip(e, stall);
-            });
-            
-            stallElement.addEventListener('mouseleave', function() {
-                if (!this.classList.contains('selected')) {
-                    this.style.transform = 'scale(1)';
-                    this.style.boxShadow = 'none';
-                    this.style.zIndex = '5';
-                }
-                hideTooltip();
-            });
-        } else {
-            // Add hover for occupied stalls
-            stallElement.addEventListener('mouseenter', function(e) {
-                this.style.opacity = '1';
-                this.style.transform = 'scale(1.02)';
-                showOccupiedTooltip(e, stall);
-            });
-            
-            stallElement.addEventListener('mouseleave', function() {
-                this.style.opacity = '0.8';
-                this.style.transform = 'scale(1)';
-                hideTooltip();
-            });
-        }
-
-        stallElement.appendChild(stallLabel);
-        container.appendChild(stallElement);
-    }
-
-    // Handle stall click with improved logic
-    function handleStallClick(stallElement) {
-        const stallId = stallElement.getAttribute('data-stall-id');
-        const isSelected = stallElement.classList.contains('selected');
-        const comboIds = stallElement.getAttribute('data-combo-ids');
-        
-        if (comboIds) {
-            // This stall is part of a combo
-            const comboIdArray = comboIds.split(',');
-            
-            if (!isSelected) {
-                // When selecting a stall that's part of a combo, auto-select all combo stalls
-                let selectedCombo = null;
-                
-                // Find the first valid combo where all stalls are available
-                for (const comboId of comboIdArray) {
-                    const combo = comboData[comboId];
-                    if (!combo || !combo.stall_ids) continue;
-                    
-                    // Check if all stalls in this combo are available
-                    const allAvailable = combo.stall_ids.every(id => 
-                        stallData[id] && stallData[id].status === 'available'
-                    );
-                    
-                    if (allAvailable) {
-                        selectedCombo = combo;
-                        break;
+                for (let x = 0; x < length; x++) {
+                    for (let y = 0; y < breadth; y++) {
+                        const gridBox = document.createElement('div');
+                        gridBox.style.position = 'absolute';
+                        gridBox.style.left = `${x * scale}px`;
+                        gridBox.style.top = `${y * scale}px`;
+                        gridBox.style.width = `${scale}px`;
+                        gridBox.style.height = `${scale}px`;
+                        // gridBox.style.border = '0.5px solid #e0e0e0';
+                        gridBox.style.boxSizing = 'border-box';
+                        gridContainer.appendChild(gridBox);
                     }
                 }
                 
-                if (selectedCombo) {
-                    // Select all stalls in this combo automatically
-                    selectedCombo.stall_ids.forEach(id => {
-                        const comboStallElement = document.querySelector(
-                            `.stall[data-stall-id="${id}"]`
-                        );
-                        if (comboStallElement && !selectedStalls.has(id.toString())) {
-                            selectStallElement(comboStallElement, id.toString());
+                container.appendChild(gridContainer);
+            }
+            
+            // Render individual stall with improved styling
+            function renderStall(stall, container, scale, offsetX, offsetY) {
+                if (!stall.selected_boxes || !Array.isArray(stall.selected_boxes) || stall.selected_boxes.length === 0) {
+                    console.warn(`Stall ${stall.id} has no valid selected_boxes`);
+                    return;
+                }
+
+                const stallBoxes = stall.selected_boxes;
+
+                // Group boxes by stall number and find the boundaries
+                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+                stallBoxes.forEach(box => {
+                    minX = Math.min(minX, box.x);
+                    minY = Math.min(minY, box.y);
+                    maxX = Math.max(maxX, box.x);
+                    maxY = Math.max(maxY, box.y);
+                });
+
+                // Create a single stall element
+                const stallElement = document.createElement('div');
+                
+                // Determine the correct CSS classes based on status
+                let statusClass = '';
+                let isOccupied = false;
+                
+                if (stall.status === 'blocked' || stall.status === 'booked') {
+                    statusClass = 'occupied';
+                    isOccupied = true;
+                } else if (stall.status === 'available') {
+                    statusClass = 'available';
+                } else {
+                    statusClass = stall.status; // fallback to original status
+                }
+                
+                // Add stall type class for styling and status class
+                stallElement.className = `stall ${statusClass} ${stall.stall_type}`;
+                
+                stallElement.setAttribute('data-stall-id', stall.id);
+                stallElement.setAttribute('data-stall-number', stall.stall_number);
+                stallElement.setAttribute('data-stall-status', stall.status);
+                stallElement.setAttribute('data-stall-price', stall.price);
+                stallElement.setAttribute('data-stall-type', stall.stall_type);
+                
+                // If the stall is part of a combo, add the combo class
+                if (stallToComboMap[stall.id]) {
+                    stallElement.classList.add('combo');
+                    stallElement.setAttribute('data-combo-ids', stallToComboMap[stall.id].join(','));
+                }
+                
+                // Position the stall element correctly with enhanced sizing
+                const stallWidth = (maxX - minX + 1) * scale;
+                const stallHeight = (maxY - minY + 1) * scale;
+                
+                stallElement.style.position = 'absolute';
+                stallElement.style.left = `${offsetX + (minX * scale)}px`;
+                stallElement.style.top = `${offsetY + (minY * scale)}px`;
+                stallElement.style.width = `${stallWidth}px`;
+                stallElement.style.height = `${stallHeight}px`;
+                stallElement.style.zIndex = '5';
+                stallElement.style.border = '1px solid #ddd';
+                stallElement.style.borderRadius = '6px';
+                stallElement.style.display = 'flex';
+                stallElement.style.alignItems = 'center';
+                stallElement.style.justifyContent = 'center';
+                stallElement.style.cursor = stall.status === 'available' ? 'pointer' : 'default';
+                stallElement.style.transition = 'all 0.3s ease';
+                stallElement.style.boxSizing = 'border-box';
+                stallElement.style.minWidth = '40px';
+                stallElement.style.minHeight = '40px';
+
+                // Apply inline styles for different stall states
+                if (isOccupied) {
+                    stallElement.style.background = 'linear-gradient(135deg, #696969, #2F2F2F)';
+                    stallElement.style.color = '#ffffff';
+                    stallElement.style.cursor = 'not-allowed';
+                    stallElement.style.opacity = '0.8';
+                    stallElement.style.borderColor = '#555';
+                } else if (stall.stall_type === 'eatery') {
+                    stallElement.style.background = 'linear-gradient(135deg, #064e06, #32CD32)';
+                    stallElement.style.color = '#ffffff';
+                    stallElement.style.borderColor = '#1a6b1a';
+                } else if (stall.stall_type === 'non-eatery') {
+                    stallElement.style.background = 'linear-gradient(135deg, #253155, #1E90FF)';
+                    stallElement.style.color = '#ffffff';
+                    stallElement.style.borderColor = '#2c4fb3';
+                }
+
+                // Add the stall number with enhanced styling
+                const stallLabel = document.createElement('div');
+                stallLabel.textContent = stall.stall_number;
+                stallLabel.className = 'stall-number';
+                stallLabel.style.fontWeight = '700';
+                stallLabel.style.fontSize = `${Math.max(12, Math.min(18, scale / 2.5))}px`;
+                stallLabel.style.textAlign = 'center';
+                stallLabel.style.textShadow = '1px 1px 3px rgba(0,0,0,0.7)';
+                stallLabel.style.userSelect = 'none';
+                stallLabel.style.pointerEvents = 'none';
+                stallLabel.style.letterSpacing = '0.5px';
+
+                // Add click event for available stalls only
+                if (stall.status === 'available') {
+                    stallElement.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleStallClick(this);
+                    });
+                    
+                    // Add enhanced hover effects for available stalls
+                    stallElement.addEventListener('mouseenter', function(e) {
+                        if (!this.classList.contains('selected')) {
+                            this.style.transform = 'scale(1.08)';
+                            this.style.boxShadow = '0 6px 15px rgba(0,0,0,0.4)';
+                            this.style.zIndex = '8';
                         }
+                        showTooltip(e, stall);
+                    });
+                    
+                    stallElement.addEventListener('mouseleave', function() {
+                        if (!this.classList.contains('selected')) {
+                            this.style.transform = 'scale(1)';
+                            this.style.boxShadow = 'none';
+                            this.style.zIndex = '5';
+                        }
+                        hideTooltip();
                     });
                 } else {
-                    // No valid combo (some stalls unavailable), just select this stall
-                    selectStallElement(stallElement, stallId);
+                    // Add hover for occupied stalls
+                    stallElement.addEventListener('mouseenter', function(e) {
+                        this.style.opacity = '1';
+                        this.style.transform = 'scale(1.02)';
+                        showOccupiedTooltip(e, stall);
+                    });
+                    
+                    stallElement.addEventListener('mouseleave', function() {
+                        this.style.opacity = '0.8';
+                        this.style.transform = 'scale(1)';
+                        hideTooltip();
+                    });
                 }
-            } else {
-                // When deselecting, check if part of a fully selected combo
-                let comboToDeselect = null;
+
+                stallElement.appendChild(stallLabel);
+                container.appendChild(stallElement);
+            }
+
+            // Handle stall click with improved logic
+            function handleStallClick(stallElement) {
+                const stallId = stallElement.getAttribute('data-stall-id');
+                const isSelected = stallElement.classList.contains('selected');
+                const comboIds = stallElement.getAttribute('data-combo-ids');
                 
-                for (const comboId of comboIdArray) {
-                    const combo = comboData[comboId];
-                    if (!combo || !combo.stall_ids) continue;
+                if (comboIds) {
+                    // This stall is part of a combo
+                    const comboIdArray = comboIds.split(',');
                     
-                    // Check if all stalls in this combo are selected
-                    const allSelected = combo.stall_ids.every(id => 
-                        selectedStalls.has(id.toString())
-                    );
-                    
-                    if (allSelected) {
-                        comboToDeselect = combo;
-                        break;
+                    if (!isSelected) {
+                        // When selecting a stall that's part of a combo, auto-select all combo stalls
+                        let selectedCombo = null;
+                        
+                        // Find the first valid combo where all stalls are available
+                        for (const comboId of comboIdArray) {
+                            const combo = comboData[comboId];
+                            if (!combo || !combo.stall_ids) continue;
+                            
+                            // Check if all stalls in this combo are available
+                            const allAvailable = combo.stall_ids.every(id => 
+                                stallData[id] && stallData[id].status === 'available'
+                            );
+                            
+                            if (allAvailable) {
+                                selectedCombo = combo;
+                                break;
+                            }
+                        }
+                        
+                        if (selectedCombo) {
+                            // Select all stalls in this combo automatically
+                            selectedCombo.stall_ids.forEach(id => {
+                                const comboStallElement = document.querySelector(
+                                    `.stall[data-stall-id="${id}"]`
+                                );
+                                if (comboStallElement && !selectedStalls.has(id.toString())) {
+                                    selectStallElement(comboStallElement, id.toString());
+                                }
+                            });
+                        } else {
+                            // No valid combo (some stalls unavailable), just select this stall
+                            selectStallElement(stallElement, stallId);
+                        }
+                    } else {
+                        // When deselecting, check if part of a fully selected combo
+                        let comboToDeselect = null;
+                        
+                        for (const comboId of comboIdArray) {
+                            const combo = comboData[comboId];
+                            if (!combo || !combo.stall_ids) continue;
+                            
+                            // Check if all stalls in this combo are selected
+                            const allSelected = combo.stall_ids.every(id => 
+                                selectedStalls.has(id.toString())
+                            );
+                            
+                            if (allSelected) {
+                                comboToDeselect = combo;
+                                break;
+                            }
+                        }
+                        
+                        if (comboToDeselect) {
+                            // Deselect all stalls in this combo
+                            comboToDeselect.stall_ids.forEach(id => {
+                                const comboStallElement = document.querySelector(
+                                    `.stall[data-stall-id="${id}"]`
+                                );
+                                if (comboStallElement) {
+                                    deselectStallElement(comboStallElement, id.toString());
+                                }
+                            });
+                        } else {
+                            // Just deselect this stall
+                            deselectStallElement(stallElement, stallId);
+                        }
+                    }
+                } else {
+                    // Regular stall (not part of a combo), toggle selection
+                    if (isSelected) {
+                        deselectStallElement(stallElement, stallId);
+                    } else {
+                        selectStallElement(stallElement, stallId);
                     }
                 }
                 
-                if (comboToDeselect) {
-                    // Deselect all stalls in this combo
-                    comboToDeselect.stall_ids.forEach(id => {
+                // Update UI
+                updateSelectedStallsList();
+                updatePricing();
+                updateStats();
+            }
+
+            // Helper function to select a stall element with enhanced red styling
+            function selectStallElement(stallElement, stallId) {
+                stallElement.classList.add('selected');
+                // Enhanced red color for selected stalls
+                stallElement.style.background = 'linear-gradient(135deg, #DC143C, #B22222)';
+                stallElement.style.borderColor = '#8B0000';
+                stallElement.style.transform = 'scale(1.05)';
+                stallElement.style.boxShadow = '0 6px 20px rgba(220,20,60,0.6)';
+                stallElement.style.zIndex = '7';
+                
+                // Add pulsing animation for better visibility
+                stallElement.style.animation = 'pulse-red 1.5s infinite';
+                
+                // Add the pulse animation keyframes if not already added
+                if (!document.querySelector('#pulse-red-style')) {
+                    const style = document.createElement('style');
+                    style.id = 'pulse-red-style';
+                    style.textContent = `
+                        @keyframes pulse-red {
+                            0% { box-shadow: 0 6px 20px rgba(220,20,60,0.6); }
+                            50% { box-shadow: 0 8px 25px rgba(220,20,60,0.8); }
+                            100% { box-shadow: 0 6px 20px rgba(220,20,60,0.6); }
+                        }
+                    `;
+                    document.head.appendChild(style);
+                }
+                
+                selectedStalls.add(stallId);
+            }
+
+            // Helper function to deselect a stall element
+            function deselectStallElement(stallElement, stallId) {
+                stallElement.classList.remove('selected');
+                
+                // Remove animation
+                stallElement.style.animation = 'none';
+                
+                // Restore original styling
+                const stall = stallData[stallId];
+                if (stall) {
+                    if (stall.stall_type === 'eatery') {
+                        stallElement.style.background = 'linear-gradient(135deg, #064e06, #32CD32)';
+                        stallElement.style.borderColor = '#1a6b1a';
+                    } else {
+                        stallElement.style.background = 'linear-gradient(135deg, #253155, #1E90FF)';
+                        stallElement.style.borderColor = '#2c4fb3';
+                    }
+                    stallElement.style.transform = 'scale(1)';
+                    stallElement.style.boxShadow = 'none';
+                    stallElement.style.zIndex = '5';
+                }
+                selectedStalls.delete(stallId);
+            }
+
+            // Update selected stalls list in booking panel - MODIFIED VERSION
+            function updateSelectedStallsList() {
+                const container = document.getElementById('selectedStallsList');
+                const countElement = document.getElementById('selectedStallCount');
+                
+                if (!container) return;
+                if (countElement) countElement.textContent = selectedStalls.size;
+                
+                if (selectedStalls.size === 0) {
+                    container.innerHTML = `
+                        <div style="text-align: center; color: rgba(255, 255, 224, 0.6); font-style: italic; padding: 20px;">
+                            No stalls selected. Click on stalls to add them.
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Group selected stalls by combo
+                const comboGroups = {};
+                const singleStalls = [];
+                
+                selectedStalls.forEach(stallId => {
+                    const stall = stallData[stallId];
+                    if (!stall) return;
+                    
+                    // Check if this stall is part of a combo where all other stalls are also selected
+                    let partOfSelectedCombo = false;
+                    
+                    if (stallToComboMap[stallId]) {
+                        for (const comboId of stallToComboMap[stallId]) {
+                            const combo = comboData[comboId];
+                            if (!combo || !combo.stall_ids) continue;
+                            
+                            // Check if all stalls in this combo are selected
+                            const allSelected = combo.stall_ids.every(id => 
+                                selectedStalls.has(id.toString())
+                            );
+                            
+                            if (allSelected) {
+                                // Add to combo group
+                                if (!comboGroups[comboId]) {
+                                    comboGroups[comboId] = {
+                                        combo: combo,
+                                        stalls: []
+                                    };
+                                }
+                                comboGroups[comboId].stalls.push(stall);
+                                partOfSelectedCombo = true;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (!partOfSelectedCombo) {
+                        singleStalls.push(stall);
+                    }
+                });
+                
+                // Group single stalls by type - NEW LOGIC
+                const eateryStalls = singleStalls.filter(stall => stall.stall_type === 'eatery');
+                const nonEateryStalls = singleStalls.filter(stall => stall.stall_type === 'non-eatery');
+                
+                // Build HTML for selected stalls with enhanced styling
+                let html = '';
+                
+                // Add grouped eatery stalls - MODIFIED
+                if (eateryStalls.length > 0) {
+                    const eateryStallNumbers = eateryStalls.map(stall => stall.stall_number).sort((a, b) => a - b).join(', ');
+                    const eateryTotalPrice = eateryStalls.reduce((sum, stall) => sum + parseFloat(stall.price), 0);
+                    const eateryStallIds = eateryStalls.map(stall => stall.id).join(',');
+                    
+                    html += `
+                        <div class="selected-stall-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; margin-bottom: 10px; background: rgba(220, 20, 60, 0.15); border: 1px solid rgba(220, 20, 60, 0.3); border-radius: 8px; transition: all 0.3s ease;">
+                            <div style="color: #fff;">
+                                <strong style="color: #DC143C; font-size: 16px;">Eatery Stalls (${eateryStalls.length}): ${eateryStallNumbers}</strong><br>
+                                <small style="color: rgba(255,255,255,0.8);">${eateryStalls.length} × ₹${parseFloat(eateryStalls[0].price).toLocaleString()} = ₹${eateryTotalPrice.toLocaleString()}</small>
+                            </div>
+                            <button class="stall-remove-btn" onclick="removeStallGroup('${eateryStallIds}')" title="Remove all eatery stalls" style="background: #ff4757; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 18px; font-weight: bold; line-height: 1; transition: all 0.2s ease;">×</button>
+                        </div>
+                    `;
+                }
+                
+                // Add grouped non-eatery stalls - MODIFIED
+                if (nonEateryStalls.length > 0) {
+                    const nonEateryStallNumbers = nonEateryStalls.map(stall => stall.stall_number).sort((a, b) => a - b).join(', ');
+                    const nonEateryTotalPrice = nonEateryStalls.reduce((sum, stall) => sum + parseFloat(stall.price), 0);
+                    const nonEateryStallIds = nonEateryStalls.map(stall => stall.id).join(',');
+                    
+                    html += `
+                        <div class="selected-stall-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; margin-bottom: 10px; background: rgba(220, 20, 60, 0.15); border: 1px solid rgba(220, 20, 60, 0.3); border-radius: 8px; transition: all 0.3s ease;">
+                            <div style="color: #fff;">
+                                <strong style="color: #DC143C; font-size: 16px;">Non-Eatery Stalls (${nonEateryStalls.length}): ${nonEateryStallNumbers}</strong><br>
+                                <small style="color: rgba(255,255,255,0.8);">${nonEateryStalls.length} × ₹${parseFloat(nonEateryStalls[0].price).toLocaleString()} = ₹${nonEateryTotalPrice.toLocaleString()}</small>
+                            </div>
+                            <button class="stall-remove-btn" onclick="removeStallGroup('${nonEateryStallIds}')" title="Remove all non-eatery stalls" style="background: #ff4757; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 18px; font-weight: bold; line-height: 1; transition: all 0.2s ease;">×</button>
+                        </div>
+                    `;
+                }
+                
+                // Add combo stalls - UNCHANGED
+                Object.values(comboGroups).forEach(group => {
+                    const stallNumbers = group.stalls.map(stall => stall.stall_number).sort((a, b) => a - b).join(', ');
+                    html += `
+                        <div class="selected-stall-item combo-stall-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; margin-bottom: 10px; background: rgba(255,215,0,0.2); border: 1px solid rgba(255,215,0,0.4); border-radius: 8px; transition: all 0.3s ease;">
+                            <div>
+                                <strong style="color: #FFD700; font-size: 16px;">Combo: Stalls ${stallNumbers}</strong><br>
+                                <small style="color: rgba(255,255,255,0.8);">Package Price - ₹${parseFloat(group.combo.price).toLocaleString()}</small>
+                            </div>
+                            <button class="stall-remove-btn" onclick="removeCombo(${group.combo.id})" title="Remove combo" style="background: #ff4757; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 18px; font-weight: bold; line-height: 1; transition: all 0.2s ease;">×</button>
+                        </div>
+                    `;
+                });
+                
+                container.innerHTML = html;
+                
+                // Add hover effects to remove buttons
+                container.querySelectorAll('.stall-remove-btn').forEach(btn => {
+                    btn.addEventListener('mouseenter', function() {
+                        this.style.background = '#ff3742';
+                        this.style.transform = 'scale(1.1)';
+                    });
+                    btn.addEventListener('mouseleave', function() {
+                        this.style.background = '#ff4757';
+                        this.style.transform = 'scale(1)';
+                    });
+                });
+            }
+
+            // NEW FUNCTION: Remove stall group by type
+            window.removeStallGroup = function(stallIds) {
+                const stallIdArray = stallIds.split(',');
+                stallIdArray.forEach(stallId => {
+                    const stallElement = document.querySelector(`.stall[data-stall-id="${stallId}"]`);
+                    if (stallElement) {
+                        deselectStallElement(stallElement, stallId);
+                    }
+                });
+                updateSelectedStallsList();
+                updatePricing();
+                updateStats();
+            };
+
+            // Remove combo
+            window.removeCombo = function(comboId) {
+                const combo = comboData[comboId];
+                if (combo && combo.stall_ids) {
+                    combo.stall_ids.forEach(id => {
                         const comboStallElement = document.querySelector(
                             `.stall[data-stall-id="${id}"]`
                         );
@@ -1449,404 +1695,176 @@ function initializeApp() {
                             deselectStallElement(comboStallElement, id.toString());
                         }
                     });
-                } else {
-                    // Just deselect this stall
-                    deselectStallElement(stallElement, stallId);
                 }
-            }
-        } else {
-            // Regular stall (not part of a combo), toggle selection
-            if (isSelected) {
-                deselectStallElement(stallElement, stallId);
-            } else {
-                selectStallElement(stallElement, stallId);
-            }
-        }
-        
-        // Update UI
-        updateSelectedStallsList();
-        updatePricing();
-        updateStats();
-    }
+                updateSelectedStallsList();
+                updatePricing();
+                updateStats();
+            };
 
-    // Helper function to select a stall element with enhanced red styling
-    function selectStallElement(stallElement, stallId) {
-        stallElement.classList.add('selected');
-        // Enhanced red color for selected stalls
-        stallElement.style.background = 'linear-gradient(135deg, #DC143C, #B22222)';
-        stallElement.style.borderColor = '#8B0000';
-        stallElement.style.transform = 'scale(1.05)';
-        stallElement.style.boxShadow = '0 6px 20px rgba(220,20,60,0.6)';
-        stallElement.style.zIndex = '7';
-        
-        // Add pulsing animation for better visibility
-        stallElement.style.animation = 'pulse-red 1.5s infinite';
-        
-        // Add the pulse animation keyframes if not already added
-        if (!document.querySelector('#pulse-red-style')) {
-            const style = document.createElement('style');
-            style.id = 'pulse-red-style';
-            style.textContent = `
-                @keyframes pulse-red {
-                    0% { box-shadow: 0 6px 20px rgba(220,20,60,0.6); }
-                    50% { box-shadow: 0 8px 25px rgba(220,20,60,0.8); }
-                    100% { box-shadow: 0 6px 20px rgba(220,20,60,0.6); }
-                }
-            `;
-            document.head.appendChild(style);
-        }
-        
-        selectedStalls.add(stallId);
-    }
-
-    // Helper function to deselect a stall element
-    function deselectStallElement(stallElement, stallId) {
-        stallElement.classList.remove('selected');
-        
-        // Remove animation
-        stallElement.style.animation = 'none';
-        
-        // Restore original styling
-        const stall = stallData[stallId];
-        if (stall) {
-            if (stall.stall_type === 'eatery') {
-                stallElement.style.background = 'linear-gradient(135deg, #064e06, #32CD32)';
-                stallElement.style.borderColor = '#1a6b1a';
-            } else {
-                stallElement.style.background = 'linear-gradient(135deg, #253155, #1E90FF)';
-                stallElement.style.borderColor = '#2c4fb3';
-            }
-            stallElement.style.transform = 'scale(1)';
-            stallElement.style.boxShadow = 'none';
-            stallElement.style.zIndex = '5';
-        }
-        selectedStalls.delete(stallId);
-    }
-
-    // Update selected stalls list in booking panel - MODIFIED VERSION
-    function updateSelectedStallsList() {
-        const container = document.getElementById('selectedStallsList');
-        const countElement = document.getElementById('selectedStallCount');
-        
-        if (!container) return;
-        if (countElement) countElement.textContent = selectedStalls.size;
-        
-        if (selectedStalls.size === 0) {
-            container.innerHTML = `
-                <div style="text-align: center; color: rgba(255, 255, 224, 0.6); font-style: italic; padding: 20px;">
-                    No stalls selected. Click on stalls to add them.
-                </div>
-            `;
-            return;
-        }
-        
-        // Group selected stalls by combo
-        const comboGroups = {};
-        const singleStalls = [];
-        
-        selectedStalls.forEach(stallId => {
-            const stall = stallData[stallId];
-            if (!stall) return;
-            
-            // Check if this stall is part of a combo where all other stalls are also selected
-            let partOfSelectedCombo = false;
-            
-            if (stallToComboMap[stallId]) {
-                for (const comboId of stallToComboMap[stallId]) {
-                    const combo = comboData[comboId];
-                    if (!combo || !combo.stall_ids) continue;
+            // Update pricing calculations - SIMPLIFIED VERSION
+            function updatePricing() {
+                // Group selected stalls by combo
+                const comboGroups = {};
+                const singleStalls = [];
+                
+                selectedStalls.forEach(stallId => {
+                    const stall = stallData[stallId];
+                    if (!stall) return;
                     
-                    // Check if all stalls in this combo are selected
-                    const allSelected = combo.stall_ids.every(id => 
-                        selectedStalls.has(id.toString())
-                    );
+                    let partOfSelectedCombo = false;
                     
-                    if (allSelected) {
-                        // Add to combo group
-                        if (!comboGroups[comboId]) {
-                            comboGroups[comboId] = {
-                                combo: combo,
-                                stalls: []
-                            };
+                    if (stallToComboMap[stallId]) {
+                        for (const comboId of stallToComboMap[stallId]) {
+                            const combo = comboData[comboId];
+                            if (!combo || !combo.stall_ids) continue;
+                            
+                            const allSelected = combo.stall_ids.every(id => 
+                                selectedStalls.has(id.toString())
+                            );
+                            
+                            if (allSelected) {
+                                if (!comboGroups[comboId]) {
+                                    comboGroups[comboId] = {
+                                        combo: combo,
+                                        stalls: []
+                                    };
+                                }
+                                comboGroups[comboId].stalls.push(stall);
+                                partOfSelectedCombo = true;
+                                break;
+                            }
                         }
-                        comboGroups[comboId].stalls.push(stall);
-                        partOfSelectedCombo = true;
-                        break;
+                    }
+                    
+                    if (!partOfSelectedCombo) {
+                        singleStalls.push(stall);
+                    }
+                });
+                
+                // Calculate pricing - SIMPLIFIED
+                const regularStallCount = singleStalls.length;
+                let regularStallBasePrice = 0;
+                
+                singleStalls.forEach(stall => {
+                    regularStallBasePrice += parseFloat(stall.price) || 0;
+                });
+                
+                // Calculate discount
+                let discountAmount = 0;
+                
+                if (regularStallCount === 2) {
+                    discountAmount = 5000;
+                } else if (regularStallCount >= 3) {
+                    discountAmount = 5000 * regularStallCount;
+                }
+                
+                const discountedRegularPrice = Math.max(0, regularStallBasePrice - discountAmount);
+                
+                // Calculate combo price
+                let comboStallPrice = 0;
+                Object.values(comboGroups).forEach(group => {
+                    comboStallPrice += parseFloat(group.combo.price) || 0;
+                });
+                
+                // SIMPLIFIED: Only base price + combo price - discount = total
+                const totalPrice = discountedRegularPrice + comboStallPrice;
+                
+                // Update display elements safely
+                const updateElement = (id, value) => {
+                    const element = document.getElementById(id);
+                    if (element) element.textContent = value;
+                };
+                
+                updateElement('basePrice', `₹ ${Math.round(regularStallBasePrice + comboStallPrice).toLocaleString()}`);
+                updateElement('totalPrice', `₹ ${Math.round(totalPrice).toLocaleString()}`);
+                
+                // Show/hide discount
+                const discountRow = document.getElementById('discountRow');
+                const discountInfo = document.getElementById('discountInfo');
+                
+                if (discountRow && discountInfo) {
+                    if (discountAmount > 0) {
+                        discountRow.style.display = 'flex';
+                        discountInfo.style.display = 'block';
+                        updateElement('discountPercent', Math.round((discountAmount / regularStallBasePrice) * 100) || 0);
+                        updateElement('discountAmount', `₹ ${discountAmount.toLocaleString()}`);
+                    } else {
+                        discountRow.style.display = 'none';
+                        discountInfo.style.display = 'none';
                     }
                 }
-            }
-            
-            if (!partOfSelectedCombo) {
-                singleStalls.push(stall);
-            }
-        });
-        
-        // Group single stalls by type - NEW LOGIC
-        const eateryStalls = singleStalls.filter(stall => stall.stall_type === 'eatery');
-        const nonEateryStalls = singleStalls.filter(stall => stall.stall_type === 'non-eatery');
-        
-        // Build HTML for selected stalls with enhanced styling
-        let html = '';
-        
-        // Add grouped eatery stalls - MODIFIED
-        if (eateryStalls.length > 0) {
-            const eateryStallNumbers = eateryStalls.map(stall => stall.stall_number).sort((a, b) => a - b).join(', ');
-            const eateryTotalPrice = eateryStalls.reduce((sum, stall) => sum + parseFloat(stall.price), 0);
-            const eateryStallIds = eateryStalls.map(stall => stall.id).join(',');
-            
-            html += `
-                <div class="selected-stall-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; margin-bottom: 10px; background: rgba(220, 20, 60, 0.15); border: 1px solid rgba(220, 20, 60, 0.3); border-radius: 8px; transition: all 0.3s ease;">
-                    <div style="color: #fff;">
-                        <strong style="color: #DC143C; font-size: 16px;">Eatery Stalls (${eateryStalls.length}): ${eateryStallNumbers}</strong><br>
-                        <small style="color: rgba(255,255,255,0.8);">${eateryStalls.length} × ₹${parseFloat(eateryStalls[0].price).toLocaleString()} = ₹${eateryTotalPrice.toLocaleString()}</small>
-                    </div>
-                    <button class="stall-remove-btn" onclick="removeStallGroup('${eateryStallIds}')" title="Remove all eatery stalls" style="background: #ff4757; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 18px; font-weight: bold; line-height: 1; transition: all 0.2s ease;">×</button>
-                </div>
-            `;
-        }
-        
-        // Add grouped non-eatery stalls - MODIFIED
-        if (nonEateryStalls.length > 0) {
-            const nonEateryStallNumbers = nonEateryStalls.map(stall => stall.stall_number).sort((a, b) => a - b).join(', ');
-            const nonEateryTotalPrice = nonEateryStalls.reduce((sum, stall) => sum + parseFloat(stall.price), 0);
-            const nonEateryStallIds = nonEateryStalls.map(stall => stall.id).join(',');
-            
-            html += `
-                <div class="selected-stall-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; margin-bottom: 10px; background: rgba(220, 20, 60, 0.15); border: 1px solid rgba(220, 20, 60, 0.3); border-radius: 8px; transition: all 0.3s ease;">
-                    <div style="color: #fff;">
-                        <strong style="color: #DC143C; font-size: 16px;">Non-Eatery Stalls (${nonEateryStalls.length}): ${nonEateryStallNumbers}</strong><br>
-                        <small style="color: rgba(255,255,255,0.8);">${nonEateryStalls.length} × ₹${parseFloat(nonEateryStalls[0].price).toLocaleString()} = ₹${nonEateryTotalPrice.toLocaleString()}</small>
-                    </div>
-                    <button class="stall-remove-btn" onclick="removeStallGroup('${nonEateryStallIds}')" title="Remove all non-eatery stalls" style="background: #ff4757; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 18px; font-weight: bold; line-height: 1; transition: all 0.2s ease;">×</button>
-                </div>
-            `;
-        }
-        
-        // Add combo stalls - UNCHANGED
-        Object.values(comboGroups).forEach(group => {
-            const stallNumbers = group.stalls.map(stall => stall.stall_number).sort((a, b) => a - b).join(', ');
-            html += `
-                <div class="selected-stall-item combo-stall-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; margin-bottom: 10px; background: rgba(255,215,0,0.2); border: 1px solid rgba(255,215,0,0.4); border-radius: 8px; transition: all 0.3s ease;">
-                    <div>
-                        <strong style="color: #FFD700; font-size: 16px;">Combo: Stalls ${stallNumbers}</strong><br>
-                        <small style="color: rgba(255,255,255,0.8);">Package Price - ₹${parseFloat(group.combo.price).toLocaleString()}</small>
-                    </div>
-                    <button class="stall-remove-btn" onclick="removeCombo(${group.combo.id})" title="Remove combo" style="background: #ff4757; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 18px; font-weight: bold; line-height: 1; transition: all 0.2s ease;">×</button>
-                </div>
-            `;
-        });
-        
-        container.innerHTML = html;
-        
-        // Add hover effects to remove buttons
-        container.querySelectorAll('.stall-remove-btn').forEach(btn => {
-            btn.addEventListener('mouseenter', function() {
-                this.style.background = '#ff3742';
-                this.style.transform = 'scale(1.1)';
-            });
-            btn.addEventListener('mouseleave', function() {
-                this.style.background = '#ff4757';
-                this.style.transform = 'scale(1)';
-            });
-        });
-    }
-
-    // NEW FUNCTION: Remove stall group by type
-    window.removeStallGroup = function(stallIds) {
-        const stallIdArray = stallIds.split(',');
-        stallIdArray.forEach(stallId => {
-            const stallElement = document.querySelector(`.stall[data-stall-id="${stallId}"]`);
-            if (stallElement) {
-                deselectStallElement(stallElement, stallId);
-            }
-        });
-        updateSelectedStallsList();
-        updatePricing();
-        updateStats();
-    };
-
-    // Remove combo
-    window.removeCombo = function(comboId) {
-        const combo = comboData[comboId];
-        if (combo && combo.stall_ids) {
-            combo.stall_ids.forEach(id => {
-                const comboStallElement = document.querySelector(
-                    `.stall[data-stall-id="${id}"]`
-                );
-                if (comboStallElement) {
-                    deselectStallElement(comboStallElement, id.toString());
-                }
-            });
-        }
-        updateSelectedStallsList();
-        updatePricing();
-        updateStats();
-    };
-
-    // Update pricing calculations - SIMPLIFIED VERSION
-    function updatePricing() {
-        // Group selected stalls by combo
-        const comboGroups = {};
-        const singleStalls = [];
-        
-        selectedStalls.forEach(stallId => {
-            const stall = stallData[stallId];
-            if (!stall) return;
-            
-            let partOfSelectedCombo = false;
-            
-            if (stallToComboMap[stallId]) {
-                for (const comboId of stallToComboMap[stallId]) {
-                    const combo = comboData[comboId];
-                    if (!combo || !combo.stall_ids) continue;
-                    
-                    const allSelected = combo.stall_ids.every(id => 
-                        selectedStalls.has(id.toString())
-                    );
-                    
-                    if (allSelected) {
-                        if (!comboGroups[comboId]) {
-                            comboGroups[comboId] = {
-                                combo: combo,
-                                stalls: []
-                            };
-                        }
-                        comboGroups[comboId].stalls.push(stall);
-                        partOfSelectedCombo = true;
-                        break;
-                    }
+                
+                // Enable/disable book button
+                const bookButton = document.getElementById('bookButton');
+                if (bookButton) {
+                    bookButton.disabled = selectedStalls.size === 0;
                 }
             }
-            
-            if (!partOfSelectedCombo) {
-                singleStalls.push(stall);
+
+            // Update statistics
+            function updateStats() {
+                const totalStalls = Object.keys(stallData).length;
+                const availableCount = totalStalls - occupiedStalls.size;
+                const selectedCount = selectedStalls.size;
+                
+                const updateElement = (id, value) => {
+                    const element = document.getElementById(id);
+                    if (element) element.textContent = value;
+                };
+                
+                updateElement('availableCount', Math.max(0, availableCount - selectedCount));
+                updateElement('selectedCount', selectedCount);
             }
-        });
-        
-        // Calculate pricing - SIMPLIFIED
-        const regularStallCount = singleStalls.length;
-        let regularStallBasePrice = 0;
-        
-        singleStalls.forEach(stall => {
-            regularStallBasePrice += parseFloat(stall.price) || 0;
-        });
-        
-        // Calculate discount
-        let discountAmount = 0;
-        
-        if (regularStallCount === 2) {
-            discountAmount = 5000;
-        } else if (regularStallCount >= 3) {
-            discountAmount = 5000 * regularStallCount;
-        }
-        
-        const discountedRegularPrice = Math.max(0, regularStallBasePrice - discountAmount);
-        
-        // Calculate combo price
-        let comboStallPrice = 0;
-        Object.values(comboGroups).forEach(group => {
-            comboStallPrice += parseFloat(group.combo.price) || 0;
-        });
-        
-        // SIMPLIFIED: Only base price + combo price - discount = total
-        const totalPrice = discountedRegularPrice + comboStallPrice;
-        
-        // Update display elements safely
-        const updateElement = (id, value) => {
-            const element = document.getElementById(id);
-            if (element) element.textContent = value;
-        };
-        
-        updateElement('basePrice', `₹ ${Math.round(regularStallBasePrice + comboStallPrice).toLocaleString()}`);
-        updateElement('totalPrice', `₹ ${Math.round(totalPrice).toLocaleString()}`);
-        
-        // Show/hide discount
-        const discountRow = document.getElementById('discountRow');
-        const discountInfo = document.getElementById('discountInfo');
-        
-        if (discountRow && discountInfo) {
-            if (discountAmount > 0) {
-                discountRow.style.display = 'flex';
-                discountInfo.style.display = 'block';
-                updateElement('discountPercent', Math.round((discountAmount / regularStallBasePrice) * 100) || 0);
-                updateElement('discountAmount', `₹ ${discountAmount.toLocaleString()}`);
-            } else {
-                discountRow.style.display = 'none';
-                discountInfo.style.display = 'none';
+
+            // Show tooltip for available stalls
+            function showTooltip(event, stall) {
+                const tooltip = document.getElementById('stallTooltip');
+                if (!tooltip) return;
+                
+                tooltip.innerHTML = `
+                    <strong>Stall ${stall.stall_number}</strong><br>
+                    Type: ${stall.stall_type}<br>
+                    Price: ₹${parseFloat(stall.price).toLocaleString()}<br>
+                    Status: Available
+                `;
+                
+                // Position tooltip carefully to avoid going off screen
+                const rect = tooltip.getBoundingClientRect();
+                let left = event.pageX + 10;
+                let top = event.pageY - 10;
+                
+                if (left + 200 > window.innerWidth) {
+                    left = event.pageX - 210;
+                }
+                if (top - 60 < 0) {
+                    top = event.pageY + 20;
+                }
+                
+                tooltip.style.left = left + 'px';
+                tooltip.style.top = top + 'px';
+                tooltip.style.opacity = '1';
+                tooltip.style.visibility = 'visible';
             }
-        }
-        
-        // Enable/disable book button
-        const bookButton = document.getElementById('bookButton');
-        if (bookButton) {
-            bookButton.disabled = selectedStalls.size === 0;
-        }
-    }
 
-    // Update statistics
-    function updateStats() {
-        const totalStalls = Object.keys(stallData).length;
-        const availableCount = totalStalls - occupiedStalls.size;
-        const selectedCount = selectedStalls.size;
-        
-        const updateElement = (id, value) => {
-            const element = document.getElementById(id);
-            if (element) element.textContent = value;
-        };
-        
-        updateElement('availableCount', Math.max(0, availableCount - selectedCount));
-        updateElement('selectedCount', selectedCount);
-    }
-
-    // Show tooltip for available stalls
-    function showTooltip(event, stall) {
-        const tooltip = document.getElementById('stallTooltip');
-        if (!tooltip) return;
-        
-        tooltip.innerHTML = `
-            <strong>Stall ${stall.stall_number}</strong><br>
-            Type: ${stall.stall_type}<br>
-            Price: ₹${parseFloat(stall.price).toLocaleString()}<br>
-            Status: Available
-        `;
-        
-        // Position tooltip carefully to avoid going off screen
-        const rect = tooltip.getBoundingClientRect();
-        let left = event.pageX + 10;
-        let top = event.pageY - 10;
-        
-        if (left + 200 > window.innerWidth) {
-            left = event.pageX - 210;
-        }
-        if (top - 60 < 0) {
-            top = event.pageY + 20;
-        }
-        
-        tooltip.style.left = left + 'px';
-        tooltip.style.top = top + 'px';
-        tooltip.style.opacity = '1';
-        tooltip.style.visibility = 'visible';
-    }
-
-    // Show tooltip for occupied stalls
-    function showOccupiedTooltip(event, stall) {
-        const tooltip = document.getElementById('stallTooltip');
-        if (!tooltip) return;
-        
-        const statusText = stall.status === 'blocked' ? 'BLOCKED' : 'BOOKED';
-        
-        tooltip.innerHTML = `
-            <strong>Stall ${stall.stall_number} - ${statusText}</strong><br>
-            Name: A2B<br>
-            Type: ${stall.stall_type}<br>
-            Price: ₹${parseFloat(stall.price).toLocaleString()}<br>
-            Status: Not Available
-        `;
-        
-        tooltip.style.left = event.pageX + 10 + 'px';
-        tooltip.style.top = event.pageY - 10 + 'px';
-        tooltip.style.opacity = '1';
-    }
+            // Show tooltip for occupied stalls
+            function showOccupiedTooltip(event, stall) {
+                const tooltip = document.getElementById('stallTooltip');
+                if (!tooltip) return;
+                
+                const statusText = stall.status === 'blocked' ? 'BLOCKED' : 'BOOKED';
+                
+                tooltip.innerHTML = `
+                    <strong>Stall ${stall.stall_number} - ${statusText}</strong><br>
+                    Name: A2B<br>
+                    Type: ${stall.stall_type}<br>
+                    Price: ₹${parseFloat(stall.price).toLocaleString()}<br>
+                    Status: Not Available
+                `;
+                
+                tooltip.style.left = event.pageX + 10 + 'px';
+                tooltip.style.top = event.pageY - 10 + 'px';
+                tooltip.style.opacity = '1';
+            }
 
             // Hide tooltip
             function hideTooltip() {
