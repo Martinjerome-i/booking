@@ -758,15 +758,22 @@
         background: #fc8a00; 
         }
 
+        
         @media (max-width: 1400px) {
             .main-layout {
                 grid-template-columns: 1fr;
+                display: flex;
+                flex-direction: column;
+            }
+            
+            .expo-floor {
+                order: 1;
             }
             
             .booking-panel {
                 position: relative;
                 top: 0;
-                order: -1;
+                order: 2;
                 max-height: none;
             }
 
@@ -1031,7 +1038,7 @@ function initializeApp() {
     hallDisplay.style.minHeight = '600px';
 
     // Set fixed width for better display - enhanced to 1200px
-    const containerWidth = 1200;
+    const containerWidth = window.innerWidth >= 1600 ? 1200 : 1050;
     const containerHeight = 603;
     
     // Calculate scale for better visibility
@@ -1057,7 +1064,7 @@ function initializeApp() {
         const testImage = new Image();
         testImage.onload = function() {
             // Image loaded successfully, now set background
-            hallDisplay.style.backgroundImage = 'url("/static/assets/img/layout-02.png")';
+            hallDisplay.style.backgroundImage = 'url("/static/assets/img/layout-03.png")';
             hallDisplay.style.backgroundSize = 'cover';
             hallDisplay.style.backgroundPosition = 'center center';
             hallDisplay.style.backgroundRepeat = 'no-repeat';
@@ -1082,7 +1089,7 @@ function initializeApp() {
             console.warn('Background image failed to load, using fallback color');
             hallDisplay.style.backgroundColor = '#f8f9fa';
         };
-        testImage.src = '/static/assets/img/layout-02.png';
+        testImage.src = '/static/assets/img/layout-03.png';
     }
 
     // Set the background image
