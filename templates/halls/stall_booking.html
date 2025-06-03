@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Briyani Expo - Enhanced Stall Booking System</title>
+    <title>IBFE</title>
+    <link rel="icon" type="image/png" href="/static/favicon.ico">
+    <!-- Added preload for key resources -->
+    <link rel="preload" href="/static/ibfe_logo.png" as="image">
     <style>
         * {
             margin: 0;
@@ -594,10 +597,13 @@
         .features-list {
             list-style: none;
             padding: 0;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px 24px; /* row and column gap */
         }
 
         .features-list li {
-            margin-bottom: 8px;
+            margin-bottom: 0; /* grid handles spacing */
             padding-left: 20px;
             position: relative;
             color: #FFFFE0;
@@ -611,6 +617,7 @@
             font-weight: bold;
             font-size: 14px;
         }
+
 
         .modal {
             display: none;
@@ -735,6 +742,28 @@
             transform: translateY(-1px);
             box-shadow: 0 3px 8px rgba(255, 140, 0, 0.4);
         }
+
+        .apply-coupon-btn {
+            margin-top: 8px;
+            padding: 6px 12px;
+            font-size: 12px;
+            background-color: #FFD700;
+            color: #000;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .apply-coupon-btn:hover {
+            background-color: #e6c200;
+        }
+
+        .coupon-message {
+            margin-top: 6px;
+            font-size: 12px;
+            color: #32CD32;
+        }
+
         
         ::-webkit-scrollbar {
         width: 5px;
@@ -827,7 +856,7 @@
                     </div>
                 </div>
                 <!-- <h1>🍛 Briyani Expo 2024</h1> -->
-                <p>Enhanced Multi-Stall Booking System - Select Multiple Stalls</p>
+                <p>INTERNATIONAL BIRYANI FESTIVAL AND EXPO - CHENNAI TRADE CENTRE - HALL 3 - 4400 SQM | 12, 13 & 14 SEPTEMBER 2025</p>
                 <div class="expo-stats">
                     <div class="stat-item">
                         <div class="stat-number">268</div>
@@ -842,7 +871,7 @@
                         <div class="stat-label">Selected</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-number">₹15,000</div>
+                        <div class="stat-number">₹55,000</div>
                         <div class="stat-label">Starting Price</div>
                     </div>
                 </div>
@@ -869,10 +898,6 @@
                         <div style="font-size: 14px;">ALL</div>
                         <div style="font-size: 11px;">3 Days</div>
                     </div> -->
-                </div>
-                <div class="floor-info">
-                    <strong>Size:</strong> 100m x 44m (4400m²) | <strong>Capacity:</strong> 268 Stalls
-                    <br><strong>Multi-Selection Mode:</strong> Click multiple stalls to add to your booking
                 </div>
 
                 <!-- Legend -->
@@ -907,9 +932,15 @@
                     <!-- Stalls will be drawn here using JavaScript -->
                 </div>
 
+                <div class="floor-info">
+                    <p><strong>If you have any questions,</strong> please contact us at support@stallbooking.com, Salesheadibfe@gmail.com , Rajganeshq@gmail.com </p>
+                        <br> 
+                        <p><strong>Contact:</strong> 9176183236 , 9087223946, 9962253522</p>                    
+                </div>
+
                 <!-- Booking Features -->
                 <div class="booking-features">
-                    <div class="features-title">🎪 Expo Features Included</div>
+                    <div class="features-title">🎪 Stall Deliverables </div>
                     <ul class="features-list">
                         <li>Premium location with high foot traffic</li>
                         <li>24/7 security and surveillance</li>
@@ -958,6 +989,14 @@
                         <label class="form-label">Email Address *</label>
                         <input type="email" class="form-control" id="emailAddress" placeholder="your@email.com" required>
                     </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Coupon Code</label>
+                        <input type="text" class="form-control" id="couponCode" placeholder="Enter coupon code">
+                        <button type="button" class="apply-coupon-btn" onclick="applyCoupon()">Apply</button>
+                        <div id="couponMessage" class="coupon-message"></div>
+                    </div>
+
                 </div>
 
                 <!-- Enhanced Price Breakdown -->
@@ -1781,7 +1820,7 @@ function initializeApp() {
         tooltip.style.visibility = 'visible';
     }
 
-  // Show tooltip for occupied stalls
+    // Show tooltip for occupied stalls
     function showOccupiedTooltip(event, stall) {
         const tooltip = document.getElementById('stallTooltip');
         if (!tooltip) return;
@@ -1790,6 +1829,7 @@ function initializeApp() {
         
         tooltip.innerHTML = `
             <strong>Stall ${stall.stall_number} - ${statusText}</strong><br>
+            Name: A2B<br>
             Type: ${stall.stall_type}<br>
             Price: ₹${parseFloat(stall.price).toLocaleString()}<br>
             Status: Not Available
