@@ -788,6 +788,13 @@
         }
 
         
+        /* For screens below 1600px */
+        @media (max-width: 1599px) {
+            .main-layout {
+                grid-template-columns: 1fr 300px;
+            }
+        }
+
         @media (max-width: 1400px) {
             .main-layout {
                 grid-template-columns: 1fr;
@@ -1048,24 +1055,6 @@
 
     <!-- Tooltip for stall information -->
     <div class="stall-tooltip" id="stallTooltip"></div>
-
-    
-    <div class="modal" id="stallInfoModal" style="display: none;">
-        <div class="modal-content" style="max-width: 500px; background: #2c3e50; color: white; border-radius: 12px;">
-            <div class="modal-header" style="padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1);">
-                <h3 id="modalStallTitle" style="margin: 0; color: #ecf0f1;">Stall Information</h3>
-                <button class="modal-close" onclick="closeStallModal()" style="background: none; border: none; color: #bdc3c7; font-size: 24px; cursor: pointer; float: right; margin-top: -30px;">×</button>
-            </div>
-            <div class="modal-body" style="padding: 20px;">
-                <div id="modalStallContent">
-                    <!-- Content will be dynamically inserted -->
-                </div>
-            </div>
-            <div class="modal-footer" style="padding: 15px 20px; border-top: 1px solid rgba(255,255,255,0.1); text-align: right;">
-                <button onclick="closeStallModal()" style="background: #34495e; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">Close</button>
-            </div>
-        </div>
-    </div>
     <script>
 // Enhanced Booking System JavaScript - International Biryani Festival and Expo
 
@@ -1103,7 +1092,7 @@
                 hallDisplay.style.minHeight = '600px';
 
                 // Set fixed width for better display - enhanced to 1200px
-                const containerWidth = window.innerWidth >= 1600 ? 1200 : 1130;
+                const containerWidth = window.innerWidth >= 1600 ? 1200 : 1150;
                 const containerHeight = 603;
                 
                 // Calculate scale for better visibility
@@ -1376,11 +1365,41 @@
                         hideTooltip();
                     });
                 } else {
-                    // Add hover for occupied stalls
+                    // Add click handler for booked stalls to redirect to booking website
+                    if (stall.status === 'booked') {
+                        stallElement.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            
+                            // Sample static website - replace with actual booking website URL
+                            const bookingWebsiteUrl = 'https://bigbasket.com';
+                            
+                            // You can customize the URL based on stall data if needed
+                            // const bookingWebsiteUrl = `https://booking-site.com/stall/${stall.id}`;
+                            // const bookingWebsiteUrl = `https://booking-site.com/stall-${stall.stall_number}`;
+                            
+                            // Open in new tab/window
+                            window.open(bookingWebsiteUrl, '_blank');
+                            
+                            // Alternative: redirect in same window
+                            // window.location.href = bookingWebsiteUrl;
+                        });
+                        
+                        // Change cursor to indicate clickability for booked stalls
+                        stallElement.style.cursor = 'pointer';
+                    }
+                    
+                    // Add hover for occupied stalls (both booked and blocked)
                     stallElement.addEventListener('mouseenter', function(e) {
                         this.style.opacity = '1';
                         this.style.transform = 'scale(1.02)';
-                        showOccupiedTooltip(e, stall);
+                        
+                        if (stall.status === 'booked') {
+                            // Different tooltip for booked stalls to indicate they're clickable
+                            showBookedTooltip(e, stall);
+                        } else {
+                            showOccupiedTooltip(e, stall);
+                        }
                     });
                     
                     stallElement.addEventListener('mouseleave', function() {
@@ -1392,6 +1411,37 @@
 
                 stallElement.appendChild(stallLabel);
                 container.appendChild(stallElement);
+            }
+
+            // Show tooltip for booked stalls (indicates clickability)
+            function showBookedTooltip(event, stall) {
+                const tooltip = document.getElementById('stallTooltip');
+                if (!tooltip) return;
+                
+                tooltip.innerHTML = `
+                    <strong>Stall ${stall.stall_number} - BOOKED</strong><br>
+                    Name: A2B<br>
+                    Type: ${stall.stall_type}<br>
+                    Status: Booked<br>
+                    <em style="color: #4CAF50;">Click to visit booking page</em>
+                `;
+                
+                // Position tooltip carefully to avoid going off screen
+                const rect = tooltip.getBoundingClientRect();
+                let left = event.pageX + 10;
+                let top = event.pageY - 10;
+                
+                if (left + 200 > window.innerWidth) {
+                    left = event.pageX - 210;
+                }
+                if (top - 60 < 0) {
+                    top = event.pageY + 20;
+                }
+                
+                tooltip.style.left = left + 'px';
+                tooltip.style.top = top + 'px';
+                tooltip.style.opacity = '1';
+                tooltip.style.visibility = 'visible';
             }
 
             // Handle stall click with improved logic
@@ -1857,8 +1907,7 @@
                     <strong>Stall ${stall.stall_number} - ${statusText}</strong><br>
                     Name: A2B<br>
                     Type: ${stall.stall_type}<br>
-                    Price: ₹${parseFloat(stall.price).toLocaleString()}<br>
-                    Status: Not Available
+                    Status: Occupied
                 `;
                 
                 tooltip.style.left = event.pageX + 10 + 'px';
