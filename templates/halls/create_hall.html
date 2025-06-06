@@ -1,0 +1,179 @@
+<!-- halls/templates/halls/create_hall.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Hall - Stall Booking System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .btn {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .btn-secondary {
+            background-color: #2196F3;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input {
+            padding: 8px;
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .preview {
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 4px;
+        }
+        .hall-preview {
+            margin-top: 10px;
+            border: 1px solid #aaa;
+            position: relative;
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Create New Hall</h1>
+            <a href="{% url 'index' %}" class="btn btn-secondary">Back to Halls</a>
+        </div>
+
+        <form method="POST" action="{% url 'create_hall' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="name">Hall Name:</label>
+                <input type="text" id="name" name="name" placeholder="Enter hall name" required>
+            </div>
+
+            <div class="form-group">
+                <label for="length">Length (meters):</label>
+                <input type="number" id="length" name="length" min="1" max="100" value="10" required>
+            </div>
+
+            <div class="form-group">
+                <label for="breadth">Breadth (meters):</label>
+                <input type="number" id="breadth" name="breadth" min="1" max="100" value="10" required>
+            </div>
+
+            <div class="preview">
+                <h3>Preview</h3>
+                <p>Hall Size: <span id="size-display">10m x 10m (100m²)</span></p>
+                <div class="hall-preview" id="hall-preview" style="width: 100%; height: 300px;"></div>
+            </div>
+
+            <button type="submit" class="btn">Create Hall</button>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const lengthInput = document.getElementById('length');
+            const breadthInput = document.getElementById('breadth');
+            const sizeDisplay = document.getElementById('size-display');
+            const hallPreview = document.getElementById('hall-preview');
+
+            // Update preview when inputs change
+            lengthInput.addEventListener('input', updatePreview);
+            breadthInput.addEventListener('input', updatePreview);
+
+            // Initial preview update
+            updatePreview();
+
+            function updatePreview() {
+                const length = parseInt(lengthInput.value) || 0;
+                const breadth = parseInt(breadthInput.value) || 0;
+                const area = length * breadth;
+
+                // Update size display
+                sizeDisplay.textContent = `${length}m x ${breadth}m (${area}m²)`;
+
+                // Clear previous preview
+                hallPreview.innerHTML = '';
+
+                // Set preview dimensions
+                const maxWidth = hallPreview.clientWidth;
+                const maxHeight = hallPreview.clientHeight;
+
+                const scaleX = maxWidth / length;
+                const scaleY = maxHeight / breadth;
+                const scale = Math.min(scaleX, scaleY);
+
+                const actualWidth = length * scale;
+                const actualHeight = breadth * scale;
+
+                // Center the preview
+                const offsetX = (maxWidth - actualWidth) / 2;
+                const offsetY = (maxHeight - actualHeight) / 2;
+
+                // Create preview box
+                const box = document.createElement('div');
+                box.style.position = 'absolute';
+                box.style.left = `${offsetX}px`;
+                box.style.top = `${offsetY}px`;
+                box.style.width = `${actualWidth}px`;
+                box.style.height = `${actualHeight}px`;
+                box.style.border = '2px solid #4CAF50';
+                box.style.backgroundColor = '#E8F5E9';
+                hallPreview.appendChild(box);
+
+                // Add grid lines
+                for (let x = 0; x <= length; x++) {
+                    const lineX = document.createElement('div');
+                    lineX.style.position = 'absolute';
+                    lineX.style.left = `${offsetX + x * scale}px`;
+                    lineX.style.top = `${offsetY}px`;
+                    lineX.style.width = '1px';
+                    lineX.style.height = `${actualHeight}px`;
+                    lineX.style.backgroundColor = '#ccc';
+                    hallPreview.appendChild(lineX);
+                }
+
+                for (let y = 0; y <= breadth; y++) {
+                    const lineY = document.createElement('div');
+                    lineY.style.position = 'absolute';
+                    lineY.style.left = `${offsetX}px`;
+                    lineY.style.top = `${offsetY + y * scale}px`;
+                    lineY.style.width = `${actualWidth}px`;
+                    lineY.style.height = '1px';
+                    lineY.style.backgroundColor = '#ccc';
+                    hallPreview.appendChild(lineY);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
